@@ -1,10 +1,8 @@
-#
-# Monitor Module
-#
-
+#coding: utf-8
 import sys
 import ConfigParser
 import pyinotify
+
 
 config = ConfigParser.RawConfigParser()
 config.read('../config.ini')
