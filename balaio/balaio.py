@@ -1,4 +1,5 @@
 # coding: utf-8
+import os
 import argparse
 import subprocess
 try:
@@ -6,7 +7,10 @@ try:
 except ImportError:
     import pickle
 
-import utils
+
+def setenv(configfile):
+    abspath = os.path.abspath(configfile)
+    os.environ['BALAIO_SETTINGS_FILE'] = abspath
 
 
 def run_monitor(stdin=subprocess.PIPE, stdout=subprocess.PIPE):
@@ -17,16 +21,16 @@ def run_monitor(stdin=subprocess.PIPE, stdout=subprocess.PIPE):
     cmd = ['python', 'monitor.py']
     monitor = subprocess.Popen(' '.join(cmd), shell=True, stdin=stdin,
         stdout=stdout)
+
     return monitor
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=u'Balaio utility')
     parser.add_argument('-c', action='store', dest='configfile',
-        type=argparse.FileType('rt'), required=True)
+        required=True)
 
     args = parser.parse_args()
-
-    config = utils.Configuration(args.configfile)
+    setenv(args.configfile)
 
     monitor = run_monitor()

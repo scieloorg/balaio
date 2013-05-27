@@ -1,3 +1,4 @@
+import os
 from ConfigParser import SafeConfigParser
 import weakref
 
@@ -31,6 +32,11 @@ class Configuration(SingletonMixin):
     def __init__(self, fp, parser_dep=SafeConfigParser):
         self.conf = parser_dep()
         self.conf.readfp(fp)
+
+    @classmethod
+    def from_env(cls):
+        filepath = os.environ['BALAIO_SETTINGS_FILE']
+        return cls.from_file(filepath)
 
     @classmethod
     def from_file(cls, filepath):

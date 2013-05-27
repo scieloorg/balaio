@@ -1,12 +1,11 @@
 #coding: utf-8
 import sys
-import ConfigParser
 import pyinotify
 
+from utils import Configuration
 
-config = ConfigParser.RawConfigParser()
-config.read('../config.ini')
 
+config = Configuration.from_env()
 mask = pyinotify.IN_CLOSE_WRITE
 
 
