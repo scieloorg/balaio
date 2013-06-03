@@ -34,3 +34,15 @@ if __name__ == '__main__':
     setenv(args.configfile)
 
     monitor = run_monitor()
+
+    print 'Start listening'
+    try:
+        while True:
+            out = monitor.stdout.readline()
+            print 'OUT:', out
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print 'Terminating all child processess'
+        monitor.terminate()
+

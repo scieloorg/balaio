@@ -13,19 +13,16 @@ class EventHandler(pyinotify.ProcessEvent):
 
     def process_IN_CLOSE_WRITE(self, event):
         # CALL CHECKIN
-        print "WRITE AND CLOSE:", event.pathname
+        sys.stdout.write("WRITE AND CLOSE: %s\n" % event.pathname)
+        sys.stdout.flush()
 
 wm = pyinotify.WatchManager()
 handler = EventHandler()
 notifier = pyinotify.Notifier(wm, handler)
 
-wm.add_watch(config.get('paths', 'watch_path').split(','), mask,
+wm.add_watch(config.get('paths', 'watch_path').split(','),
+             mask,
              rec=config.get('params', 'recursive'),
-             auto_add=config.get('params', 'auto_add'))
+             auto_add=config.get('params', 'recursive'))
 
-try:
-    notifier.loop(daemonize=config.get('params', 'daemonize'),
-                  pid_file=config.get('paths', 'pid_file'),
-                  stdout=config.get('paths', 'output'))
-except pyinotify.NotifierError, err:
-    print >> sys.stderr, err
+notifier.loop(pid_file=config.get('paths', 'pid_file'))
