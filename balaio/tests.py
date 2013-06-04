@@ -349,3 +349,35 @@ class SendMessageFunctionTests(mocker.MockerTestCase):
             int(stream.getvalue().split('\n')[0].split(' ')[1]),
             len('serialized-data-byte-string')
         )
+
+
+class RecvMessageFunctionTests(mocker.MockerTestCase):
+    serialized_message = 'e5fcf4f4606df6368779205e29b22e5851355de3 14\n\x80\x02U\x07messageq\x01.'
+
+    def test_valid_data_is_deserialized(self):
+        mock_digest = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
+        self.mocker.replay()
+
+        in_stream = StringIO(self.serialized_message)
+        messages = utils.recv_messages(in_stream, mock_digest)
+
+        self.assertEqual(messages.next(), 'message')
+
+    def test_corrupted_data_is_bypassed(self):
+        mock_digest = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3XXXXX')
+        self.mocker.replay()
+
+        in_stream = StringIO(self.serialized_message)
+        messages = utils.recv_messages(in_stream, mock_digest)
+
+        self.assertRaises(StopIteration, lambda: messages.next())
+
+    def test_raises_StopIteration_while_the_stream_is_exhausted(self):
+        in_stream = StringIO()
+        messages = utils.recv_messages(in_stream, utils.make_digest)
+
+        self.assertRaises(StopIteration, lambda: messages.next())

@@ -92,10 +92,12 @@ def send_message(stream, message, digest, pickle_dep=pickle):
     stream.flush()
 
 
-def recv_message(stream, digest):
+def recv_messages(stream, digest, pickle_dep=pickle):
     """
     Returns an iterator that retrieves messages from the ``stream``
-    on its deserialized form
+    on its deserialized form.
+    When the stream is exhausted the iterator stops, raising
+    StopIteration.
 
     ``stream`` is a readable socket, pipe, buffer of something like that.
     ``digest`` is a callable that generates a hash in order to avoid
@@ -114,7 +116,7 @@ def recv_message(stream, digest):
         in_message = stream.read(int(in_length))
 
         if in_digest == digest(in_message):
-            yield pickle.loads(in_message)
+            yield pickle_dep.loads(in_message)
         else:
             # log the failure
             continue
