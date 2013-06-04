@@ -1,6 +1,12 @@
 import os
 from ConfigParser import SafeConfigParser
 import weakref
+import hmac
+import hashlib
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 
 class SingletonMixin(object):
@@ -50,3 +56,65 @@ class Configuration(SingletonMixin):
 
     def __getattr__(self, attr):
         return getattr(self.conf, attr)
+
+
+def make_digest(message, secret='sekretz'):
+    """
+    Returns a digest for the message based on the given secret
+
+    ``message`` is the byte string to be calculated
+    ``secret`` is a shared key used by the hash algorithm
+    """
+    hash = hmac.new(secret,
+                    message,
+                    hashlib.sha1)
+    return hash.hexdigest()
+
+
+def send_message(stream, message, digest, pickle_dep=pickle):
+    """
+    Serializes the message and flushes it through ``stream``
+
+    ``stream`` is a writable socket, pipe, buffer of something like that.
+    ``message`` is the object to be dispatched.
+    ``digest`` is a callable that generates a hash in order to avoid
+    data transmission corruptions.
+    """
+    if not callable(digest):
+        raise ValueError('digest must be callable')
+
+    serialized = pickle_dep.dumps(message, pickle_dep.HIGHEST_PROTOCOL)
+    data_digest = digest(serialized)
+    header = '%s %s\n' % (data_digest, len(serialized))
+
+    stream.write(header)
+    stream.write(serialized)
+    stream.flush()
+
+
+def recv_message(stream, digest):
+    """
+    Returns an iterator that retrieves messages from the ``stream``
+    on its deserialized form
+
+    ``stream`` is a readable socket, pipe, buffer of something like that.
+    ``digest`` is a callable that generates a hash in order to avoid
+    data transmission corruptions.
+    """
+    if not callable(digest):
+        raise ValueError('digest must be callable')
+
+    while True:
+        header = stream.readline()
+
+        if not header:
+            raise StopIteration()
+
+        in_digest, in_length = header.split(' ')
+        in_message = stream.read(int(in_length))
+
+        if in_digest == digest(in_message):
+            yield pickle.loads(in_message)
+        else:
+            # log the failure
+            continue

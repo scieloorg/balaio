@@ -1,5 +1,6 @@
 # coding: utf-8
 import ConfigParser
+from StringIO import StringIO
 
 import mocker
 
@@ -260,3 +261,91 @@ class ConfigurationTests(mocker.MockerTestCase):
         self.assertRaises(
             ConfigParser.NoSectionError,
             lambda: conf.get('missing', 'status'))
+
+
+class MakeDigestFunctionTests(mocker.MockerTestCase):
+    """
+    blackbox tests approach.
+    """
+    def test_digests_are_determinist(self):
+        self.assertEqual(
+            utils.make_digest('foo'),
+            utils.make_digest('foo')
+        )
+
+    def test_digests_are_sensible_to_secret_keys(self):
+        self.assertNotEqual(
+            utils.make_digest('foo'),
+            utils.make_digest('foo', secret='bar')
+        )
+
+    def test_digests_have_no_newline_char(self):
+        self.assertFalse('\n' in utils.make_digest('foo'))
+
+    def test_invalid_messages_raise_TypeError(self):
+        self.assertRaises(
+            TypeError,
+            lambda: utils.make_digest(object()))
+
+
+class SendMessageFunctionTests(mocker.MockerTestCase):
+
+    def test_stream_is_flushed(self):
+        mock_stream = self.mocker.mock()
+
+        mock_stream.write(mocker.ANY)
+        self.mocker.result(None)
+        self.mocker.count(2)
+
+        mock_stream.flush()
+        self.mocker.result(None)
+
+        self.mocker.replay()
+
+        self.assertIsNone(
+            utils.send_message(mock_stream, 'message', utils.make_digest))
+
+    def test_serialized_data_digest_in_header(self):
+        """
+        The data header is formed by:
+        <serialized data digest> <serialized data length>\n
+        """
+        mock_digest = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
+        self.mocker.replay()
+
+        stream = StringIO()
+
+        utils.send_message(stream, 'message', mock_digest)
+        self.assertEqual(
+            stream.getvalue().split('\n')[0].split(' ')[0],
+            'e5fcf4f4606df6368779205e29b22e5851355de3'
+        )
+
+    def test_serialized_data_length_in_header(self):
+        """
+        The data header is formed by:
+        <serialized data digest> <serialized data length>\n
+        """
+        mock_digest = self.mocker.mock()
+        mock_pickle = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
+
+        mock_pickle.HIGHEST_PROTOCOL
+        self.mocker.result('foo')
+
+        mock_pickle.dumps(mocker.ANY, mocker.ANY)
+        self.mocker.result('serialized-data-byte-string')
+
+        self.mocker.replay()
+
+        stream = StringIO()
+
+        utils.send_message(stream, 'message', mock_digest, pickle_dep=mock_pickle)
+
+        self.assertEqual(
+            int(stream.getvalue().split('\n')[0].split(' ')[1]),
+            len('serialized-data-byte-string')
+        )
