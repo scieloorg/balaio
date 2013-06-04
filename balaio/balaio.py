@@ -2,10 +2,6 @@
 import os
 import argparse
 import subprocess
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 
 def setenv(configfile):
