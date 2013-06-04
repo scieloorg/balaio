@@ -3,8 +3,13 @@ import ConfigParser
 import urllib2
 import urllib
 
-from .utils import SingletonMixin
+from .utils import SingletonMixin, Configuration
 
+# the environment variable is not set under tests
+if __debug__:
+    config = None
+else:
+    config = Configuration.from_env()
 
 CHECKIN_MESSAGE_FIELDS = ('checkin_id', 'collection_uri', 'article_title',
     'journal_title', 'issue_label', 'pkgmeta_filename', 'pkgmeta_md5',
@@ -75,7 +80,7 @@ class Request(SingletonMixin):
 
 class Notifier(SingletonMixin):
 
-    def __init__(self, settings, request_dep=Request):
+    def __init__(self, settings=config, request_dep=Request):
         """
         ``settings`` is an instance of ConfigParser.ConfigParser.
         """

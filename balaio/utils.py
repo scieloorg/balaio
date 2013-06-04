@@ -41,7 +41,11 @@ class Configuration(SingletonMixin):
 
     @classmethod
     def from_env(cls):
-        filepath = os.environ['BALAIO_SETTINGS_FILE']
+        try:
+            filepath = os.environ['BALAIO_SETTINGS_FILE']
+        except KeyError:
+            raise ValueError('missing env variable BALAIO_SETTINGS_FILE')
+
         return cls.from_file(filepath)
 
     @classmethod
