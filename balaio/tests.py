@@ -1,9 +1,11 @@
 # coding: utf-8
 import ConfigParser
+from StringIO import StringIO
 
 import mocker
 
 import notifier
+import utils
 
 
 class ExtractSettingsFunctionTests(mocker.MockerTestCase):
@@ -93,27 +95,27 @@ class ExtractSettingsFunctionTests(mocker.MockerTestCase):
 class SingletonMixinTests(mocker.MockerTestCase):
 
     def test_without_args(self):
-        class Foo(notifier.SingletonMixin):
+        class Foo(utils.SingletonMixin):
             pass
 
         self.assertIs(Foo(), Foo())
 
     def test_single_int_arg(self):
-        class Foo(notifier.SingletonMixin):
+        class Foo(utils.SingletonMixin):
             def __init__(self, x):
                 self.x = x
 
         self.assertIs(Foo(2), Foo(2))
 
     def test_single_int_kwarg(self):
-        class Foo(notifier.SingletonMixin):
+        class Foo(utils.SingletonMixin):
             def __init__(self, x=None):
                 self.x = x
 
         self.assertIs(Foo(x=2), Foo(x=2))
 
     def test_multiple_int_arg(self):
-        class Foo(notifier.SingletonMixin):
+        class Foo(utils.SingletonMixin):
             def __init__(self, x, y):
                 self.x = x
                 self.y = y
@@ -121,7 +123,7 @@ class SingletonMixinTests(mocker.MockerTestCase):
         self.assertIs(Foo(2, 6), Foo(2, 6))
 
     def test_multiple_int_kwarg(self):
-        class Foo(notifier.SingletonMixin):
+        class Foo(utils.SingletonMixin):
             def __init__(self, x=None, y=None):
                 self.x = x
                 self.y = y
@@ -129,7 +131,7 @@ class SingletonMixinTests(mocker.MockerTestCase):
         self.assertIs(Foo(x=2, y=6), Foo(x=2, y=6))
 
     def test_ConfigParser_arg(self):
-        class Foo(notifier.SingletonMixin):
+        class Foo(utils.SingletonMixin):
             def __init__(self, x):
                 self.x = x
 
@@ -218,3 +220,164 @@ class ValidadeNotificationMessageFunctionTests(mocker.MockerTestCase):
 
         self.assertFalse(
             notifier.validate_notification_message(message, fields))
+
+
+class ConfigurationTests(mocker.MockerTestCase):
+
+    def _make_fp(self):
+        mock_fp = self.mocker.mock()
+
+        mock_fp.name
+        self.mocker.result('settings.ini')
+
+        mock_fp.readline()
+        self.mocker.result('[app]')
+
+        mock_fp.readline()
+        self.mocker.result('status = True')
+
+        mock_fp.readline()
+        self.mocker.result('')
+
+        self.mocker.replay()
+
+        return mock_fp
+
+    def test_fp(self):
+        mock_fp = self._make_fp()
+        conf = utils.Configuration(mock_fp)
+        self.assertEqual(conf.get('app', 'status'), 'True')
+
+    def test_non_existing_option_raises_ConfigParser_NoOptionError(self):
+        mock_fp = self._make_fp()
+        conf = utils.Configuration(mock_fp)
+        self.assertRaises(
+            ConfigParser.NoOptionError,
+            lambda: conf.get('app', 'missing'))
+
+    def test_non_existing_section_raises_ConfigParser_NoSectionError(self):
+        mock_fp = self._make_fp()
+        conf = utils.Configuration(mock_fp)
+        self.assertRaises(
+            ConfigParser.NoSectionError,
+            lambda: conf.get('missing', 'status'))
+
+
+class MakeDigestFunctionTests(mocker.MockerTestCase):
+    """
+    blackbox tests approach.
+    """
+    def test_digests_are_determinist(self):
+        self.assertEqual(
+            utils.make_digest('foo'),
+            utils.make_digest('foo')
+        )
+
+    def test_digests_are_sensible_to_secret_keys(self):
+        self.assertNotEqual(
+            utils.make_digest('foo'),
+            utils.make_digest('foo', secret='bar')
+        )
+
+    def test_digests_have_no_newline_char(self):
+        self.assertFalse('\n' in utils.make_digest('foo'))
+
+    def test_invalid_messages_raise_TypeError(self):
+        self.assertRaises(
+            TypeError,
+            lambda: utils.make_digest(object()))
+
+
+class SendMessageFunctionTests(mocker.MockerTestCase):
+
+    def test_stream_is_flushed(self):
+        mock_stream = self.mocker.mock()
+
+        mock_stream.write(mocker.ANY)
+        self.mocker.result(None)
+        self.mocker.count(2)
+
+        mock_stream.flush()
+        self.mocker.result(None)
+
+        self.mocker.replay()
+
+        self.assertIsNone(
+            utils.send_message(mock_stream, 'message', utils.make_digest))
+
+    def test_serialized_data_digest_in_header(self):
+        """
+        The data header is formed by:
+        <serialized data digest> <serialized data length>\n
+        """
+        mock_digest = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
+        self.mocker.replay()
+
+        stream = StringIO()
+
+        utils.send_message(stream, 'message', mock_digest)
+        self.assertEqual(
+            stream.getvalue().split('\n')[0].split(' ')[0],
+            'e5fcf4f4606df6368779205e29b22e5851355de3'
+        )
+
+    def test_serialized_data_length_in_header(self):
+        """
+        The data header is formed by:
+        <serialized data digest> <serialized data length>\n
+        """
+        mock_digest = self.mocker.mock()
+        mock_pickle = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
+
+        mock_pickle.HIGHEST_PROTOCOL
+        self.mocker.result('foo')
+
+        mock_pickle.dumps(mocker.ANY, mocker.ANY)
+        self.mocker.result('serialized-data-byte-string')
+
+        self.mocker.replay()
+
+        stream = StringIO()
+
+        utils.send_message(stream, 'message', mock_digest, pickle_dep=mock_pickle)
+
+        self.assertEqual(
+            int(stream.getvalue().split('\n')[0].split(' ')[1]),
+            len('serialized-data-byte-string')
+        )
+
+
+class RecvMessageFunctionTests(mocker.MockerTestCase):
+    serialized_message = 'e5fcf4f4606df6368779205e29b22e5851355de3 14\n\x80\x02U\x07messageq\x01.'
+
+    def test_valid_data_is_deserialized(self):
+        mock_digest = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
+        self.mocker.replay()
+
+        in_stream = StringIO(self.serialized_message)
+        messages = utils.recv_messages(in_stream, mock_digest)
+
+        self.assertEqual(messages.next(), 'message')
+
+    def test_corrupted_data_is_bypassed(self):
+        mock_digest = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3XXXXX')
+        self.mocker.replay()
+
+        in_stream = StringIO(self.serialized_message)
+        messages = utils.recv_messages(in_stream, mock_digest)
+
+        self.assertRaises(StopIteration, lambda: messages.next())
+
+    def test_raises_StopIteration_while_the_stream_is_exhausted(self):
+        in_stream = StringIO()
+        messages = utils.recv_messages(in_stream, utils.make_digest)
+
+        self.assertRaises(StopIteration, lambda: messages.next())

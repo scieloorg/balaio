@@ -1,9 +1,15 @@
 # coding: utf-8
 import ConfigParser
-import weakref
 import urllib2
 import urllib
 
+from .utils import SingletonMixin, Configuration
+
+# the environment variable is not set under tests
+if __debug__:
+    config = None
+else:
+    config = Configuration.from_env()
 
 CHECKIN_MESSAGE_FIELDS = ('checkin_id', 'collection_uri', 'article_title',
     'journal_title', 'issue_label', 'pkgmeta_filename', 'pkgmeta_md5',
@@ -27,22 +33,6 @@ def _extract_settings(settings):
         url = 'http://' + url
 
     return (url, api_username, api_key)
-
-
-class SingletonMixin(object):
-    """
-    Adds a singleton behaviour to an existing class.
-
-    weakrefs are used in order to keep a low memory footprint.
-    As a result, args and kwargs passed to classes initializers
-    must be of weakly refereable types.
-    """
-    _instances = weakref.WeakValueDictionary()
-
-    def __new__(cls, *args, **kwargs):
-        return cls._instances.setdefault(
-            (cls, args, tuple(kwargs.items())),
-            super(type(cls), cls).__new__(cls, *args, **kwargs))
 
 
 class Request(SingletonMixin):
@@ -90,7 +80,7 @@ class Request(SingletonMixin):
 
 class Notifier(SingletonMixin):
 
-    def __init__(self, settings, request_dep=Request):
+    def __init__(self, settings=config, request_dep=Request):
         """
         ``settings`` is an instance of ConfigParser.ConfigParser.
         """
