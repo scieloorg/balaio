@@ -59,22 +59,14 @@ class PackageAnalyzer(SPSMixin, Xray):
 
     def __init__(self, *args):
         super(PackageAnalyzer, self).__init__(*args)
-        self._errors = []
+        self._errors = set()
 
     @property
     def errors(self):
         """
         Returns an list of errors or empty list
         """
-        return self._errors
-
-    @errors.setter
-    def errors(self, error):
-        """
-        Set an error to the errors list
-        """
-        if not error in self._errors:
-            self._errors.append(error)
+        return tuple(self._errors)
 
     def is_valid_package(self):
         """
@@ -85,7 +77,7 @@ class PackageAnalyzer(SPSMixin, Xray):
             self.get_ext('pdf')
             return True
         except AttributeError, e:
-            self.errors = e.message
+            self.errors.add(e.message)
             return False
 
     def is_valid_content(self):
@@ -108,5 +100,8 @@ class PackageAnalyzer(SPSMixin, Xray):
             for tag in eval_tags:
                 if xml.find(tag).text is None:
                     return False
-
         return True
+
+
+class Checkin(object):
+    pass
