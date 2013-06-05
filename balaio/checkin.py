@@ -1,7 +1,18 @@
 #coding: utf-8
-import itertools
+import os
+import models
 import zipfile
+import slumber
+import itertools
 import xml.etree.ElementTree as etree
+
+from utils import Configuration
+
+# the environment variable is not set under tests
+if __debug__:
+    config = None
+else:
+    config = Configuration.from_env()
 
 
 class SPSMixin(object):
@@ -19,6 +30,23 @@ class SPSMixin(object):
             return xmls[0]
         else:
             raise AttributeError('there is not a single xml file')
+
+    @property
+    def meta(self):
+        dct_mta = {}
+
+        xml_nodes = {"journal_title": ".//journal-title-group/journal-title",
+                     "journal_eissn": ".//issn[@pub-type='epub']",
+                     "journal_pissn": ".//issn[@pub-type='ppub']",
+                     "article_title": ".//title-group/article-title",
+                     "issue_year": ".//pub-date/year",
+                     "issue_volume": ".//volume",
+                     }
+
+        for node_k, node_v in xml_nodes.items():
+            dct_mta[node_k] = self.xml.find(node_v).text
+
+        return dct_mta
 
 
 class Xray(object):
@@ -64,7 +92,7 @@ class PackageAnalyzer(SPSMixin, Xray):
     @property
     def errors(self):
         """
-        Returns an list of errors or empty list
+        Returns a tuple of errors
         """
         return tuple(self._errors)
 
@@ -80,28 +108,15 @@ class PackageAnalyzer(SPSMixin, Xray):
             self.errors.add(e.message)
             return False
 
-    def is_valid_content(self):
-        """
-        Validate the content of the xml(s) file(s)
-        Considering in this validation:
-            ``journal-title``, ``journal-pissn``, ``journal-eissn``,
-            ``article-title``, ``issue-year``, ``issue-volume``, ``issue-number``
-        """
 
-        eval_tags = [".//journal-title-group/journal-title",
-                     ".//issn[@pub-type='epub']",
-                     ".//issn[@pub-type='ppub']",
-                     ".//title-group/article-title",
-                     ".//pub-date/year",
-                     ".//volume",
-                     ]
-
-        for xml in self.xmls:
-            for tag in eval_tags:
-                if xml.find(tag).text is None:
-                    return False
-        return True
-
-
-class Checkin(object):
+def exist_issue(issn, year, vol, num):
     pass
+
+
+def get_attempt(package):
+    pkg_alz = PackageAnalyzer(package)
+
+    if pkg_alz.is_valid_package():
+        os.chmod(pkg_alz._filename, 0770)
+        article = models.ArticlePkg(**pkg_alz.meta)
+        #Persist this object
