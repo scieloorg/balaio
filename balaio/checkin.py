@@ -1,10 +1,11 @@
 #coding: utf-8
 import os
-import models
+import stat
 import zipfile
 import itertools
 import xml.etree.ElementTree as etree
 
+import models
 from utils import Configuration
 
 # the environment variable is not set under tests
@@ -58,6 +59,9 @@ class Xray(object):
         self._classify()
 
     def __del__(self):
+        self._cleanup_package_fp()
+
+    def _cleanup_package_fp(self):
         self._zip_pkg.close()
 
     def _classify(self):
@@ -87,6 +91,16 @@ class PackageAnalyzer(SPSMixin, Xray):
     def __init__(self, *args):
         super(PackageAnalyzer, self).__init__(*args)
         self._errors = set()
+        self._default_perms = stat.S_IMODE(os.stat(self._filename).st_mode)
+        self._is_locked = False
+
+    def __enter__(self):
+        self.lock_package()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.restore_perms()
+        self._cleanup_package_fp()
 
     @property
     def errors(self):
@@ -109,16 +123,29 @@ class PackageAnalyzer(SPSMixin, Xray):
 
         return is_valid
 
+    def lock_package(self):
+        """
+        Removes the write permission for Others.
+        http://docs.python.org/2/library/stat.html#stat.S_IWOTH
+        """
+        if not self._is_locked:
+            perm = self._default_perms ^ stat.S_IWOTH
+            os.chmod(self._filename, perm)
+            self._is_locked = True
+
+    def restore_perms(self):
+        os.chmod(self._filename, self._default_perms)
+        self.is_locked = False
+
 
 def get_attempt(package):
     """
     Always returns a brand new models.Attempt instance, bound to
     the expected models.ArticlePkg instance.
     """
-    pkg_alz = PackageAnalyzer(package)
+    with PackageAnalyzer(package) as pkg_alz:
 
-    if pkg_alz.is_valid_package():
-        os.chmod(pkg_alz._filename, 0770)
-        article = models.ArticlePkg(**pkg_alz.meta)
-        #Persist this object
+        if pkg_alz.is_valid_package():
+            article = models.ArticlePkg(**pkg_alz.meta)
+            #Persist this object
 
