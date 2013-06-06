@@ -45,6 +45,7 @@ que é responsável por receber notificações de checkins de pacotes.
 ```javascript
 {
     "checkin_id": <string>,
+    "articlepkg_id:" <string>,
     "collection_uri": <string>,
     "article_title": <string>,
     "journal_title": <string>,
