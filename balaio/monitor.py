@@ -6,11 +6,7 @@ import pyinotify
 from utils import Configuration
 
 
-# the environment variable is not set under tests
-if __debug__:
-    config = None
-else:
-    config = Configuration.from_env()
+config = Configuration.from_env()
 
 mask = pyinotify.IN_CLOSE_WRITE
 

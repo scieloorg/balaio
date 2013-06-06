@@ -5,11 +5,9 @@ import urllib
 
 from .utils import SingletonMixin, Configuration
 
-# the environment variable is not set under tests
-if __debug__:
-    config = None
-else:
-    config = Configuration.from_env()
+
+config = Configuration.from_env()
+
 
 CHECKIN_MESSAGE_FIELDS = ('checkin_id', 'collection_uri', 'article_title',
     'journal_title', 'issue_label', 'pkgmeta_filename', 'pkgmeta_md5',

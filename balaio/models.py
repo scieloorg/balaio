@@ -17,10 +17,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 
-engine = create_engine('sqlite:///:memory:', echo=True)
+config = Configuration.from_env()
+
+engine = create_engine(config.get('app', 'db_dsn'),
+                       echo=config.getboolean('app', 'debug'))
 Session = sessionmaker(bind=engine)
-
-
 Base = declarative_base()
 
 
