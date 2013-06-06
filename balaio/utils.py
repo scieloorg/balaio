@@ -7,6 +7,10 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
+import threading
+
+
+stdout_lock = threading.Lock()
 
 
 class SingletonMixin(object):
@@ -77,7 +81,9 @@ def make_digest(message, secret='sekretz'):
 
 def send_message(stream, message, digest, pickle_dep=pickle):
     """
-    Serializes the message and flushes it through ``stream``
+    Serializes the message and flushes it through ``stream``.
+    Writes to stream are synchronized in order to keep data
+    integrity.
 
     ``stream`` is a writable socket, pipe, buffer of something like that.
     ``message`` is the object to be dispatched.
@@ -91,9 +97,10 @@ def send_message(stream, message, digest, pickle_dep=pickle):
     data_digest = digest(serialized)
     header = '%s %s\n' % (data_digest, len(serialized))
 
-    stream.write(header)
-    stream.write(serialized)
-    stream.flush()
+    with stdout_lock:
+        stream.write(header)
+        stream.write(serialized)
+        stream.flush()
 
 
 def recv_messages(stream, digest, pickle_dep=pickle):
