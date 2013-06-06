@@ -2,7 +2,6 @@
 import os
 import models
 import zipfile
-import slumber
 import itertools
 import xml.etree.ElementTree as etree
 
@@ -100,23 +99,26 @@ class PackageAnalyzer(SPSMixin, Xray):
         """
         Validate if exist at least one xml file and one pdf file
         """
-        try:
-            self.get_ext('xml')
-            self.get_ext('pdf')
-            return True
-        except AttributeError, e:
-            self.errors.add(e.message)
-            return False
+        is_valid = True
+        for ext in ['xml', 'pdf']:
+            try:
+                self.get_ext(ext)
+            except AttributeError, e:
+                self._errors.add(e.message)
+                is_valid = False
 
-
-def exist_issue(issn, year, vol, num):
-    pass
+        return is_valid
 
 
 def get_attempt(package):
+    """
+    Always returns a brand new models.Attempt instance, bound to
+    the expected models.ArticlePkg instance.
+    """
     pkg_alz = PackageAnalyzer(package)
 
     if pkg_alz.is_valid_package():
         os.chmod(pkg_alz._filename, 0770)
         article = models.ArticlePkg(**pkg_alz.meta)
         #Persist this object
+
