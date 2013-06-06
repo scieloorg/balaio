@@ -2,17 +2,8 @@
 import os
 import models
 import zipfile
-import slumber
 import itertools
 import xml.etree.ElementTree as etree
-
-from utils import Configuration
-
-# the environment variable is not set under tests
-if __debug__:
-    config = None
-else:
-    config = Configuration.from_env()
 
 
 class SPSMixin(object):
@@ -107,10 +98,6 @@ class PackageAnalyzer(SPSMixin, Xray):
         except AttributeError, e:
             self.errors.add(e.message)
             return False
-
-
-def exist_issue(issn, year, vol, num):
-    pass
 
 
 def get_attempt(package):
