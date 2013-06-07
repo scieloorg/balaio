@@ -41,3 +41,4 @@ if __name__ == '__main__':
     finally:
         print 'Terminating all child processess'
         monitor.terminate()
+

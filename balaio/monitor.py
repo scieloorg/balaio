@@ -20,7 +20,6 @@ class EventHandler(pyinotify.ProcessEvent):
 
 
 if __name__ == '__main__':
-
     wm = pyinotify.WatchManager()
     handler = EventHandler()
     notifier = pyinotify.Notifier(wm, handler)
