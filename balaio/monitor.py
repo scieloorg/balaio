@@ -1,6 +1,7 @@
 #coding: utf-8
 import sys
 
+import checkin
 import pyinotify
 
 from utils import Configuration
@@ -15,6 +16,7 @@ class EventHandler(pyinotify.ProcessEvent):
 
     def process_IN_CLOSE_WRITE(self, event):
         # CALL CHECKIN
+        checkin.get_attempt(event.pathname)
         sys.stdout.write("WRITE AND CLOSE: %s\n" % event.pathname)
         sys.stdout.flush()
 
