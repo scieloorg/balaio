@@ -1,9 +1,19 @@
 #coding: utf-8
 import os
-import models
+import sys
+import stat
 import zipfile
 import itertools
 import xml.etree.ElementTree as etree
+
+import models
+from utils import Configuration
+
+# the environment variable is not set under tests
+if __debug__:
+    config = None
+else:
+    config = Configuration.from_env()
 
 
 class SPSMixin(object):
@@ -32,6 +42,7 @@ class SPSMixin(object):
                      "article_title": ".//title-group/article-title",
                      "issue_year": ".//pub-date/year",
                      "issue_volume": ".//volume",
+                     "issue_number": ".//issue",
                      }
 
         for node_k, node_v in xml_nodes.items():
@@ -50,6 +61,9 @@ class Xray(object):
         self._classify()
 
     def __del__(self):
+        self._cleanup_package_fp()
+
+    def _cleanup_package_fp(self):
         self._zip_pkg.close()
 
     def _classify(self):
@@ -79,6 +93,19 @@ class PackageAnalyzer(SPSMixin, Xray):
     def __init__(self, *args):
         super(PackageAnalyzer, self).__init__(*args)
         self._errors = set()
+        self._default_perms = stat.S_IMODE(os.stat(self._filename).st_mode)
+        self._is_locked = False
+        self._is_valid = True
+
+    def __enter__(self):
+        self.lock_package()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.restore_perms()
+        self._cleanup_package_fp()
+        if not self._is_valid:
+            self.rename_package()
 
     @property
     def errors(self):
@@ -91,19 +118,52 @@ class PackageAnalyzer(SPSMixin, Xray):
         """
         Validate if exist at least one xml file and one pdf file
         """
-        try:
-            self.get_ext('xml')
-            self.get_ext('pdf')
-            return True
-        except AttributeError, e:
-            self.errors.add(e.message)
-            return False
+        for ext in ['xml', 'pdf']:
+            try:
+                self.get_ext(ext)
+            except AttributeError, e:
+                self._errors.add(e.message)
+                self._is_valid = False
+
+        return self._is_valid
+
+    def lock_package(self):
+        """
+        Removes the write permission for Others.
+        http://docs.python.org/2/library/stat.html#stat.S_IWOTH
+        """
+        if not self._is_locked:
+            perm = self._default_perms ^ stat.S_IWOTH
+            os.chmod(self._filename, perm)
+            self._is_locked = True
+
+    def restore_perms(self):
+        os.chmod(self._filename, self._default_perms)
+        self.is_locked = False
+
+    def rename_package(self, prefix='__failed__'):
+        os.rename(self._filename, prefix + self._filename)
 
 
 def get_attempt(package):
-    pkg_alz = PackageAnalyzer(package)
+    """
+    Always returns a brand new models.Attempt instance, bound to
+    the expected models.ArticlePkg instance.
+    """
+    with PackageAnalyzer(package) as pkg_alz:
 
-    if pkg_alz.is_valid_package():
-        os.chmod(pkg_alz._filename, 0770)
-        article = models.ArticlePkg(**pkg_alz.meta)
-        #Persist this object
+        if pkg_alz.is_valid_package():
+
+            art = models.get_or_create(models.ArticlePkg, **pkg_alz.meta)
+
+            #Function in utils.py
+            pkg_hash = make_digest_file(pkg_alz._zip_pkg)
+
+            attempt_meta = {'package_md5': pkg_hash,
+                            'articlepkg_id': art.id}
+
+            attempt = models.get_or_create(models.Attempt, **attempt_meta)
+
+            return attempt
+        else:
+            sys.stdout.write("Invalid package: %s\n" % pkg_alz.errors)

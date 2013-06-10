@@ -35,11 +35,15 @@ class Attempt(Base):
     collection_uri = Column(String)
 
     articlepkg = relationship('ArticlePkg',
-        backref=backref('attempts', cascade='all, delete-orphan'))
+                              backref=backref('attempts',
+                              cascade='all, delete-orphan'))
 
     def __init__(self, *args, **kwargs):
         super(Attempt, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
+
+    def __repr__(self):
+        return "<Attempt('%s, %s')>" % (self.id, self.package_md5)
 
 
 class ArticlePkg(Base):
@@ -53,6 +57,26 @@ class ArticlePkg(Base):
     issue_year = Column(Integer, nullable=False)
     issue_volume = Column(Integer, nullable=False)
     issue_number = Column(Integer, nullable=False)
+
+    def __repr__(self):
+        return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
+
+
+def get_or_create(model, **kwargs):
+        """
+        Try get the model by ```kwargs``` otherwise create the model.
+        """
+        ses = Session()
+
+        obj = ses.query(model).filter_by(**kwargs)
+
+        if ses.query(obj.exists()).scalar():
+            return obj.one()
+        else:
+            obj = model(**kwargs)
+            ses.add(obj)
+            ses.commit()
+            return obj
 
 
 if __name__ == '__main__':
