@@ -93,7 +93,6 @@ class PackageAnalyzer(SPSMixin, Xray):
         self._errors = set()
         self._default_perms = stat.S_IMODE(os.stat(self._filename).st_mode)
         self._is_locked = False
-        self._is_valid = True
 
     def __enter__(self):
         self.lock_package()
@@ -102,7 +101,7 @@ class PackageAnalyzer(SPSMixin, Xray):
     def __exit__(self, exc_type, exc_value, traceback):
         self.restore_perms()
         self._cleanup_package_fp()
-        if not self._is_valid:
+        if not self._is_valid():
             self.rename_package()
 
     @property
@@ -116,14 +115,15 @@ class PackageAnalyzer(SPSMixin, Xray):
         """
         Validate if exist at least one xml file and one pdf file
         """
+        is_valid = True
         for ext in ['xml', 'pdf']:
             try:
-                self.get_ext(ext)
+                _ = self.get_ext(ext)
             except AttributeError, e:
                 self._errors.add(e.message)
-                self._is_valid = False
+                is_valid = False
 
-        return self._is_valid
+        return is_valid
 
     def lock_package(self):
         """
