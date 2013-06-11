@@ -16,8 +16,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import utils
 
-config = Configuration.from_env()
+config = utils.Configuration.from_env()
 
 engine = create_engine(config.get('app', 'db_dsn'),
                        echo=config.getboolean('app', 'debug'))
