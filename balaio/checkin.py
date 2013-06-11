@@ -41,7 +41,8 @@ class SPSMixin(object):
                      }
 
         for node_k, node_v in xml_nodes.items():
-            dct_mta[node_k] = self.xml.find(node_v).text
+            node = self.xml.find(node_v)
+            dct_mta[node_k] = getattr(node, 'text', None)
 
         return dct_mta
 
