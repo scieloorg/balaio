@@ -1,5 +1,6 @@
 #coding: utf-8
 import os
+import sys
 import stat
 import zipfile
 import itertools
@@ -38,6 +39,7 @@ class SPSMixin(object):
                      "article_title": ".//title-group/article-title",
                      "issue_year": ".//pub-date/year",
                      "issue_volume": ".//volume",
+                     "issue_number": ".//issue",
                      }
 
         for node_k, node_v in xml_nodes.items():
@@ -91,6 +93,7 @@ class PackageAnalyzer(SPSMixin, Xray):
         self._errors = set()
         self._default_perms = stat.S_IMODE(os.stat(self._filename).st_mode)
         self._is_locked = False
+        self._is_valid = True
 
     def __enter__(self):
         self.lock_package()
@@ -99,6 +102,8 @@ class PackageAnalyzer(SPSMixin, Xray):
     def __exit__(self, exc_type, exc_value, traceback):
         self.restore_perms()
         self._cleanup_package_fp()
+        if not self._is_valid:
+            self.rename_package()
 
     @property
     def errors(self):
@@ -111,15 +116,14 @@ class PackageAnalyzer(SPSMixin, Xray):
         """
         Validate if exist at least one xml file and one pdf file
         """
-        is_valid = True
         for ext in ['xml', 'pdf']:
             try:
                 self.get_ext(ext)
             except AttributeError, e:
                 self._errors.add(e.message)
-                is_valid = False
+                self._is_valid = False
 
-        return is_valid
+        return self._is_valid
 
     def lock_package(self):
         """
@@ -135,6 +139,9 @@ class PackageAnalyzer(SPSMixin, Xray):
         os.chmod(self._filename, self._default_perms)
         self.is_locked = False
 
+    def rename_package(self, prefix='__failed__'):
+        os.rename(self._filename, prefix + self._filename)
+
 
 def get_attempt(package):
     """
@@ -144,6 +151,17 @@ def get_attempt(package):
     with PackageAnalyzer(package) as pkg_alz:
 
         if pkg_alz.is_valid_package():
-            article = models.ArticlePkg(**pkg_alz.meta)
-            #Persist this object
 
+            art = models.get_or_create(models.ArticlePkg, **pkg_alz.meta)
+
+            #Function in utils.py
+            pkg_hash = make_digest_file(pkg_alz._zip_pkg)
+
+            attempt_meta = {'package_md5': pkg_hash,
+                            'articlepkg_id': art.id}
+
+            attempt = models.get_or_create(models.Attempt, **attempt_meta)
+
+            return attempt
+        else:
+            sys.stdout.write("Invalid package: %s\n" % pkg_alz.errors)
