@@ -136,3 +136,17 @@ def recv_messages(stream, digest, pickle_dep=pickle):
         else:
             # log the failure
             continue
+
+
+def prefix_file(filename, prefix):
+    """
+    Renames ``filename`` adding the prefix ``prefix``.
+    """
+    path, file_or_dir = os.path.split(filename)
+    new_filename = os.path.join(path, prefix + file_or_dir)
+    os.rename(filepaname, new_filename)
+
+
+def mark_as_failed(filename):
+    prefix_file(filename, '_failed_')
+

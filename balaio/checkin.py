@@ -7,10 +7,10 @@ import itertools
 import xml.etree.ElementTree as etree
 
 import models
-from utils import Configuration
+import utils
 
 
-config = Configuration.from_env()
+config = utils.Configuration.from_env()
 
 
 class SPSMixin(object):
@@ -101,8 +101,6 @@ class PackageAnalyzer(SPSMixin, Xray):
     def __exit__(self, exc_type, exc_value, traceback):
         self.restore_perms()
         self._cleanup_package_fp()
-        if not self._is_valid():
-            self.rename_package()
 
     @property
     def errors(self):
@@ -139,29 +137,24 @@ class PackageAnalyzer(SPSMixin, Xray):
         os.chmod(self._filename, self._default_perms)
         self.is_locked = False
 
-    def rename_package(self, prefix='__failed__'):
-        os.rename(self._filename, prefix + self._filename)
-
 
 def get_attempt(package):
     """
     Always returns a brand new models.Attempt instance, bound to
     the expected models.ArticlePkg instance.
     """
-    with PackageAnalyzer(package) as pkg_alz:
+    with PackageAnalyzer(package) as pkg:
 
-        if pkg_alz.is_valid_package():
+        if pkg.is_valid_package():
+            article = models.get_or_create(models.ArticlePkg, **pkg.meta)
+            pkg_checksum = utils.make_digest_file(package)
 
-            art = models.get_or_create(models.ArticlePkg, **pkg_alz.meta)
-
-            #Function in utils.py
-            pkg_hash = make_digest_file(pkg_alz._zip_pkg)
-
-            attempt_meta = {'package_md5': pkg_hash,
-                            'articlepkg_id': art.id}
-
+            attempt_meta = {'package_md5': pkg_checksum,
+                            'articlepkg_id': article.id}
             attempt = models.get_or_create(models.Attempt, **attempt_meta)
 
             return attempt
         else:
-            sys.stdout.write("Invalid package: %s\n" % pkg_alz.errors)
+            sys.stderr.write("Invalid package: %s\n" % pkg.errors)
+            utils.mark_as_failed(package)
+
