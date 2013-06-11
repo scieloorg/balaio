@@ -84,6 +84,25 @@ def make_digest(message, secret='sekretz'):
     return hash.hexdigest()
 
 
+def make_digest_file(filepath, secret='sekretz'):
+    """
+    Returns a digest for the filepath based on the given secret
+
+    ``filepath`` is the file to have its bytes calculated
+    ``secret`` is a shared key used by the hash algorithm
+    """
+    hash = hmac.new(secret, '', hashlib.sha1)
+
+    with open(filepath, 'rb') as f:
+        while True:
+            chunk = f.read(1024)
+            if not chunk:
+                break
+            hash.update(chunk)
+
+    return hash.hexdigest()
+
+
 def send_message(stream, message, digest, pickle_dep=pickle):
     """
     Serializes the message and flushes it through ``stream``.
