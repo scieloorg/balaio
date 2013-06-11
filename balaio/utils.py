@@ -1,3 +1,4 @@
+import types
 import os
 from ConfigParser import SafeConfigParser
 import weakref
@@ -75,12 +76,24 @@ def make_digest(message, secret='sekretz'):
     """
     Returns a digest for the message based on the given secret
 
-    ``message`` is the byte string to be calculated
+    ``message`` is the file object or byte string to be calculated
     ``secret`` is a shared key used by the hash algorithm
     """
-    hash = hmac.new(secret,
-                    message,
-                    hashlib.sha1)
+    hash = hmac.new(secret, '', hashlib.sha1)
+
+    if hasattr(message, 'read'):
+        while True:
+            chunk = message.read(1024)
+            if not chunk:
+                break
+            hash.update(chunk)
+
+    elif isinstance(message, types.StringType):
+        hash.update(message)
+
+    else:
+        raise TypeError('Unsupported type %s' % type(message))
+
     return hash.hexdigest()
 
 
@@ -91,16 +104,10 @@ def make_digest_file(filepath, secret='sekretz'):
     ``filepath`` is the file to have its bytes calculated
     ``secret`` is a shared key used by the hash algorithm
     """
-    hash = hmac.new(secret, '', hashlib.sha1)
-
     with open(filepath, 'rb') as f:
-        while True:
-            chunk = f.read(1024)
-            if not chunk:
-                break
-            hash.update(chunk)
+        digest = make_digest(f, secret)
 
-    return hash.hexdigest()
+    return digest
 
 
 def send_message(stream, message, digest, pickle_dep=pickle):
@@ -163,9 +170,8 @@ def prefix_file(filename, prefix):
     """
     path, file_or_dir = os.path.split(filename)
     new_filename = os.path.join(path, prefix + file_or_dir)
-    os.rename(filepaname, new_filename)
+    os.rename(filename, new_filename)
 
 
 def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
-

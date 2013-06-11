@@ -35,10 +35,9 @@ if __name__ == '__main__':
     try:
         while True:
             out = monitor.stdout.readline()
-            print 'OUT:', out
+            print 'OUT: %r' % out
     except KeyboardInterrupt:
         pass
     finally:
         print 'Terminating all child processess'
         monitor.terminate()
-

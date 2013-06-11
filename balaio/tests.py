@@ -287,6 +287,24 @@ class MakeDigestFunctionTests(mocker.MockerTestCase):
             TypeError,
             lambda: utils.make_digest(object()))
 
+    def test_digests_for_file_objects(self):
+        file1 = StringIO('Some content')
+        file2 = file1.getvalue()
+
+        self.assertEqual(
+            utils.make_digest(file1),
+            utils.make_digest(file2)
+        )
+
+    def test_digests_for_file_obj_are_sensible_to_secret_keys(self):
+        file1 = StringIO('Some content')
+        file2 = file1.getvalue()
+
+        self.assertNotEqual(
+            utils.make_digest(file1),
+            utils.make_digest(file2, secret='bar')
+        )
+
 
 class SendMessageFunctionTests(mocker.MockerTestCase):
 

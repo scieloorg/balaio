@@ -4,10 +4,10 @@ import sys
 import checkin
 import pyinotify
 
-from utils import Configuration
+import utils
 
 
-config = Configuration.from_env()
+config = utils.Configuration.from_env()
 
 mask = pyinotify.IN_CLOSE_WRITE
 
@@ -15,10 +15,8 @@ mask = pyinotify.IN_CLOSE_WRITE
 class EventHandler(pyinotify.ProcessEvent):
 
     def process_IN_CLOSE_WRITE(self, event):
-        # CALL CHECKIN
-        checkin.get_attempt(event.pathname)
-        sys.stdout.write("WRITE AND CLOSE: %s\n" % event.pathname)
-        sys.stdout.flush()
+        attempt = checkin.get_attempt(event.pathname)
+        utils.send_message(sys.stdout, attempt, utils.make_digest)
 
 
 if __name__ == '__main__':
