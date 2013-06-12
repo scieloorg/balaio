@@ -1,11 +1,15 @@
 # coding: utf-8
+import io
 import ConfigParser
 from StringIO import StringIO
+import zipfile
+from tempfile import NamedTemporaryFile
 
 import mocker
 
 import notifier
 import utils
+import checkin
 
 
 class ExtractSettingsFunctionTests(mocker.MockerTestCase):
@@ -399,3 +403,61 @@ class RecvMessageFunctionTests(mocker.MockerTestCase):
         messages = utils.recv_messages(in_stream, utils.make_digest)
 
         self.assertRaises(StopIteration, lambda: messages.next())
+
+
+class XrayTests(mocker.MockerTestCase):
+
+    def _make_test_archive(self, arch_data):
+        fp = NamedTemporaryFile()
+        with zipfile.ZipFile(fp, 'w') as zipfp:
+            for archive, data in arch_data:
+                zipfp.writestr(archive, data)
+
+        return fp
+
+    def test_non_zip_archive_raises_ValueError(self):
+        fp = NamedTemporaryFile()
+        self.assertRaises(ValueError, lambda: checkin.Xray(fp.name))
+
+    def test_get_ext_returns_member_names(self):
+        arch = self._make_test_archive(
+            [('bar.xml', b'<root><name>bar</name></root>')])
+
+        xray = checkin.Xray(arch.name)
+
+        self.assertEquals(xray.get_ext('xml'), ['bar.xml'])
+
+    def test_get_ext_raises_ValueError_when_ext_doesnot_exist(self):
+        arch = self._make_test_archive(
+            [('bar.xml', b'<root><name>bar</name></root>')])
+
+        xray = checkin.Xray(arch.name)
+
+        self.assertRaises(ValueError, lambda: xray.get_ext('jpeg'))
+
+    def test_get_fps_returns_an_iterable(self):
+        arch = self._make_test_archive(
+            [('bar.xml', b'<root><name>bar</name></root>')])
+
+        xray = checkin.Xray(arch.name)
+
+        fps = xray.get_fps('xml')
+        self.assertTrue(hasattr(fps, 'next'))
+
+    def test_get_fpd_yields_ZipExtFile_instances(self):
+        arch = self._make_test_archive(
+            [('bar.xml', b'<root><name>bar</name></root>')])
+
+        xray = checkin.Xray(arch.name)
+
+        fps = xray.get_fps('xml')
+        self.assertIsInstance(fps.next(), zipfile.ZipExtFile)
+
+    def test_get_fps_swallow_exceptions_when_ext_doesnot_exist(self):
+        arch = self._make_test_archive(
+            [('bar.xml', b'<root><name>bar</name></root>')])
+
+        xray = checkin.Xray(arch.name)
+        fps = xray.get_fps('jpeg')
+
+        self.assertRaises(StopIteration, lambda: fps.next())

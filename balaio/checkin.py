@@ -1,6 +1,5 @@
 #coding: utf-8
 import os
-import sys
 import stat
 import zipfile
 import itertools
@@ -8,6 +7,9 @@ import xml.etree.ElementTree as etree
 
 import models
 import utils
+
+
+__all__ = ['PackageAnalyzer', 'get_attempt']
 
 
 config = utils.Configuration.from_env()
@@ -68,7 +70,12 @@ class Xray(object):
         self._cleanup_package_fp()
 
     def _cleanup_package_fp(self):
-        self._zip_pkg.close()
+        # raises AttributeError if the object have not
+        # been initialized properly.
+        try:
+            self._zip_pkg.close()
+        except AttributeError:
+            pass
 
     def _classify(self):
         for fileinfo, filename in zip(self._zip_pkg.infolist(), self._zip_pkg.namelist()):
@@ -79,14 +86,25 @@ class Xray(object):
                 ext_node.append(filename)
 
     def get_ext(self, ext):
+        """
+        Get a list os members having ``ext`` as extension. Raises
+        ValueError if the archive does not have any members matching
+        the extension.
+        """
         try:
             return self._pkg_names[ext]
         except KeyError:
-            raise AttributeError("the package does not contain a '%s' file" % ext)
+            raise ValueError("the package does not contain a '%s' file" % ext)
 
     def get_fps(self, ext):
-
-        filenames = self.get_ext(ext)
+        """
+        Get file objects for all members having ``ext`` as extension.
+        If ``ext`` is not found in the archive, the iterator is empty.
+        """
+        try:
+            filenames = self.get_ext(ext)
+        except ValueError:
+            raise StopIteration()
 
         for filename in filenames:
             yield self._zip_pkg.open(filename, 'r')
@@ -123,7 +141,7 @@ class PackageAnalyzer(SPSMixin, Xray):
         for ext in ['xml', 'pdf']:
             try:
                 _ = self.get_ext(ext)
-            except AttributeError, e:
+            except ValueError, e:
                 self._errors.add(e.message)
                 is_valid = False
 
@@ -162,4 +180,3 @@ def get_attempt(package):
             return attempt
         else:
             raise ValueError('the package is not valid: %s' % ', '.join(pkg.errors))
-
