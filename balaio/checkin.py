@@ -52,6 +52,12 @@ class SPSMixin(object):
 class Xray(object):
 
     def __init__(self, filename):
+        """
+        ``filename`` is the full path to a zip file.
+        """
+        if not zipfile.is_zipfile(filename):
+            raise ValueError('%s is not a valid zipfile.' % filename)
+
         self._filename = filename
         self._zip_pkg = zipfile.ZipFile(filename, 'r')
         self._pkg_names = {}
