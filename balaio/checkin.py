@@ -155,6 +155,5 @@ def get_attempt(package):
 
             return attempt
         else:
-            sys.stderr.write("Invalid package: %s\n" % pkg.errors)
-            utils.mark_as_failed(package)
+            raise ValueError('the package is not valid: %s' % ', '.join(pkg.errors))
 

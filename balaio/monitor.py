@@ -15,8 +15,13 @@ mask = pyinotify.IN_CLOSE_WRITE
 class EventHandler(pyinotify.ProcessEvent):
 
     def process_IN_CLOSE_WRITE(self, event):
-        attempt = checkin.get_attempt(event.pathname)
-        utils.send_message(sys.stdout, attempt, utils.make_digest)
+        filepath = event.pathname
+        try:
+            attempt = checkin.get_attempt(filepath)
+        except ValueError:
+            utils.mark_as_failed(filepath)
+        else:
+            utils.send_message(sys.stdout, attempt, utils.make_digest)
 
 
 if __name__ == '__main__':
@@ -30,3 +35,4 @@ if __name__ == '__main__':
                  auto_add=config.get('monitor', 'recursive'))
 
     notifier.loop(pid_file=config.get('monitor', 'pid_file'))
+
