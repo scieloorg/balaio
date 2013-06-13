@@ -2,6 +2,7 @@
 import sys
 
 import checkin
+import zipfile
 import pyinotify
 
 import utils
@@ -16,6 +17,10 @@ class EventHandler(pyinotify.ProcessEvent):
 
     def process_IN_CLOSE_WRITE(self, event):
         filepath = event.pathname
+
+        if not zipfile.is_zipfile(filepath):
+            return None
+
         try:
             attempt = checkin.get_attempt(filepath)
         except ValueError:

@@ -16,7 +16,7 @@ def run_monitor(stdin=subprocess.PIPE, stdout=subprocess.PIPE):
     """
     cmd = ['python', 'monitor.py']
     monitor = subprocess.Popen(' '.join(cmd), shell=True, stdin=stdin,
-        stdout=stdout)
+                               stdout=stdout)
 
     return monitor
 
@@ -24,7 +24,7 @@ def run_monitor(stdin=subprocess.PIPE, stdout=subprocess.PIPE):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=u'Balaio utility')
     parser.add_argument('-c', action='store', dest='configfile',
-        required=True)
+                        required=True)
 
     args = parser.parse_args()
     setenv(args.configfile)
