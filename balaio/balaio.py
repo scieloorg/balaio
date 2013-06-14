@@ -37,7 +37,11 @@ def run_validator(stdin=subprocess.PIPE, stdout=subprocess.PIPE):
 
 
 def terminate(procs):
-    print 'Terminating child processess...'
+    """
+    Tries to terminate all child processes on a civilized way.
+    If the processes insist to live, we kill them mercilessly.
+    """
+    print 'Terminating child processes...'
     for p in reversed(procs):
         p.terminate()
 
@@ -52,11 +56,18 @@ def terminate(procs):
 
 
 def main():
+    """
+    Set up the processes and run indefinitely.
+    """
+    print 'Start listening'
+
     monitor = run_monitor()
     validator = run_validator(stdin=monitor.stdout)
     procs = [monitor, validator]
 
-    # terminate all child processess
+    # if this script is terminated by SIGTERM,
+    # the terminate function will take care of
+    # the child processes.
     atexit.register(terminate, procs)
 
     while True:
@@ -66,14 +77,12 @@ def main():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=u'Balaio utility')
     parser.add_argument('-c', action='store', dest='configfile',
-                        required=True)
+        required=True)
 
     args = parser.parse_args()
     setenv(args.configfile)
 
     try:
-        print 'Start listening'
         main()
     except KeyboardInterrupt:
         sys.exit(0)
-
