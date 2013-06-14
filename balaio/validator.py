@@ -16,4 +16,8 @@ ppl = plumber.Pipeline(ExamplePipe)
 
 if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
-    results = [msg for msg in ppl.run(messages)]
+    try:
+        results = [msg for msg in ppl.run(messages)]
+    except KeyboardInterrupt:
+        sys.exit(0)
+
