@@ -161,6 +161,15 @@ class PackageAnalyzer(SPSMixin, Xray):
         os.chmod(self._filename, self._default_perms)
         self.is_locked = False
 
+    @property
+    def checksum(self):
+        """
+        Encapsulate the digest generation in order to avoid
+        things like secret key changes that could crash the
+        package identification.
+        """
+        return utils.make_digest_file(self._filename)
+
 
 def get_attempt(package):
     """
@@ -171,7 +180,7 @@ def get_attempt(package):
 
         if pkg.is_valid_package():
             article = models.get_or_create(models.ArticlePkg, **pkg.meta)
-            pkg_checksum = utils.make_digest_file(package)
+            pkg_checksum = pkg.checksum
 
             attempt_meta = {'package_md5': pkg_checksum,
                             'articlepkg_id': article.id}

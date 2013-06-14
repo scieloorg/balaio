@@ -1,5 +1,4 @@
 # coding: utf-8
-import io
 import ConfigParser
 from StringIO import StringIO
 import zipfile
@@ -504,3 +503,129 @@ class SPSMixinTests(mocker.MockerTestCase):
         pkg = self._makeOne(arch.name)
 
         self.assertRaises(AttributeError, lambda: pkg.xml)
+
+    def test_meta_journal_title_data_is_fetched(self):
+        data = [
+            ('bar.xml', b'<root><journal-title-group><journal-title>foo</journal-title></journal-title-group></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertEqual(pkg.meta['journal_title'], 'foo')
+
+    def test_meta_journal_title_is_None_if_not_present(self):
+        data = [
+            ('bar.xml', b'<root></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertIsNone(pkg.meta['journal_title'])
+
+    def test_meta_journal_eissn_data_is_fetched(self):
+        data = [
+            ('bar.xml', b'<root><issn pub-type="epub">1234-1234</issn></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertEqual(pkg.meta['journal_eissn'], '1234-1234')
+
+    def test_meta_journal_eissn_is_None_if_not_present(self):
+        data = [
+            ('bar.xml', b'<root></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertIsNone(pkg.meta['journal_eissn'])
+
+    def test_meta_journal_pissn_data_is_fetched(self):
+        data = [
+            ('bar.xml', b'<root><issn pub-type="ppub">1234-1234</issn></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertEqual(pkg.meta['journal_pissn'], '1234-1234')
+
+    def test_meta_journal_pissn_is_None_if_not_present(self):
+        data = [
+            ('bar.xml', b'<root></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertIsNone(pkg.meta['journal_pissn'])
+
+    def test_meta_article_title_data_is_fetched(self):
+        data = [
+            ('bar.xml', b'<root><title-group><article-title>bar</article-title></title-group></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertEqual(pkg.meta['article_title'], 'bar')
+
+    def test_meta_article_title_is_None_if_not_present(self):
+        data = [
+            ('bar.xml', b'<root></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertIsNone(pkg.meta['article_title'])
+
+    def test_meta_issue_year_data_is_fetched(self):
+        data = [
+            ('bar.xml', b'<root><pub-date><year>2013</year></pub-date></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertEqual(pkg.meta['issue_year'], '2013')
+
+    def test_meta_issue_year_is_None_if_not_present(self):
+        data = [
+            ('bar.xml', b'<root></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertIsNone(pkg.meta['issue_year'])
+
+    def test_meta_issue_volume_data_is_fetched(self):
+        data = [
+            ('bar.xml', b'<root><volume>2</volume></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertEqual(pkg.meta['issue_volume'], '2')
+
+    def test_meta_issue_volume_is_None_if_not_present(self):
+        data = [
+            ('bar.xml', b'<root></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertIsNone(pkg.meta['issue_volume'])
+
+    def test_meta_issue_number_data_is_fetched(self):
+        data = [
+            ('bar.xml', b'<root><issue>2</issue></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertEqual(pkg.meta['issue_number'], '2')
+
+    def test_meta_issue_number_is_None_if_not_present(self):
+        data = [
+            ('bar.xml', b'<root></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertIsNone(pkg.meta['issue_number'])
