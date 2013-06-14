@@ -1,2 +1,3 @@
 pyinotify
 sqlalchemy
+git+git://github.com/gustavofonseca/plumber.git#egg=plumber

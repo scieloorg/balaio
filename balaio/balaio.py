@@ -15,10 +15,22 @@ def run_monitor(stdin=subprocess.PIPE, stdout=subprocess.PIPE):
     instance.
     """
     cmd = ['python', 'monitor.py']
-    monitor = subprocess.Popen(' '.join(cmd), shell=True, stdin=stdin,
+    monitor = subprocess.Popen(' '.join(cmd),
+                               shell=True,
+                               stdin=stdin,
                                stdout=stdout)
 
     return monitor
+
+
+def run_validator(stdin=subprocess.PIPE, stdout=subprocess.PIPE):
+    cmd = ['python', 'validator.py']
+    validator = subprocess.Popen(' '.join(cmd),
+                                 shell=True,
+                                 stdin=stdin,
+                                 stdout=stdout)
+
+    return validator
 
 
 if __name__ == '__main__':
@@ -30,14 +42,15 @@ if __name__ == '__main__':
     setenv(args.configfile)
 
     monitor = run_monitor()
+    validator = run_validator(stdin=monitor.stdout)
 
     print 'Start listening'
     try:
         while True:
-            out = monitor.stdout.readline()
-            print 'OUT: %r' % out
+            pass
     except KeyboardInterrupt:
         pass
     finally:
         print 'Terminating all child processess'
+        validator.terminate()
         monitor.terminate()
