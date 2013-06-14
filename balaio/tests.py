@@ -4,6 +4,7 @@ import ConfigParser
 from StringIO import StringIO
 import zipfile
 from tempfile import NamedTemporaryFile
+from xml.etree.ElementTree import ElementTree
 
 import mocker
 
@@ -461,3 +462,45 @@ class XrayTests(mocker.MockerTestCase):
         fps = xray.get_fps('jpeg')
 
         self.assertRaises(StopIteration, lambda: fps.next())
+
+
+class SPSMixinTests(mocker.MockerTestCase):
+
+    def _make_test_archive(self, arch_data):
+        fp = NamedTemporaryFile()
+        with zipfile.ZipFile(fp, 'w') as zipfp:
+            for archive, data in arch_data:
+                zipfp.writestr(archive, data)
+
+        return fp
+
+    def _makeOne(self, fname):
+        class Foo(checkin.SPSMixin, checkin.Xray):
+            pass
+
+        return Foo(fname)
+
+    def test_xmls_yields_etree_instances(self):
+        data = [('bar.xml', b'<root><name>bar</name></root>')]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        xmls = pkg.xmls
+        self.assertIsInstance(xmls.next(), ElementTree)
+
+    def test_xml_returns_etree_instance(self):
+        data = [('bar.xml', b'<root><name>bar</name></root>')]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertIsInstance(pkg.xml, ElementTree)
+
+    def test_xml_raises_AttributeError_when_multiple_xmls(self):
+        data = [
+            ('bar.xml', b'<root><name>bar</name></root>'),
+            ('baz.xml', b'<root><name>baz</name></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertRaises(AttributeError, lambda: pkg.xml)
