@@ -10,7 +10,7 @@ import utils
 
 config = utils.Configuration.from_env()
 
-mask = pyinotify.IN_CLOSE_WRITE
+mask = pyinotify.IN_CLOSE_WRITE | pyinotify.IN_CREATE
 
 
 class EventHandler(pyinotify.ProcessEvent):
@@ -40,4 +40,3 @@ if __name__ == '__main__':
                  auto_add=config.get('monitor', 'recursive'))
 
     notifier.loop(pid_file=config.get('monitor', 'pid_file'))
-
