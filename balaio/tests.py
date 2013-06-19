@@ -10,7 +10,7 @@ import mocker
 import notifier
 import utils
 import checkin
-
+import validator
 
 class ExtractSettingsFunctionTests(mocker.MockerTestCase):
 
@@ -355,8 +355,8 @@ class SendMessageFunctionTests(mocker.MockerTestCase):
         mock_digest(mocker.ANY)
         self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
 
-        mock_pickle.HIGHEST_PROTOCOL
         self.mocker.result('foo')
+        mock_pickle.HIGHEST_PROTOCOL
 
         mock_pickle.dumps(mocker.ANY, mocker.ANY)
         self.mocker.result('serialized-data-byte-string')
@@ -629,3 +629,24 @@ class SPSMixinTests(mocker.MockerTestCase):
         pkg = self._makeOne(arch.name)
 
         self.assertIsNone(pkg.meta['issue_number'])
+
+class PipeFundingCheckTests(mocker.MockerTestCase):
+        
+    
+
+    def _make_one(self, etree):
+        from validator import PipeFundingCheck
+        return PipeFundingCheck(etree)
+
+
+    def test_no_funding_group(self):
+        expected = 'funding-group=0'
+            
+        etree = ElementTree()
+        data = etree.parse(StringIO('<root></root>'))
+
+        pipe = self._make_one(data)
+        data = pipe.transform(data)
+        self.assertEqual(expected, pipe.warnings())
+        
+
