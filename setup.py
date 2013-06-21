@@ -24,6 +24,7 @@ setup(
         "Topic :: System",
         "Topic :: Utilities",
     ],
+    setup_requires=["nose>=1.0", "coverage"],
     tests_require=["mocker"],
-    test_suite='balaio.tests',
+    test_suite="nose.collector",
 )
