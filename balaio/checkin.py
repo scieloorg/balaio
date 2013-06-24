@@ -120,6 +120,7 @@ class PackageAnalyzer(SPSMixin, Xray):
 
     def __enter__(self):
         self.lock_package()
+        self.change_group()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -147,15 +148,39 @@ class PackageAnalyzer(SPSMixin, Xray):
 
         return is_valid
 
+    def is_valid_content(self):
+        """
+        Validade if the package have at least one ISSN
+        """
+
+        if self.meta['journal_eissn'] or self.meta['journal_pissn']:
+            return True
+        else:
+            self._errors.add('package need at least one ISSN')
+            return False
+
     def lock_package(self):
         """
-        Removes the write permission for Others.
+        Removes the write permission for Owners and Others.
         http://docs.python.org/2/library/stat.html#stat.S_IWOTH
         """
         if not self._is_locked:
-            perm = self._default_perms ^ stat.S_IWOTH
-            os.chmod(self._filename, perm)
+            perm = self._default_perms ^ stat.S_IWOTH ^ stat.S_IWUSR
+
+            try:
+                os.chmod(self._filename, perm)
+            except OSError, e:
+                self._errors.add(e.message)
+                raise ValueError("Cant change the package permission")
+
             self._is_locked = True
+
+    def change_group(self):
+        """
+        Change the group to the application group
+        http://docs.python.org/2/library/os.html#os.chown
+        """
+        os.chown(self._filename, -1, os.getgid())
 
     def restore_perms(self):
         os.chmod(self._filename, self._default_perms)
@@ -178,7 +203,7 @@ def get_attempt(package):
     """
     with PackageAnalyzer(package) as pkg:
 
-        if pkg.is_valid_package():
+        if pkg.is_valid_package() and pkg.is_valid_content():
             article = models.get_or_create(models.ArticlePkg, **pkg.meta)
             pkg_checksum = pkg.checksum
 

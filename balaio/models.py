@@ -53,8 +53,8 @@ class ArticlePkg(Base):
 
     id = Column(Integer, primary_key=True)
     article_title = Column(String, nullable=False)
-    journal_pissn = Column(String, nullable=False)
-    journal_eissn = Column(String, nullable=False)
+    journal_pissn = Column(String, nullable=True)
+    journal_eissn = Column(String, nullable=True)
     journal_title = Column(String, nullable=False)
     issue_year = Column(Integer, nullable=False)
     issue_volume = Column(Integer, nullable=False)
