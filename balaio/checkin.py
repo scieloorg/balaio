@@ -155,7 +155,13 @@ class PackageAnalyzer(SPSMixin, Xray):
         """
         if not self._is_locked:
             perm = self._default_perms ^ stat.S_IWOTH ^ stat.S_IWUSR
-            os.chmod(self._filename, perm)
+
+            try:
+                os.chmod(self._filename, perm)
+            except OSError, e:
+                self._errors.add(e.message)
+                raise ValueError("Cant change the package permission")
+
             self._is_locked = True
 
     def change_group(self):
