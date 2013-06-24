@@ -148,6 +148,17 @@ class PackageAnalyzer(SPSMixin, Xray):
 
         return is_valid
 
+    def is_valid_content(self):
+        """
+        Validade if the package have at least one ISSN
+        """
+
+        if self.meta['journal_eissn'] or self.meta['journal_pissn']:
+            return True
+        else:
+            self._errors.add('package need at least one ISSN')
+            return False
+
     def lock_package(self):
         """
         Removes the write permission for Owners and Others.
@@ -192,7 +203,7 @@ def get_attempt(package):
     """
     with PackageAnalyzer(package) as pkg:
 
-        if pkg.is_valid_package():
+        if pkg.is_valid_package() and pkg.is_valid_content():
             article = models.get_or_create(models.ArticlePkg, **pkg.meta)
             pkg_checksum = pkg.checksum
 
