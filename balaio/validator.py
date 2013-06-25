@@ -8,36 +8,27 @@ import notifier
 from models import Attempt
 
 
-class ValidationNotifier(object):
-    def __init__(self, stage, notifier_dep=notifier.Notifier):
-        self._notifier = notifier_dep
-        self._result = {}
-        self._result['stage'] = stage
-
-    def format_result(self, result_type, description):
-        self._result['status'] = result_type
-        self._result['description'] = description
-
-    def validation_event(self, message):
-        for k,v in self._result.items():
-            message[k] = v
-        self._notifier.validation_event(message)
-
 
 class ValidationPipe(plumber.Pipe):
-    def __init__(self, data, validation_notifier_dep=ValidationNotifier):
+    def __init__(self, data, notifier_dep=notifier.Notifier):
         super(ValidationPipe, self).__init__(data)
-        self._validation_notifier = validation_notifier_dep(self._stage_)
+        self._notifier = notifier_dep
         
+    def transform(self, data):
+        result = self.validate(data)
+
+        for k,v in self._result.items():
+            message[k] = v
+        
+        self._notifier.validation_event(message)
+
+    def validate(self, data):
+
 
 class FundingCheckingPipe(ValidationPipe):
     _stage_ = 'funding-group'
 
-    def transform(self, data):
-        status = ''
-        description = '' 
-        message = {}
-
+    def validate(self, data):
         funding_nodes = data.findall('.//funding-group')
         
         if len(funding_nodes) == 0:    
@@ -58,10 +49,12 @@ class FundingCheckingPipe(ValidationPipe):
             status = 'ok'
             description = ''
 
-        self._validation_notifier.format_result(status, description)         
-        self._validation_notifier.validation_event(message)
-        
-        return data
+        result = {
+            'stage': _stage_, 
+            'status': status, 
+            'description': description,
+        }
+        return result
 
     def _node_text(self, nodes):
         text = ''
