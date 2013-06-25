@@ -630,23 +630,76 @@ class SPSMixinTests(mocker.MockerTestCase):
 
         self.assertIsNone(pkg.meta['issue_number'])
 
-class PipeFundingCheckTests(mocker.MockerTestCase):
-        
+
+class ValidationNotifierTest(mocker.MockerTestCase):
     
+    def test_formating_result(self):
+        from validator import ValidationNotifier
+        expected = {
+            'stage':'stage name',
+            'status':'status value',
+            'description':'description text',            
+            }
+        validation_notifier = ValidationNotifier()
+        validation_notifier.format_result('stage name', 'status value', 'description text')
+        self.assertEqual(expected['stage'], validation_notifier._result['stage'])       
+        self.assertEqual(expected['status'], validation_notifier._result['status'])       
+        self.assertEqual(expected['description'], validation_notifier._result['description'])       
 
-    def _make_one(self, etree):
-        from validator import PipeFundingCheck
-        return PipeFundingCheck(etree)
 
+class FundingCheckingPipeTest(mocker.MockerTestCase):
 
-    def test_no_funding_group(self):
-        expected = 'funding-group=0'
-            
+    def _mock_dep(self, stage, status, description):
+        
+        mock_validation_notifier = self.mocker.mock()
+
+        #mock_validation_notifier._result = {}
+        
+        mock_validation_notifier.format_result(stage, status, description)
+
+        mock_validation_notifier._result['status'] = status
+        mock_validation_notifier._result['stage'] = stage
+        mock_validation_notifier._result['description'] = description
+
+        mock_validation_notifier._result['stage']
+        self.mocker.result(stage)
+
+        mock_validation_notifier._result['status']
+        self.mocker.result(status)
+
+        mock_validation_notifier._result['description']
+        self.mocker.result(description)
+
+        self.mocker.replay()
+
+        return mock_validation_notifier
+
+    def _make_pipe(self, *args, **kwargs):
+        from validator import FundingCheckingPipe
+        return FundingCheckingPipe(*args, **kwargs)
+
+    def _make_data(self, xml_string = '<root></root>'):
         etree = ElementTree()
-        data = etree.parse(StringIO('<root></root>'))
+        return etree.parse(StringIO(xml_string))
+    
+    def test_no_funding_group_and_no_ack(self):
+        expected = {
+            'stage':'funding-group',
+            'status':'w',
+            'description':'no funding-group and no ack was identified',            
+            }
+        
+        data = self._make_data('<root></root>')
+        pipe = self._make_pipe(data, validation_notifier_dep=self._mock_dep(
+            'funding-group',
+            'w',
+            'description'))
 
-        pipe = self._make_one(data)
         data = pipe.transform(data)
-        self.assertEqual(expected, pipe.warnings())
+
+        self.assertEquals(expected['stage'], pipe._validation_notifier._result['stage'])
+        self.assertEquals(expected['status'], pipe._validation_notifier._result['status'])
+        self.assertEquals(expected['description'], pipe._validation_notifier._result['description'])
         
 
+    
