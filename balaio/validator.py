@@ -14,22 +14,24 @@ class ValidationPipe(plumber.Pipe):
     def __init__(self, data, notifier_dep=notifier.Notifier):
         super(ValidationPipe, self).__init__(data)
         self._notifier = notifier_dep
-        
+
     def transform(self, data):
         # data = (Attempt, PackageAnalyzer)
         # PackagerAnalyzer.xml
         attempt, package_analyzer = data
 
-        message = {}
-        result = self.validate(package_analyzer.xml)
+        result_status, result_description = self.validate(package_analyzer.xml)
 
-        for k,v in result.items():
-            message[k] = v
-        
+        message = {
+            'stage': self._stage_,
+            'status': result_status,
+            'description': result_description,
+        }
+
         self._notifier.validation_event(message)
 
-    def validate(self, data):
-        return {}
+        return data
+
 
 class FundingCheckingPipe(ValidationPipe):
     _stage_ = 'funding-group'
@@ -39,8 +41,8 @@ class FundingCheckingPipe(ValidationPipe):
         description = ''
 
         funding_nodes = data.findall('.//funding-group')
-        
-        if len(funding_nodes) == 0:    
+
+        if len(funding_nodes) == 0:
             ack_nodes = data.findall('.//ack')
             if len(ack_nodes) > 0:
                 ack_text = ''
@@ -57,10 +59,10 @@ class FundingCheckingPipe(ValidationPipe):
                 description = 'no funding-group and no ack was identified'
         else:
             description = etree.tostring(funding_nodes[0])
-        result = { 'stage': self._stage_, 'status': status, 'description': description,}
-        return result
 
-    
+        return [status, description]
+
+
     def _ack_contains_number(self, ack_text):
         number_in_ack = False
         for i in range(0,10):
@@ -69,12 +71,9 @@ class FundingCheckingPipe(ValidationPipe):
                 break
         return number_in_ack
 
-class ExamplePipe(plumber.Pipe):
-    def transform(self, data):
-        return data
 
+ppl = plumber.Pipeline(FundingCheckingPipe)
 
-ppl = plumber.Pipeline(ExamplePipe)
 
 if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
