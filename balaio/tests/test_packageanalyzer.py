@@ -231,3 +231,31 @@ class XrayTests(mocker.MockerTestCase):
 
         self.assertRaises(StopIteration, lambda: fps.next())
 
+
+class PackageAnalyserTests(mocker.MockerTestCase):
+
+    def _make_test_archive(self, arch_data):
+        fp = NamedTemporaryFile()
+        with zipfile.ZipFile(fp, 'w') as zipfp:
+            for archive, data in arch_data:
+                zipfp.writestr(archive, data)
+
+        return fp
+
+    def _makeOne(self, fname):
+        return checkin.PackageAnalyzer(fname)
+
+    def test_package_checksum_is_calculated(self):
+        data = [('bar.xml', b'<root><name>bar</name></root>')]
+        arch1 = self._make_test_archive(data)
+        arch2 = self._make_test_archive(data)
+
+        self.assertEquals(
+            self._makeOne(arch1.name).checksum,
+            self._makeOne(arch2.name).checksum
+        )
+
+    def test_is_subclass_of_spsmixin_and_xray(self):
+        self.assertTrue(issubclass(checkin.PackageAnalyzer, checkin.Xray))
+        self.assertTrue(issubclass(checkin.PackageAnalyzer, checkin.SPSMixin))
+
