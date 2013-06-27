@@ -8,7 +8,9 @@ import utils
 import notifier
 from models import Attempt
 
-
+STATUS_ERROR = 'e'
+STATUS_WARNING = 'w'
+STATUS_OK = 'ok'
 
 class ValidationPipe(plumber.Pipe):
     def __init__(self, data, notifier_dep=notifier.Notifier):
@@ -20,61 +22,45 @@ class ValidationPipe(plumber.Pipe):
         # PackagerAnalyzer.xml
         attempt, package_analyzer = data
 
-        message = {}
-        result = self.validate(package_analyzer.xml)
+        result_status, result_description = self.validate(package_analyzer.xml)
 
-        for k,v in result.items():
-            message[k] = v
-        
+        message = {
+            'stage': self._stage_, 
+            'status': result_status, 
+            'description': result_description, 
+        }
+
         self._notifier.validation_event(message)
-
-    def validate(self, data):
-        return {}
+        
+        return data
 
 class FundingCheckingPipe(ValidationPipe):
     _stage_ = 'funding-group'
 
     def validate(self, data):
-        status = 'ok'
-        description = ''
-
-        funding_nodes = data.findall('.//funding-group')
         
-        if len(funding_nodes) == 0:    
-            ack_nodes = data.findall('.//ack')
-            if len(ack_nodes) > 0:
-                ack_text = ''
-                for ack_node in ack_nodes:
-                    ack_text += etree.tostring(ack_node)
+        funding_nodes = data.findall('.//funding-group')
+        ack_node = data.findall('.//ack') 
 
-                description = ack_text
-                if self._ack_contains_number(ack_text):
-                    status = 'e'
-                else:
-                    status = 'w'
-            else:
-                status = 'w'
-                description = 'no funding-group and no ack was identified'
-        else:
+        status = STATUS_OK if funding_nodes != [] else STATUS_WARNING
+        
+        if status == STATUS_OK:
             description = etree.tostring(funding_nodes[0])
-        result = { 'stage': self._stage_, 'status': status, 'description': description,}
-        return result
-
+        else:
+            description = etree.tostring(ack_node[0]) if ack_node != [] else 'no funding-group and no ack was identified'
+            
+            status = STATUS_ERROR if self._ack_contains_number(description) else STATUS_WARNING
+        return [ status, description ]
     
     def _ack_contains_number(self, ack_text):
-        number_in_ack = False
-        for i in range(0,10):
-            if str(i) in ack_text:
-                number_in_ack = True
-                break
-        return number_in_ack
-
-class ExamplePipe(plumber.Pipe):
-    def transform(self, data):
-        return data
+        # if ack_text contains any number
+        return any((True for n in xrange(10) if str(n) in ack_text))
 
 
-ppl = plumber.Pipeline(ExamplePipe)
+
+
+
+ppl = plumber.Pipeline(FundingCheckingPipe)
 
 if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
