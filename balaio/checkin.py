@@ -48,9 +48,6 @@ class SPSMixin(object):
             node = self.xml.find(node_v)
             dct_mta[node_k] = getattr(node, 'text', None)
 
-        if not dct_mta['journal_eissn'] and not dct_mta['journal_pissn']:
-            raise ValueError('package need at least one ISSN')
-
         return dct_mta
 
 
@@ -194,10 +191,11 @@ def get_attempt(package):
     """
     Always returns a brand new models.Attempt instance, bound to
     the expected models.ArticlePkg instance.
+    - Verify if exist at least one ISSN.
     """
     with PackageAnalyzer(package) as pkg:
 
-        if pkg.is_valid_package():
+        if pkg.is_valid_package() and (pkg.meta['journal_eissn'] or pkg.meta['journal_pissn']):
             article = models.get_or_create(models.ArticlePkg, **pkg.meta)
             pkg_checksum = pkg.checksum
 

@@ -49,8 +49,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_journal_title_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><journal-title-group><journal-title>foo</journal-title>\
-                </journal-title-group><issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root><journal-title-group><journal-title>foo</journal-title></journal-title-group></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -59,7 +58,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_journal_title_is_None_if_not_present(self):
         data = [
-            ('bar.xml', b'<root><issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -77,7 +76,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_journal_eissn_is_None_if_not_present(self):
         data = [
-            ('bar.xml', b'<root><issn pub-type="ppub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -95,7 +94,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_journal_pissn_is_None_if_not_present(self):
         data = [
-            ('bar.xml', b'<root><issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -104,8 +103,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_article_title_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><title-group><article-title>bar</article-title>\
-                   </title-group><issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root><title-group><article-title>bar</article-title></title-group></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -114,7 +112,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_article_title_is_None_if_not_present(self):
         data = [
-            ('bar.xml', b'<root><issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -123,8 +121,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_issue_year_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><pub-date><year>2013</year></pub-date>\
-                                <issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root><pub-date><year>2013</year></pub-date></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -133,7 +130,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_issue_year_is_None_if_not_present(self):
         data = [
-            ('bar.xml', b'<root><issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -142,8 +139,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_issue_volume_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><volume>2</volume>\
-                         <issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root><volume>2</volume></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -152,7 +148,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_issue_volume_is_None_if_not_present(self):
         data = [
-            ('bar.xml', b'<root><issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -161,8 +157,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_issue_number_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><issue>2</issue>\
-                         <issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root><issue>2</issue></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -171,21 +166,12 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_issue_number_is_None_if_not_present(self):
         data = [
-            ('bar.xml', b'<root><issn pub-type="epub">1234-1234</issn></root>'),
-        ]
-        arch = self._make_test_archive(data)
-        pkg = self._makeOne(arch.name)
-
-        self.assertIsNone(pkg.meta['issue_number'])
-
-    def test_if_pissn_None_and_if_eissn_None(self):
-        data = [
             ('bar.xml', b'<root></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
 
-        self.assertRaises(ValueError, lambda: pkg.meta)
+        self.assertIsNone(pkg.meta['issue_number'])
 
 
 class XrayTests(mocker.MockerTestCase):
@@ -245,3 +231,30 @@ class XrayTests(mocker.MockerTestCase):
 
         self.assertRaises(StopIteration, lambda: fps.next())
 
+
+class PackageAnalyserTests(mocker.MockerTestCase):
+
+    def _make_test_archive(self, arch_data):
+        fp = NamedTemporaryFile()
+        with zipfile.ZipFile(fp, 'w') as zipfp:
+            for archive, data in arch_data:
+                zipfp.writestr(archive, data)
+
+        return fp
+
+    def _makeOne(self, fname):
+        return checkin.PackageAnalyzer(fname)
+
+    def test_package_checksum_is_calculated(self):
+        data = [('bar.xml', b'<root><name>bar</name></root>')]
+        arch1 = self._make_test_archive(data)
+        arch2 = self._make_test_archive(data)
+
+        self.assertEquals(
+            self._makeOne(arch1.name).checksum,
+            self._makeOne(arch2.name).checksum
+        )
+
+    def test_is_subclass_of_spsmixin_and_xray(self):
+        self.assertTrue(issubclass(checkin.PackageAnalyzer, checkin.Xray))
+        self.assertTrue(issubclass(checkin.PackageAnalyzer, checkin.SPSMixin))
