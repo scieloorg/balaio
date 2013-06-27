@@ -23,9 +23,9 @@ class FundingCheckingPipeTest(unittest.TestCase):
         expected = ['w', 'no funding-group and no ack was identified']
 
         self.assertEquals(
-            expected, 
+            expected,
             self._validate('<root></root>'))
-        
+
     def test_no_funding_group_and_ack_has_no_number(self):
         expected = ['w', '<ack>acknowle<sub />dgements</ack>']
 

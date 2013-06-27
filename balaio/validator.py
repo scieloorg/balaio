@@ -8,15 +8,16 @@ import utils
 import notifier
 from models import Attempt
 
-STATUS_ERROR = 'e'
-STATUS_WARNING = 'w'
 STATUS_OK = 'ok'
+STATUS_WARNING = 'w'
+STATUS_ERROR = 'e'
+
 
 class ValidationPipe(plumber.Pipe):
     def __init__(self, data, notifier_dep=notifier.Notifier):
         super(ValidationPipe, self).__init__(data)
         self._notifier = notifier_dep
-        
+
     def transform(self, data):
         # data = (Attempt, PackageAnalyzer)
         # PackagerAnalyzer.xml
@@ -25,14 +26,15 @@ class ValidationPipe(plumber.Pipe):
         result_status, result_description = self.validate(package_analyzer.xml)
 
         message = {
-            'stage': self._stage_, 
-            'status': result_status, 
-            'description': result_description, 
+            'stage': self._stage_,
+            'status': result_status,
+            'description': result_description,
         }
 
         self._notifier.validation_event(message)
-        
+
         return data
+
 
 class FundingCheckingPipe(ValidationPipe):
     _stage_ = 'funding-group'
@@ -43,7 +45,8 @@ class FundingCheckingPipe(ValidationPipe):
         ack_node = data.findall('.//ack') 
 
         status = STATUS_OK if funding_nodes != [] else STATUS_WARNING
-        
+        description = ''
+
         if status == STATUS_OK:
             description = etree.tostring(funding_nodes[0])
         else:
@@ -54,12 +57,9 @@ class FundingCheckingPipe(ValidationPipe):
     
     def _ack_contains_number(self, ack_text):
         # if ack_text contains any number
+
         return any((True for n in xrange(10) if str(n) in ack_text))
-
-
-
-
-
+        
 ppl = plumber.Pipeline(FundingCheckingPipe)
 
 if __name__ == '__main__':
