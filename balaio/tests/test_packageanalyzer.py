@@ -258,3 +258,4 @@ class PackageAnalyserTests(mocker.MockerTestCase):
     def test_is_subclass_of_spsmixin_and_xray(self):
         self.assertTrue(issubclass(checkin.PackageAnalyzer, checkin.Xray))
         self.assertTrue(issubclass(checkin.PackageAnalyzer, checkin.SPSMixin))
+
