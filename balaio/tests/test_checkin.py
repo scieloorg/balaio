@@ -3,6 +3,7 @@ from tempfile import NamedTemporaryFile
 from xml.etree.ElementTree import ElementTree
 
 import mocker
+
 from balaio import checkin
 
 
@@ -259,3 +260,27 @@ class PackageAnalyserTests(mocker.MockerTestCase):
         self.assertTrue(issubclass(checkin.PackageAnalyzer, checkin.Xray))
         self.assertTrue(issubclass(checkin.PackageAnalyzer, checkin.SPSMixin))
 
+    def test_package_is_locked_during_context(self):
+        import os, stat
+
+        data = [('bar.xml', b'<root><name>bar</name></root>')]
+        arch = self._make_test_archive(data)
+
+        out_context_perm = stat.S_IMODE(os.stat(arch.name).st_mode)
+
+        with checkin.PackageAnalyzer(arch.name) as pkg:
+            in_context_perm = stat.S_IMODE(os.stat(arch.name).st_mode)
+            self.assertTrue(out_context_perm != in_context_perm)
+
+        self.assertEqual(out_context_perm, stat.S_IMODE(os.stat(arch.name).st_mode))
+
+    def test_package_remove_user_write_perm_during_context(self):
+        import os, stat
+
+        data = [('bar.xml', b'<root><name>bar</name></root>')]
+        arch = self._make_test_archive(data)
+
+        with checkin.PackageAnalyzer(arch.name) as pkg:
+            in_context_perm = oct(stat.S_IMODE(os.stat(arch.name).st_mode))
+            for forbidden_val in ['3', '6', '7']:
+                self.assertNotEqual(in_context_perm[1], forbidden_val)
