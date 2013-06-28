@@ -45,14 +45,12 @@ class FundingCheckingPipe(ValidationPipe):
         ack_node = data.findall('.//ack') 
 
         status = STATUS_OK if funding_nodes != [] else STATUS_WARNING
-        description = ''
+        description = etree.tostring(funding_nodes[0])
 
-        if status == STATUS_OK:
-            description = etree.tostring(funding_nodes[0])
-        else:
-            description = etree.tostring(ack_node[0]) if ack_node != [] else 'no funding-group and no ack was identified'
-            
+        if not status == STATUS_OK:
+            description = etree.tostring(ack_node[0]) if ack_node != [] else 'no funding-group and no ack was identified'            
             status = STATUS_ERROR if self._ack_contains_number(description) else STATUS_WARNING
+        
         return [ status, description ]
     
     def _ack_contains_number(self, ack_text):
