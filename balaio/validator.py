@@ -37,6 +37,17 @@ class ValidationPipe(plumber.Pipe):
 
 
 class FundingCheckingPipe(ValidationPipe):
+    """
+    Check the absence/presence of funding-group and ack in the document
+    
+    funding-group is a mandatory element only if there is contract or project number
+    in the document. Sometimes this information comes in Acknowledgments section.
+
+    STATUS_OK      if founding-group is present
+    STATUS_ERROR   if no founding-group, but Acknowledgments (ack) has number
+    STATUS_WARNING if no founding-group, but Acknowledgments ...
+
+    """
     _stage_ = 'funding-group'
 
     def validate(self, data):
@@ -44,9 +55,8 @@ class FundingCheckingPipe(ValidationPipe):
         funding_nodes = data.findall('.//funding-group')
         ack_node = data.findall('.//ack') 
 
-        status = STATUS_OK if funding_nodes != [] else STATUS_WARNING
-        description = etree.tostring(funding_nodes[0])
-
+        status, description = [ STATUS_OK, etree.tostring(funding_nodes[0]) ] if funding_nodes != [] else [ STATUS_WARNING, 'no funding-group' ]
+        
         if not status == STATUS_OK:
             description = etree.tostring(ack_node[0]) if ack_node != [] else 'no funding-group and no ack was identified'            
             status = STATUS_ERROR if self._ack_contains_number(description) else STATUS_WARNING
@@ -55,9 +65,11 @@ class FundingCheckingPipe(ValidationPipe):
     
     def _ack_contains_number(self, ack_text):
         # if ack_text contains any number
-
         return any((True for n in xrange(10) if str(n) in ack_text))
         
+
+
+
 ppl = plumber.Pipeline(FundingCheckingPipe)
 
 if __name__ == '__main__':
