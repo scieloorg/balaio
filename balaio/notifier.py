@@ -3,7 +3,7 @@ import ConfigParser
 import urllib2
 import urllib
 
-from .utils import SingletonMixin, Configuration
+from utils import SingletonMixin, Configuration
 
 
 config = Configuration.from_env()
