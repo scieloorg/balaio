@@ -8,6 +8,9 @@ import utils
 import notifier
 from models import Attempt
 
+STATUS_OK = 'ok'
+STATUS_WARNING = 'w'
+STATUS_ERROR = 'e'
 
 
 class ValidationPipe(plumber.Pipe):
@@ -37,43 +40,25 @@ class FundingCheckingPipe(ValidationPipe):
     _stage_ = 'funding-group'
 
     def validate(self, data):
-        status = 'ok'
-        description = ''
-
+        
         funding_nodes = data.findall('.//funding-group')
+        ack_node = data.findall('.//ack') 
 
-        if len(funding_nodes) == 0:
-            ack_nodes = data.findall('.//ack')
-            if len(ack_nodes) > 0:
-                ack_text = ''
-                for ack_node in ack_nodes:
-                    ack_text += etree.tostring(ack_node)
+        status = STATUS_OK if funding_nodes != [] else STATUS_WARNING
+        description = etree.tostring(funding_nodes[0])
 
-                description = ack_text
-                if self._ack_contains_number(ack_text):
-                    status = 'e'
-                else:
-                    status = 'w'
-            else:
-                status = 'w'
-                description = 'no funding-group and no ack was identified'
-        else:
-            description = etree.tostring(funding_nodes[0])
-
-        return [status, description]
-
-
+        if not status == STATUS_OK:
+            description = etree.tostring(ack_node[0]) if ack_node != [] else 'no funding-group and no ack was identified'            
+            status = STATUS_ERROR if self._ack_contains_number(description) else STATUS_WARNING
+        
+        return [ status, description ]
+    
     def _ack_contains_number(self, ack_text):
-        number_in_ack = False
-        for i in range(0,10):
-            if str(i) in ack_text:
-                number_in_ack = True
-                break
-        return number_in_ack
+        # if ack_text contains any number
 
-
+        return any((True for n in xrange(10) if str(n) in ack_text))
+        
 ppl = plumber.Pipeline(FundingCheckingPipe)
-
 
 if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
