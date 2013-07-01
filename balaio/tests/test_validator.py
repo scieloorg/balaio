@@ -2,6 +2,8 @@ import mocker
 from xml.etree.ElementTree import ElementTree
 
 from balaio import validator
+from balaio import notifier
+from balaio.validator import ManagerData
 
 
 class FundingCheckingPipeTest(mocker.MockerTestCase):
@@ -24,7 +26,20 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
 
     def _validate(self, xml_string):
         data = self._make_data(xml_string)
-        pipe = self._make_pipe(data)
+        
+        mock_request = self.mocker.mock(notifier.Request)
+
+        notifier_dep = self.mocker.mock()
+        notifier_dep.Request
+        self.mocker.result(notifier.Request)
+
+        manager_dep = self.mocker.mock()
+        manager_dep()
+        self.mocker.result(ManagerData)
+
+        self.mocker.replay()
+
+        pipe = self._make_pipe(data, manager_dep, notifier_dep)
         return pipe.validate(data)
 
     def test_no_funding_group_and_no_ack(self):
