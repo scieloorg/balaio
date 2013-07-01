@@ -175,3 +175,34 @@ def prefix_file(filename, prefix):
 
 def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
+
+
+def check_digit(issn):
+    """
+    Calculate the check digit of the ISSN
+
+    https://en.wikipedia.org/wiki/International_Standard_Serial_Number
+    """
+
+    total = 0
+    issn = list(issn.replace('-', ''))
+
+    for i, v in enumerate(issn[:-1]):
+        total = total + ((8-i) * int(v))
+
+    remainder = total % 11
+
+    if not remainder:
+        check_digit = 0
+    else:
+        check_digit = 11 - remainder
+
+    return 'X' if check_digit == 10 else str(check_digit)
+
+
+def is_valid_issn(issn):
+    """
+    Return True if valid, otherwise False.
+    """
+
+    return bool(check_digit(issn) == issn[-1])
