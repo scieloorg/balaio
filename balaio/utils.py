@@ -177,7 +177,7 @@ def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
 
 
-def check_digit(issn):
+def calc_check_digit_issn(issn):
     """
     Calculate the check digit of the ISSN
 
@@ -205,4 +205,4 @@ def is_valid_issn(issn):
     Return True if valid, otherwise False.
     """
 
-    return bool(check_digit(issn) == issn[-1])
+    return calc_check_digit_issn(issn) == issn[-1]
