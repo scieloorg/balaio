@@ -1,5 +1,6 @@
 import mocker
 from xml.etree.ElementTree import ElementTree
+import json
 
 from balaio import validator
 from balaio import notifier
@@ -12,35 +13,43 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
         from balaio.validator import FundingCheckingPipe
         return FundingCheckingPipe(*args, **kwargs)
 
-    def _make_data(self, xml_string='<root></root>'):
+    def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
         from StringIO import StringIO
-        etree = ElementTree()
 
+        etree = ElementTree()
+        xml = etree.parse(StringIO(xml_string))
+
+        attempt = self.mocker.mock()
         pkg_analyzer = self.mocker.mock()
+
         pkg_analyzer.xml
-        self.mocker.result(etree.parse(StringIO(xml_string)))
+        self.mocker.result(xml)
+
+        pkg_analyzer.meta['journal_title']
+        self.mocker.result('Revista Brasileira ...')
 
         self.mocker.replay()
 
-        return pkg_analyzer
+        return (attempt, pkg_analyzer)
 
     def _validate(self, xml_string):
+        mock_manager = self.mocker.mock()
+        mock_notifier = self.mocker.mock()
+
+        mock_notifier()
+        self.mocker.result(mock_notifier)
+
+        mock_manager()
+        self.mocker.result(mock_manager)
+
+        mock_manager.registered_data('Revista Brasileira ...')
+        self.mocker.result('{"journal":{"journal-title":"Revista Brasileira ..."}}')
+
         data = self._make_data(xml_string)
-        
-        mock_request = self.mocker.mock(notifier.Request)
-
-        notifier_dep = self.mocker.mock()
-        notifier_dep.Request
-        self.mocker.result(notifier.Request)
-
-        manager_dep = self.mocker.mock()
-        manager_dep()
-        self.mocker.result(ManagerData)
-
         self.mocker.replay()
 
-        pipe = self._make_pipe(data, manager_dep, notifier_dep)
-        return pipe.validate(data)
+        pipe = self._make_pipe(data, mock_manager, mock_notifier)
+        return pipe.validate(data[1])
 
     def test_no_funding_group_and_no_ack(self):
         expected = ['w', 'no funding-group and no ack']

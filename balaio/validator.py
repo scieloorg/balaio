@@ -53,7 +53,7 @@ class Manager(SingletonMixin):
         assert isinstance(request_dep, Request)
 
         self._request = request_dep
-        self._url, self._username, self._apikey = _extract_settings(settings)
+        self._url, self._username, self._apikey = notifier._extract_settings(settings)
 
     def _prepare_url(self, endpoint):
         return '%s/%s/' % (self._url, endpoint)
@@ -72,9 +72,14 @@ class Manager(SingletonMixin):
         req = self._request(full_url, self._username, self._apikey)
         req.post(data)
 
-    def do_query(self, query):
+    def registered_data(self, query):
         #FIXME execute SciELO Manager API instead
-        return '{"journal": {"journal-title":"Revista Brasileira ..."}'
+        #if not validate_notification_message(message, CHECKIN_MESSAGE_FIELDS):
+        #    raise ValueError('invalid message')
+
+        self._submit('journal', query)
+        
+        return '{"journal": {"journal-title":"Revista Brasileira ..."}}'
 
 
 class ManagerData(object):
@@ -83,7 +88,7 @@ class ManagerData(object):
     """
     def __init__(self, json_data):
         super(ManagerData, self).__init__()
-        self._data = json.load(json_data)
+        self._data = json.loads(json_data)
 
     def abbrev_journal_title(self):
         # FIXME
@@ -97,7 +102,7 @@ class ValidationPipe(plumber.Pipe):
     def __init__(self, data, manager_dep=Manager, notifier_dep=notifier.Notifier):
         super(ValidationPipe, self).__init__(data)
         self._notifier = notifier_dep()
-        self._manager_data = ManagerData(manager_dep().do_query(data.xml.journal_title))
+        self._manager_data = ManagerData(manager_dep().registered_data(data[1].meta['journal_title']))
 
     def transform(self, data):
         # data = (Attempt, PackageAnalyzer)
