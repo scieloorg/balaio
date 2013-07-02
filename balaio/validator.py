@@ -1,4 +1,8 @@
 # coding: utf-8
+import ConfigParser
+import urllib2
+import urllib
+
 import sys
 import xml.etree.ElementTree as etree
 import json
@@ -6,8 +10,13 @@ import json
 import plumber
 
 import utils
+from utils import SingletonMixin, Configuration
 import notifier
+from notifier import Request
 from models import Attempt
+
+
+config = Configuration.from_env()
 
 STATUS_OK = 'ok'
 STATUS_WARNING = 'w'
@@ -33,12 +42,35 @@ def etree_nodes_value(self, etree, xpath):
     return '\n'.join([node.text for node in etree.findall(xpath)])
 
 
-class Manager(object):
+class Manager(SingletonMixin):
     """
     Manager
     """
-    def __init__(self):
-        super(Manager, self).__init__()
+    def __init__(self, settings=config, request_dep=Request):
+        """
+        ``settings`` is an instance of ConfigParser.ConfigParser.
+        """
+        assert isinstance(request_dep, Request)
+
+        self._request = request_dep
+        self._url, self._username, self._apikey = _extract_settings(settings)
+
+    def _prepare_url(self, endpoint):
+        return '%s/%s/' % (self._url, endpoint)
+
+    def _submit(self, endpoint, data):
+        """
+        Submits json-encoded data to the given endpoint.
+
+        ``endpoint`` is a string representing an available
+        endpoint at SciELO Manager.
+        See: http://manager.scielo.org/api/v1/
+        ``data`` is a mapping in the format expected
+        by the remote endpoint.
+        """
+        full_url = self._prepare_url(endpoint)
+        req = self._request(full_url, self._username, self._apikey)
+        req.post(data)
 
     def do_query(self, query):
         #FIXME execute SciELO Manager API instead
