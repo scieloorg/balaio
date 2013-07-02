@@ -2,13 +2,15 @@
 import ConfigParser
 import urllib2
 import urllib
-
 import sys
 import xml.etree.ElementTree as etree
 import json
+from StringIO import StringIO
 
 import plumber
 
+# futurely scieloapi is package
+import scieloapi
 import utils
 from utils import SingletonMixin, Configuration
 import notifier
@@ -42,44 +44,49 @@ def etree_nodes_value(self, etree, xpath):
     return '\n'.join([node.text for node in etree.findall(xpath)])
 
 
-class Manager(SingletonMixin):
+class Manager(object):
     """
-    Manager
+    Interface for SciELO API
     """
-    def __init__(self, settings=config, request_dep=Request):
-        """
-        ``settings`` is an instance of ConfigParser.ConfigParser.
-        """
-        assert isinstance(request_dep, Request)
+    _format = '&format=json'
 
-        self._request = request_dep
-        self._url, self._username, self._apikey = notifier._extract_settings(settings)
+    def __init__(self, api_url='http:/????', username='', api_key=''):
+        super(Manager, self).__init__()
+        self._api_url = api_url
+        self._autentication = '/?username=' + username + '&api_key=' + api_key
 
-    def _prepare_url(self, endpoint):
-        return '%s/%s/' % (self._url, endpoint)
+    def _url(self, query):
+        return self._api_url + query + self._autentication + self._format
 
-    def _submit(self, endpoint, data):
-        """
-        Submits json-encoded data to the given endpoint.
+    def _query(self, url, offset='0'):
+        return urllib2.open(url + '&offset=' + offset).read()
 
-        ``endpoint`` is a string representing an available
-        endpoint at SciELO Manager.
-        See: http://manager.scielo.org/api/v1/
-        ``data`` is a mapping in the format expected
-        by the remote endpoint.
-        """
-        full_url = self._prepare_url(endpoint)
-        req = self._request(full_url, self._username, self._apikey)
-        req.post(data)
+    def _item_id(self, param, key, value):
+        item_id = None
+        api_result = self._query(self._url(param))
+        data = json.load(api_result)
 
-    def registered_data(self, query):
-        #FIXME execute SciELO Manager API instead
-        #if not validate_notification_message(message, CHECKIN_MESSAGE_FIELDS):
-        #    raise ValueError('invalid message')
+        meta = data.get('meta', {})
+        total = meta.get('total_count', 0)
+        offset = meta.get('offset', 0)
+        limit = meta.get('limit', 0)
 
-        self._submit('journal', query)
-        
-        return '{"journal": {"journal-title":"Revista Brasileira ..."}}'
+        found = [o for o in data.get('objects', {}) if o.get(key, '') == value]
+        while found is [] and offset < total:
+            offset += limit
+            api_result = self._query(self._url(param), offset)
+            data = json.load(api_result)
+            found = [o for o in data.get('objects', {}) if o.get(key, '') == value]
+        if found != []:
+            item_id = found[0].get('id', None)
+        return item_id
+
+    def _item(self, param, item_id):
+        return self._query(self._url(param + '/' + item_id + '/'))
+
+    def journal(self, journal_title):
+        item_id = self._item_id('journals', 'title', journal_title)
+        return self._item('journals', item_id)
 
 
 class ManagerData(object):
@@ -88,11 +95,13 @@ class ManagerData(object):
     """
     def __init__(self, json_data):
         super(ManagerData, self).__init__()
-        self._data = json.loads(json_data)
+        self._data = json.load(json_data)
+
+    def get(self, label):
+        return self._data.get(label, '')
 
     def abbrev_journal_title(self):
-        # FIXME
-        return self._data['abbrev-journal-title'] if 'abbrev-journal-title' in self._data.keys() else ''
+        return self._data.get('title_iso')
 
 
 class ValidationPipe(plumber.Pipe):
@@ -102,7 +111,7 @@ class ValidationPipe(plumber.Pipe):
     def __init__(self, data, manager_dep=Manager, notifier_dep=notifier.Notifier):
         super(ValidationPipe, self).__init__(data)
         self._notifier = notifier_dep()
-        self._manager_data = ManagerData(manager_dep().registered_data(data[1].meta['journal_title']))
+        self._manager = manager_dep()
 
     def transform(self, data):
         # data = (Attempt, PackageAnalyzer)
@@ -121,6 +130,9 @@ class ValidationPipe(plumber.Pipe):
 
         return data
 
+    def _journal(self, params={}):
+        return self._manager.get(params)
+
 
 # Pipes to validate journal data
 class AbbrevJournalTitleValidationPipe(ValidationPipe):
@@ -129,8 +141,11 @@ class AbbrevJournalTitleValidationPipe(ValidationPipe):
     """
 
     def validate(self, package_analyzer):
+
+        manager_data = ManagerData(self._manager.journal(package_analyzer.meta['journal_title']))
+
         xml_data = etree_nodes_value(package_analyzer.xml, './/journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
-        registered_data = self._manager_data.abbrev_journal_title()
+        registered_data = manager_data.abbrev_journal_title()
         return compare_registered_data_and_xml_data(registered_data, xml_data)
 
 

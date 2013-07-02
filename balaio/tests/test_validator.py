@@ -1,6 +1,7 @@
 import mocker
 from xml.etree.ElementTree import ElementTree
 import json
+from StringIO import StringIO
 
 from balaio import validator
 from balaio import notifier
@@ -14,7 +15,6 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
         return FundingCheckingPipe(*args, **kwargs)
 
     def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
-        from StringIO import StringIO
 
         etree = ElementTree()
         xml = etree.parse(StringIO(xml_string))
@@ -43,7 +43,7 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
         self.mocker.result(mock_manager)
 
         mock_manager.registered_data('Revista Brasileira ...')
-        self.mocker.result('{"journal":{"journal-title":"Revista Brasileira ..."}}')
+        self.mocker.result(StringIO('{"journal":{"journal-title":"Revista Brasileira ..."}}'))
 
         data = self._make_data(xml_string)
         self.mocker.replay()
