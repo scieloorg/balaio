@@ -4,6 +4,7 @@ import stat
 import zipfile
 import itertools
 import xml.etree.ElementTree as etree
+import logging
 
 import models
 import utils
@@ -11,8 +12,10 @@ import utils
 
 __all__ = ['PackageAnalyzer', 'get_attempt']
 
-
+logger = logging.getLogger('balaio.checkin')
 config = utils.Configuration.from_env()
+
+utils.setup_logging()
 
 
 class SPSMixin(object):
@@ -193,6 +196,7 @@ def get_attempt(package):
     the expected models.ArticlePkg instance.
     - Verify if exist at least one ISSN.
     """
+    logger.info('Analysing package: %s' % package)
     with PackageAnalyzer(package) as pkg:
 
         if pkg.is_valid_package() and (pkg.meta['journal_eissn'] or pkg.meta['journal_pissn']):
@@ -201,8 +205,11 @@ def get_attempt(package):
 
             attempt_meta = {'package_md5': pkg_checksum,
                             'articlepkg_id': article.id}
+            logger.debug('Trying to generate an Attempt for package with chksum: %s and ArticlePkg: %s' % (attempt_meta['package_md5'], attempt_meta['articlepkg_id']))
             attempt = models.get_or_create(models.Attempt, **attempt_meta)
 
             return attempt
         else:
-            raise ValueError('the package is not valid: %s' % ', '.join(pkg.errors))
+            errors = ', '.join(pkg.errors)
+            logger.debug('Invalid package: %s. Errors: %s' % (package, errors))
+            raise ValueError('the package is not valid: %s' % errors)
