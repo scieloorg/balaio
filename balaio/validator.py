@@ -48,45 +48,47 @@ class Manager(object):
     """
     Interface for SciELO API
     """
-    _format = '&format=json'
+    _main = 'MAIN/QUERY?username=USERNAME&api_key=API_KEY&format=json'
 
     def __init__(self, api_url='http:/????', username='', api_key=''):
         super(Manager, self).__init__()
-        self._api_url = api_url
-        self._autentication = '/?username=' + username + '&api_key=' + api_key
+        self.api_params['USERNAME'] = username
+        self.api_params['API_KEY'] = api_key
+        self.api_params['MAIN'] = api_key
 
-    def _url(self, query):
-        return self._api_url + query + self._autentication + self._format
+        for key, param in self.api_params.items():
+            self._main = self._main.replace(key, param)
 
-    def _query(self, url, offset='0'):
-        return urllib2.open(url + '&offset=' + offset).read()
+    def do_query(self, query, params={}):
+        return urllib2.open(self._main.replace('QUERY', query) + '&'.join([key + '=' + value for key, value in params.items()])).read()
 
-    def _item_id(self, param, key, value):
+    def _item_id(self, query, data_label, match_value):
+        """
+        Find in all an item which ``data_label`` has a value that matches ``match_value``
+        (esse metodo seria desnecessario se na api estivesse search)
+        Returns item id
+        """
         item_id = None
-        api_result = self._query(self._url(param))
-        data = json.load(api_result)
+        all_items = json.load(self.do_query(query))
 
-        meta = data.get('meta', {})
+        meta = all_items.get('meta', {})
         total = meta.get('total_count', 0)
         offset = meta.get('offset', 0)
         limit = meta.get('limit', 0)
 
-        found = [o for o in data.get('objects', {}) if o.get(key, '') == value]
+        found = [o for o in all_items.get('objects', {}) if o.get(data_label, '') == match_value]
         while found is [] and offset < total:
             offset += limit
-            api_result = self._query(self._url(param), offset)
-            data = json.load(api_result)
-            found = [o for o in data.get('objects', {}) if o.get(key, '') == value]
-        if found != []:
+            all_items = json.load(self.do_query(query, {'offset': offset}))
+            found = [o for o in all_items.get('objects', {}) if o.get(data_label, '') == match_value]
+
+        if not found is []:
             item_id = found[0].get('id', None)
         return item_id
 
-    def _item(self, param, item_id):
-        return self._query(self._url(param + '/' + item_id + '/'))
-
     def journal(self, journal_title):
         item_id = self._item_id('journals', 'title', journal_title)
-        return self._item('journals', item_id)
+        return self.do_query('journals/' + item_id)
 
 
 class ManagerData(object):
