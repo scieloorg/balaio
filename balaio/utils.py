@@ -177,6 +177,24 @@ def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
 
 
+def validate_issn(issn):
+    """
+    This function analyze the ISSN:
+        - Verify the length
+        - Verify if it`s a string
+        - Return issn
+    """
+
+    if not isinstance(issn, basestring):
+        raise TypeError
+    if len(issn) != 9:
+        raise ValueError
+    if not '-' in issn:
+        raise ValueError
+
+    return issn
+
+
 def calc_check_digit_issn(issn):
     """
     Calculate the check digit of the ISSN
@@ -185,9 +203,10 @@ def calc_check_digit_issn(issn):
     """
 
     total = 0
-    issn = list(issn.replace('-', ''))
+    issn = validate_issn(issn)
+    lissn = list(issn.replace('-', ''))
 
-    for i, v in enumerate(issn[:-1]):
+    for i, v in enumerate(lissn[:-1]):
         total = total + ((8-i) * int(v))
 
     remainder = total % 11
