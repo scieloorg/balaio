@@ -347,8 +347,13 @@ class ISSNFunctionsTest(unittest.TestCase):
 
         self.assertRaises(TypeError, lambda: utils.validate_issn(issn))
 
-    def test_validate_issn_with_no_well_format(self):
-        issn = u'217997543'
+    def test_validate_issn_with_no_well_format_without_hyphen(self):
+        issn = u'217a9754'
+
+        self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
+
+    def test_validate_issn_with_no_well_format_with_hyphen(self):
+        issn = u'2-1799754'
 
         self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
 
