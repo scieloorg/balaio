@@ -187,3 +187,52 @@ def setup_logging():
     # an unformatted pickle
     rootLogger.addHandler(socketHandler)
 
+
+def validate_issn(issn):
+    """
+    This function analyze the ISSN:
+        - Verify the length
+        - Verify if it`s a string
+        - Return issn
+    """
+
+    if not isinstance(issn, basestring):
+        raise TypeError
+    if len(issn) != 9:
+        raise ValueError
+    if not '-' in issn:
+        raise ValueError
+
+    return issn
+
+
+def calc_check_digit_issn(issn):
+    """
+    Calculate the check digit of the ISSN
+
+    https://en.wikipedia.org/wiki/International_Standard_Serial_Number
+    """
+
+    total = 0
+    issn = validate_issn(issn)
+    lissn = list(issn.replace('-', ''))
+
+    for i, v in enumerate(lissn[:-1]):
+        total = total + ((8-i) * int(v))
+
+    remainder = total % 11
+
+    if not remainder:
+        check_digit = 0
+    else:
+        check_digit = 11 - remainder
+
+    return 'X' if check_digit == 10 else str(check_digit)
+
+
+def is_valid_issn(issn):
+    """
+    Return True if valid, otherwise False.
+    """
+
+    return calc_check_digit_issn(issn) == issn[-1]
