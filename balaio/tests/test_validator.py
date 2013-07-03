@@ -1,7 +1,10 @@
 import unittest
 from xml.etree.ElementTree import ElementTree
 
+import mocker
+
 from balaio import validator
+
 
 class FundingCheckingPipeTest(unittest.TestCase):
 
@@ -44,3 +47,7 @@ class FundingCheckingPipeTest(unittest.TestCase):
         expected = ['ok', '<funding-group>funding data</funding-group>']
 
         self.assertEquals(expected, self._validate('<root><ack>acknowledgements<funding-group>funding data</funding-group></ack></root>'))
+
+
+class ValidationPipeTests(mocker.MockerTestCase):
+    pass
