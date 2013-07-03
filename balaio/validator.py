@@ -86,11 +86,8 @@ class Manager(object):
             item_id = found[0].get('id', None)
         return item_id
 
-    def journal(self, attribute, value):
-        if attribute != 'id':
-            item_id = self._item_id('journals', attribute, value)
-        else:
-            item_id = value
+    def journal(self, value, attribute='id'):
+        item_id = value if attribute == 'id' else self._item_id('journals', attribute, value)
         return self.do_query('journals/' + item_id + '/')
 
 
@@ -130,7 +127,7 @@ class AbbrevJournalTitleValidationPipe(ValidationPipe):
     """
 
     def validate(self, package_analyzer):
-        journal_data = self._manager.journal('title', package_analyzer.meta['journal_title'])
+        journal_data = self._manager.journal(package_analyzer.meta['journal_title'], 'title')
 
         xml_data = etree_nodes_value(package_analyzer.xml, './/journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
 
