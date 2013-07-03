@@ -193,15 +193,17 @@ def validate_issn(issn):
     This function analyze the ISSN:
         - Verify the length
         - Verify if it`s a string
-        - Return issn
+        - Return issn if it`s valid
     """
 
     if not isinstance(issn, basestring):
-        raise TypeError
+        raise TypeError('Invalid type')
     if len(issn) != 9:
-        raise ValueError
+        raise ValueError('Invalid length')
     if not '-' in issn:
-        raise ValueError
+        raise ValueError('Invalid format')
+    if calc_check_digit_issn(issn) != issn[-1]:
+        raise ValueError('Invaid ISSN')
 
     return issn
 
@@ -214,7 +216,6 @@ def calc_check_digit_issn(issn):
     """
 
     total = 0
-    issn = validate_issn(issn)
     lissn = list(issn.replace('-', ''))
 
     for i, v in enumerate(lissn[:-1]):
@@ -234,5 +235,7 @@ def is_valid_issn(issn):
     """
     Return True if valid, otherwise False.
     """
-
-    return calc_check_digit_issn(issn) == issn[-1]
+    try:
+        return bool(validate_issn(issn))
+    except (ValueError, TypeError):
+        return False

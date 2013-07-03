@@ -342,30 +342,30 @@ class ISSNFunctionsTest(unittest.TestCase):
 
         self.assertEqual(utils.calc_check_digit_issn(issn), issn[-1])
 
-    def test_calc_check_digit_issn_with_ISSN_as_Number(self):
+    def test_validate_issn_with_ISSN_as_Number(self):
         issn = 21799754
 
-        self.assertRaises(TypeError, lambda: utils.calc_check_digit_issn(issn))
+        self.assertRaises(TypeError, lambda: utils.validate_issn(issn))
 
-    def test_calc_check_digit_issn_with_no_well_format(self):
+    def test_validate_issn_with_no_well_format(self):
         issn = u'217997543'
 
-        self.assertRaises(ValueError, lambda: utils.calc_check_digit_issn(issn))
+        self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
 
-    def test_calc_check_digit_issn_with_size_smaller_than_eight(self):
+    def test_validate_issn_with_size_smaller_than_eight(self):
         issn = u'2179-975'
 
-        self.assertRaises(ValueError, lambda: utils.calc_check_digit_issn(issn))
+        self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
 
-    def test_calc_check_digit_issn_with_size_greater_than_eight(self):
+    def test_validate_issn_with_size_greater_than_eight(self):
         issn = u'2179-975123'
 
-        self.assertRaises(ValueError, lambda: utils.calc_check_digit_issn(issn))
+        self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
 
-    def test_calc_check_digit_with_no_numerical_issn(self):
+    def test_validate_issn_with_no_numerical_issn(self):
         issn = u'abcd-fghi'
 
-        self.assertRaises(ValueError, lambda: utils.calc_check_digit_issn(issn))
+        self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
 
     def test_is_valid_issn_with_valid_issn(self):
         issn = u'2179-975X'
