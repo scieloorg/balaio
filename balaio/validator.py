@@ -25,7 +25,7 @@ STATUS_WARNING = 'w'
 STATUS_ERROR = 'e'
 
 
-def compare_registered_data_and_xml_data(self, registered_data, xml_data):
+def compare_registered_data_and_xml_data(registered_data, xml_data):
     """
     Compare registered data in Manager to data in XML
     Returns [status, description]
@@ -37,7 +37,7 @@ def compare_registered_data_and_xml_data(self, registered_data, xml_data):
     return [status, description]
 
 
-def etree_nodes_value(self, etree, xpath):
+def etree_nodes_value(etree, xpath):
     """
     Returns content of a given ``xpath`` of ``etree``
     """
@@ -54,7 +54,7 @@ class Manager(object):
         super(Manager, self).__init__()
         self.api_params['USERNAME'] = username
         self.api_params['API_KEY'] = api_key
-        self.api_params['MAIN'] = api_key
+        self.api_params['MAIN'] = api_url
 
         for key, param in self.api_params.items():
             self._main = self._main.replace(key, param)
@@ -86,24 +86,12 @@ class Manager(object):
             item_id = found[0].get('id', None)
         return item_id
 
-    def journal(self, journal_title):
-        item_id = self._item_id('journals', 'title', journal_title)
-        return self.do_query('journals/' + item_id)
-
-
-class ManagerData(object):
-    """
-    ManagerData
-    """
-    def __init__(self, json_data):
-        super(ManagerData, self).__init__()
-        self._data = json.load(json_data)
-
-    def get(self, label):
-        return self._data.get(label, '')
-
-    def abbrev_journal_title(self):
-        return self._data.get('title_iso')
+    def journal(self, attribute, value):
+        if attribute != 'id':
+            item_id = self._item_id('journals', attribute, value)
+        else:
+            item_id = value
+        return self.do_query('journals/' + item_id + '/')
 
 
 class ValidationPipe(plumber.Pipe):
@@ -114,6 +102,8 @@ class ValidationPipe(plumber.Pipe):
         super(ValidationPipe, self).__init__(data)
         self._notifier = notifier_dep()
         self._manager = manager_dep()
+        self._journal = {}
+        self._issue = {}
 
     def transform(self, data):
         # data = (Attempt, PackageAnalyzer)
@@ -132,8 +122,8 @@ class ValidationPipe(plumber.Pipe):
 
         return data
 
-    def _journal(self, params={}):
-        return self._manager.get(params)
+    def load_manager_data(self, json_data):
+        self._manager_data = json.load(json_data)
 
 
 # Pipes to validate journal data
@@ -143,11 +133,10 @@ class AbbrevJournalTitleValidationPipe(ValidationPipe):
     """
 
     def validate(self, package_analyzer):
-
-        manager_data = ManagerData(self._manager.journal(package_analyzer.meta['journal_title']))
+        self.load_manager_data(self._manager.journal('title', package_analyzer.meta['journal_title']))
 
         xml_data = etree_nodes_value(package_analyzer.xml, './/journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
-        registered_data = manager_data.abbrev_journal_title()
+        registered_data = self._manager_data.get('title_iso', '')
         return compare_registered_data_and_xml_data(registered_data, xml_data)
 
 

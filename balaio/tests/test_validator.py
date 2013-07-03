@@ -5,7 +5,6 @@ from StringIO import StringIO
 
 from balaio import validator
 from balaio import notifier
-from balaio.validator import ManagerData
 
 
 class FundingCheckingPipeTest(mocker.MockerTestCase):
@@ -25,10 +24,8 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
         pkg_analyzer.xml
         self.mocker.result(xml)
 
-        pkg_analyzer.meta['journal_title']
-        self.mocker.result('Revista Brasileira ...')
-
-        self.mocker.replay()
+        #pkg_analyzer.meta['journal_title']
+        #self.mocker.result('Revista Brasileira ...')
 
         return (attempt, pkg_analyzer)
 
@@ -42,8 +39,8 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
         mock_manager()
         self.mocker.result(mock_manager)
 
-        mock_manager.registered_data('Revista Brasileira ...')
-        self.mocker.result(StringIO('{"journal":{"journal-title":"Revista Brasileira ..."}}'))
+        #mock_manager.journal('title', 'Revista Brasileira ...')
+        #self.mocker.result(StringIO('{"journal":{"journal-title":"Revista Brasileira ..."}}'))
 
         data = self._make_data(xml_string)
         self.mocker.replay()
@@ -76,3 +73,59 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
         expected = ['ok', '<funding-group>funding data</funding-group>']
 
         self.assertEquals(expected, self._validate('<root><ack>acknowledgements<funding-group>funding data</funding-group></ack></root>'))
+
+
+class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
+
+    def _make_pipe(self, *args, **kwargs):
+        from balaio.validator import AbbrevJournalTitleValidationPipe
+        return AbbrevJournalTitleValidationPipe(*args, **kwargs)
+
+    def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
+
+        etree = ElementTree()
+        xml = etree.parse(StringIO(xml_string))
+
+        attempt = self.mocker.mock()
+        pkg_analyzer = self.mocker.mock()
+
+        pkg_analyzer.xml
+        self.mocker.result(xml)
+
+        pkg_analyzer.meta['journal_title']
+        self.mocker.result('Revista Brasileira ...')
+
+        return (attempt, pkg_analyzer)
+
+    def _validate(self, xml_string):
+        mock_manager = self.mocker.mock()
+        mock_notifier = self.mocker.mock()
+
+        mock_notifier()
+        self.mocker.result(mock_notifier)
+
+        mock_manager()
+        self.mocker.result(mock_manager)
+
+        mock_manager.journal('title', 'Revista Brasileira ...')
+        self.mocker.result(StringIO('{"journal":{"journal-title":"Revista Brasileira ..."}}'))
+
+        data = self._make_data(xml_string)
+        self.mocker.replay()
+
+        pipe = self._make_pipe(data, mock_manager, mock_notifier)
+        return pipe.validate(data[1])
+
+    def test_abbrev_journal_title_is_valid(self):
+        expected = ['e', '<abbrev-journal-title abbrev-type="publisher">Rev. Bras. ????</abbrev-journal-title>']
+
+        self.assertEquals(
+            expected,
+            self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev. Bras. ????</abbrev-journal-title></journal-meta></root>'))
+
+    def test_abbrev_journal_title_is_not_valid(self):
+        expected = ['e', '<abbrev-journal-title>abbrev-journal-titlenowledgements<p>1234</p></abbrev-journal-title>']
+
+        self.assertEquals(
+            expected,
+            self._validate('<root><abbrev-journal-title>abbrev-journal-titlenowledgements<p>1234</p></abbrev-journal-title></root>'))
