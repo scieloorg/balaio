@@ -122,9 +122,6 @@ class ValidationPipe(plumber.Pipe):
 
         return data
 
-    def load_manager_data(self, json_data):
-        self._manager_data = json.load(json_data)
-
 
 # Pipes to validate journal data
 class AbbrevJournalTitleValidationPipe(ValidationPipe):
@@ -133,11 +130,11 @@ class AbbrevJournalTitleValidationPipe(ValidationPipe):
     """
 
     def validate(self, package_analyzer):
-        self.load_manager_data(self._manager.journal('title', package_analyzer.meta['journal_title']))
+        journal_data = self._manager.journal('title', package_analyzer.meta['journal_title'])
 
         xml_data = etree_nodes_value(package_analyzer.xml, './/journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
-        registered_data = self._manager_data.get('title_iso', '')
-        return compare_registered_data_and_xml_data(registered_data, xml_data)
+
+        return compare_registered_data_and_xml_data(journal_data.get('title_iso', ''), xml_data)
 
 
 # Pipes to validate issue data
