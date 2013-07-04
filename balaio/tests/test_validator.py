@@ -68,6 +68,7 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
 
         self.assertEquals(expected, self._validate('<root><ack>acknowledgements<funding-group>funding data</funding-group></ack></root>'))
 
+
 class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
 
     def _make_pipe(self, *args, **kwargs):
@@ -127,7 +128,7 @@ class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
 
         self.assertEquals(
             expected,
-            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>', '{"journal-title":"Revista Brasileira ..."}'))
+            self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev. Bras. ????</abbrev-journal-title></journal-meta></root>', '{"journal-title":"Revista Brasileira ..."}'))
 
     def test_abbrev_journal_title_not_matched(self):
         expected = ['e', 'Data in XML and Manager do not match.\nData in Manager: Rev. Bras. ????\nData in XML: Rev Bras ????']
@@ -135,3 +136,78 @@ class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
         self.assertEquals(
             expected,
             self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev Bras ????</abbrev-journal-title></journal-meta></root>'))
+
+
+class NLMJournalTitleValidationPipeTest(mocker.MockerTestCase):
+
+    def _make_pipe(self, *args, **kwargs):
+        from balaio.validator import NLMJournalTitleValidationPipe
+        return NLMJournalTitleValidationPipe(*args, **kwargs)
+
+    def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
+
+        etree = ElementTree()
+        xml = etree.parse(StringIO(xml_string))
+
+        attempt = self.mocker.mock()
+        pkg_analyzer = self.mocker.mock()
+
+        pkg_analyzer.xml
+        self.mocker.result(xml)
+
+        pkg_analyzer.meta
+        self.mocker.result({'journal_title': 'Revista Brasileira ...'})
+
+        return (attempt, pkg_analyzer)
+
+    def _validate(self, xml_string, manager_result='{"journal-title":"Revista Brasileira ...", "medline_title": "Rev. Bras. ????"}'):
+        mock_manager = self.mocker.mock()
+        mock_notifier = self.mocker.mock()
+
+        mock_notifier()
+        self.mocker.result(mock_notifier)
+
+        mock_manager()
+        self.mocker.result(mock_manager)
+
+        mock_manager.journal('Revista Brasileira ...', 'title')
+        self.mocker.result(json.load(StringIO(manager_result)))
+
+        data = self._make_data(xml_string)
+        self.mocker.replay()
+
+        pipe = self._make_pipe(data, mock_manager, mock_notifier)
+        return pipe.validate(data[1])
+
+    def test_nlm_journal_title_is_valid(self):
+        expected = ['ok', 'Rev. Bras. ????']
+
+        self.assertEquals(
+            expected,
+            self._validate('<root><journal-meta><journal-id journal-id-type="nlm-ta">Rev. Bras. ????</journal-id></journal-meta></root>'))
+
+    def test_nlm_journal_not_found_in_xml_and_not_found_in_manager(self):
+        expected = ['ok', '']
+        self.assertEquals(
+            expected,
+            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>', '{"journal-title":"Revista Brasileira ..."}'))
+
+    def test_nlm_journal_title_not_found_in_xml(self):
+        expected = ['e', './/journal-meta/journal-id[@journal-id-type="nlm-ta"] not found in XML']
+        self.assertEquals(
+            expected,
+            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>'))
+
+    def test_nlm_journal_title_not_found_in_manager(self):
+        expected = ['e', 'medline_title not found in Manager']
+
+        self.assertEquals(
+            expected,
+            self._validate('<root><journal-meta><journal-id journal-id-type="nlm-ta">Rev. Bras. ????</journal-id></journal-meta></root>', '{"journal-title":"Revista Brasileira ..."}'))
+
+    def test_nlm_journal_title_not_matched(self):
+        expected = ['e', 'Data in XML and Manager do not match.\nData in Manager: Rev. Bras. ????\nData in XML: Rev Bras ????']
+
+        self.assertEquals(
+            expected,
+            self._validate('<root><journal-meta><journal-id journal-id-type="nlm-ta">Rev Bras ????</journal-id></journal-meta></root>'))
