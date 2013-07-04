@@ -50,14 +50,14 @@ class ValidationPipe(plumber.Pipe):
         xml_data = self._xml_data(package_analyzer)
 
         if registered_data is None:
-            status, description = [STATUS_ERROR, self._registered_data_label + ' not found in scieloapi.Manager']
+            status, description = [STATUS_ERROR, self._registered_data_label + ' not found in Manager']
         elif xml_data == '':
             status, description = [STATUS_ERROR, self._xml_data_label + ' not found in XML']
         elif xml_data == registered_data:
             status, description = [STATUS_OK, xml_data]
         else:
             status = STATUS_ERROR
-            description = 'Data in XML and scieloapi.Manager do not match.' + '\n' + 'Data in scieloapi.Manager: ' + registered_data + '\n' + 'Data in XML: ' + xml_data
+            description = 'Data in XML and Manager do not match.' + '\n' + 'Data in Manager: ' + registered_data + '\n' + 'Data in XML: ' + xml_data
         return [status, description]
 
 
