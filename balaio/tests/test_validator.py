@@ -1,7 +1,6 @@
 import mocker
-import unittest
-from xml.etree.ElementTree import ElementTree
 from StringIO import StringIO
+from xml.etree.ElementTree import ElementTree
 
 
 class FundingCheckingPipeTest(mocker.MockerTestCase):
@@ -11,7 +10,6 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
         return FundingCheckingPipe(*args, **kwargs)
 
     def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
-
         etree = ElementTree()
         xml = etree.parse(StringIO(xml_string))
 
@@ -66,21 +64,39 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
         self.assertEquals(expected, self._validate('<root><ack>acknowledgements<funding-group>funding data</funding-group></ack></root>'))
 
 
-class ISSNCheckingPipeTest(unittest.TestCase):
+class ISSNCheckingPipeTest(mocker.MockerTestCase):
 
     def _make_pipe(self, *args, **kwargs):
         from balaio.validator import ISSNCheckingPipe
         return ISSNCheckingPipe(*args, **kwargs)
 
     def _make_data(self, xml_string='<root></root>'):
-        from StringIO import StringIO
         etree = ElementTree()
-        return etree.parse(StringIO(xml_string))
+        xml = etree.parse(StringIO(xml_string))
+
+        attempt = self.mocker.mock()
+        pkg_analyzer = self.mocker.mock()
+
+        pkg_analyzer.xml
+        self.mocker.result(xml)
+
+        return (attempt, pkg_analyzer)
 
     def _validate(self, xml_string):
+        mock_manager = self.mocker.mock()
+        mock_notifier = self.mocker.mock()
+
+        mock_notifier()
+        self.mocker.result(mock_notifier)
+
+        mock_manager()
+        self.mocker.result(mock_manager)
+
         data = self._make_data(xml_string)
-        pipe = self._make_pipe(data)
-        return pipe.validate(data)
+        self.mocker.replay()
+
+        pipe = self._make_pipe(data, mock_manager, mock_notifier)
+        return pipe.validate(data[1])
 
     def test_pipe_issn_with_one_valid_ISSN(self):
         expected = ['ok', '']

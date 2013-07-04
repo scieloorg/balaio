@@ -123,7 +123,9 @@ class ISSNCheckingPipe(ValidationPipe):
     """
     _stage_ = 'issn'
 
-    def validate(self, data):
+    def validate(self, package_analyzer):
+
+        data = package_analyzer.xml
 
         journal_eissn = data.findtext(".//issn[@pub-type='epub']")
         journal_pissn = data.findtext(".//issn[@pub-type='ppub']")
