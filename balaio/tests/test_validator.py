@@ -138,7 +138,7 @@ class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
             self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev Bras ????</abbrev-journal-title></journal-meta></root>'))
 
 
-class ISSNValidationPipeTest(mocker.MockerTestCase):
+class ISSNCheckingPipeTest(mocker.MockerTestCase):
 
     def _make_pipe(self, *args, **kwargs):
         from balaio.validator import ISSNValidationPipe
@@ -189,6 +189,18 @@ class ISSNValidationPipeTest(mocker.MockerTestCase):
 
         self.assertEquals(
             self._validate("<root><issn pub-type='ppub'>0100-879X</issn><issn pub-type='epub'>1414-431X</issn></root>"), expected)
+
+    def test_pipe_issn_with_strange_ISSN(self):
+        expected = ['e', 'neither eletronic ISSN nor print ISSN are valid']
+
+        self.assertEquals(
+            self._validate("<root><issn pub-type='ppub'>01ols0-OIN</issn></root>"), expected)
+
+    def test_pipe_issn_with_one_strange_ISSN_and_one_valid_ISSN(self):
+        expected = ['ok', '']
+
+        self.assertEquals(
+            self._validate("<root><issn pub-type='ppub'>01ols0-OIN</issn><issn pub-type='epub'>1414-431X</issn></root>"), expected)
 
 
 class NLMJournalTitleValidationPipeTest(mocker.MockerTestCase):
