@@ -1,17 +1,17 @@
-import mocker
-from xml.etree.ElementTree import ElementTree
 import json
+import mocker
 from StringIO import StringIO
+from xml.etree.ElementTree import ElementTree
 
 from balaio import validator
 from balaio import notifier
 
 
-class FundingCheckingPipeTest(mocker.MockerTestCase):
+class FundingValidationPipeTest(mocker.MockerTestCase):
 
     def _make_pipe(self, *args, **kwargs):
-        from balaio.validator import FundingCheckingPipe
-        return FundingCheckingPipe(*args, **kwargs)
+        from balaio.validator import FundingValidationPipe
+        return FundingValidationPipe(*args, **kwargs)
 
     def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
 
@@ -136,6 +136,59 @@ class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
         self.assertEquals(
             expected,
             self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev Bras ????</abbrev-journal-title></journal-meta></root>'))
+
+
+class ISSNValidationPipeTest(mocker.MockerTestCase):
+
+    def _make_pipe(self, *args, **kwargs):
+        from balaio.validator import ISSNValidationPipe
+        return ISSNValidationPipe(*args, **kwargs)
+
+    def _make_data(self, xml_string='<root></root>'):
+        etree = ElementTree()
+        xml = etree.parse(StringIO(xml_string))
+
+        attempt = self.mocker.mock()
+        pkg_analyzer = self.mocker.mock()
+
+        pkg_analyzer.xml
+        self.mocker.result(xml)
+
+        return (attempt, pkg_analyzer)
+
+    def _validate(self, xml_string):
+        mock_manager = self.mocker.mock()
+        mock_notifier = self.mocker.mock()
+
+        mock_notifier()
+        self.mocker.result(mock_notifier)
+
+        mock_manager()
+        self.mocker.result(mock_manager)
+
+        data = self._make_data(xml_string)
+        self.mocker.replay()
+
+        pipe = self._make_pipe(data, mock_manager, mock_notifier)
+        return pipe.validate(data[1])
+
+    def test_pipe_issn_with_one_valid_ISSN(self):
+        expected = ['ok', '']
+
+        self.assertEquals(
+            self._validate("<root><issn pub-type='epub'>0102-6720</issn></root>"), expected)
+
+    def test_pipe_issn_with_one_invalid_ISSN(self):
+        expected = ['e', 'neither eletronic ISSN nor print ISSN are valid']
+
+        self.assertEquals(
+            self._validate("<root><issn pub-type='ppub'>1234-1234</issn></root>"), expected)
+
+    def test_pipe_issn_with_two_valid_ISSN_eletronic_and_print(self):
+        expected = ['ok', '']
+
+        self.assertEquals(
+            self._validate("<root><issn pub-type='ppub'>0100-879X</issn><issn pub-type='epub'>1414-431X</issn></root>"), expected)
 
 
 class NLMJournalTitleValidationPipeTest(mocker.MockerTestCase):
