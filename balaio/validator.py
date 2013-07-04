@@ -161,7 +161,7 @@ class FundingValidationPipe(ValidationPipe):
         return any((True for n in xrange(10) if str(n) in text))
 
 
-ppl = plumber.Pipeline(ISSNValidationPipe, FundingValidationPipe)
+ppl = plumber.Pipeline(ISSNValidationPipe, AbbrevJournalTitleValidationPipe, NLMJournalTitleValidationPipe, FundingValidationPipe)
 
 if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
