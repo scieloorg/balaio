@@ -191,8 +191,9 @@ def setup_logging():
 def validate_issn(issn):
     """
     This function analyze the ISSN:
-        - Verify the length
         - Verify if it`s a string
+        - Verify the length
+        - Verify the format: ``0102-6720``
         - Return issn if it`s valid
     """
 

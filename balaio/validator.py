@@ -39,7 +39,7 @@ class ValidationPipe(plumber.Pipe):
 class FundingCheckingPipe(ValidationPipe):
     """
     Check the absence/presence of funding-group and ack in the document
-    
+
     funding-group is a mandatory element only if there is contract or project number
     in the document. Sometimes this information comes in Acknowledgments section.
 
@@ -51,26 +51,49 @@ class FundingCheckingPipe(ValidationPipe):
     _stage_ = 'funding-group'
 
     def validate(self, data):
-        
+
         funding_nodes = data.findall('.//funding-group')
-        ack_node = data.findall('.//ack') 
+        ack_node = data.findall('.//ack')
 
         status, description = [ STATUS_OK, etree.tostring(funding_nodes[0]) ] if funding_nodes != [] else [ STATUS_WARNING, 'no funding-group' ]
-        
+
         if not status == STATUS_OK:
-            description = etree.tostring(ack_node[0]) if ack_node != [] else 'no funding-group and no ack was identified'            
+            description = etree.tostring(ack_node[0]) if ack_node != [] else 'no funding-group and no ack was identified'
             status = STATUS_ERROR if self._ack_contains_number(description) else STATUS_WARNING
-        
+
         return [ status, description ]
-    
+
     def _ack_contains_number(self, ack_text):
         # if ack_text contains any number
         return any((True for n in xrange(10) if str(n) in ack_text))
-        
 
 
+class ISSNCheckingPipe(ValidationPipe):
+    """
+    Verify if the ISSN(s) exist on SciELO Manager and if it`s a valid ISSN.
 
-ppl = plumber.Pipeline(FundingCheckingPipe)
+    Analyzed atribute from ``.//issn``: ``@pub-type="ppub"`` or ``@pub-type="epub"``
+
+    """
+    _stage_ = 'issn'
+
+    def validate(self, data):
+
+        journal_eissn = data.findtext(".//issn[@pub-type='epub']")
+        journal_pissn = data.findtext(".//issn[@pub-type='ppub']")
+
+        if utils.is_valid_issn(journal_pissn) or utils.is_valid_issn(journal_eissn):
+            if journal_pissn:
+                #Validate journal_pissn against SciELO Manager
+                pass
+            if journal_eissn:
+                #Validate journal_eissn against SciELO Manager
+                pass
+            return [STATUS_OK, '']
+        else:
+            return [STATUS_ERROR, 'neither eletronic ISSN nor print ISSN are valid']
+
+ppl = plumber.Pipeline(FundingCheckingPipe, ISSNCheckingPipe)
 
 if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
