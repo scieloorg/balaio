@@ -9,6 +9,7 @@ try:
 except ImportError:
     import pickle
 import threading
+import logging, logging.handlers
 
 
 stdout_lock = threading.Lock()
@@ -175,3 +176,66 @@ def prefix_file(filename, prefix):
 
 def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
+
+
+def setup_logging():
+    rootLogger = logging.getLogger('')
+    rootLogger.setLevel(logging.DEBUG)
+    socketHandler = logging.handlers.SocketHandler('localhost',
+        logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+    # don't bother with a formatter, since a socket handler sends the event as
+    # an unformatted pickle
+    rootLogger.addHandler(socketHandler)
+
+
+def validate_issn(issn):
+    """
+    This function analyze the ISSN:
+        - Verify the length
+        - Verify if it`s a string
+        - Return issn if it`s valid
+    """
+
+    if not isinstance(issn, basestring):
+        raise TypeError('Invalid type')
+    if len(issn) != 9:
+        raise ValueError('Invalid length')
+    if not '-' in issn:
+        raise ValueError('Invalid format')
+    if calc_check_digit_issn(issn) != issn[-1]:
+        raise ValueError('Invaid ISSN')
+
+    return issn
+
+
+def calc_check_digit_issn(issn):
+    """
+    Calculate the check digit of the ISSN
+
+    https://en.wikipedia.org/wiki/International_Standard_Serial_Number
+    """
+
+    total = 0
+    lissn = list(issn.replace('-', ''))
+
+    for i, v in enumerate(lissn[:-1]):
+        total = total + ((8-i) * int(v))
+
+    remainder = total % 11
+
+    if not remainder:
+        check_digit = 0
+    else:
+        check_digit = 11 - remainder
+
+    return 'X' if check_digit == 10 else str(check_digit)
+
+
+def is_valid_issn(issn):
+    """
+    Return True if valid, otherwise False.
+    """
+    try:
+        return bool(validate_issn(issn))
+    except (ValueError, TypeError):
+        return False

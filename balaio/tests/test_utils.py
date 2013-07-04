@@ -1,5 +1,6 @@
-import ConfigParser
 import mocker
+import unittest
+import ConfigParser
 from StringIO import StringIO
 
 from balaio import notifier
@@ -319,3 +320,64 @@ class RecvMessageFunctionTests(mocker.MockerTestCase):
         self.assertRaises(StopIteration, lambda: messages.next())
 
 
+class ISSNFunctionsTest(unittest.TestCase):
+
+    def test_calc_check_digit_issn_with_valid_ISSN(self):
+        issn = u'0102-3306'
+
+        self.assertEqual(utils.calc_check_digit_issn(issn), issn[-1])
+
+    def test_calc_check_digit_issn_with_invalid_ISSN(self):
+        issn = u'2179-9752'
+
+        self.assertNotEqual(utils.calc_check_digit_issn(issn), issn[-1])
+
+    def test_calc_check_digit_issn_with_check_digit_zero(self):
+        issn = u'0102-8650'
+
+        self.assertEqual(utils.calc_check_digit_issn(issn), issn[-1])
+
+    def test_calc_check_digit_issn_with_check_digit_X(self):
+        issn = u'2179-975X'
+
+        self.assertEqual(utils.calc_check_digit_issn(issn), issn[-1])
+
+    def test_validate_issn_with_ISSN_as_Number(self):
+        issn = 21799754
+
+        self.assertRaises(TypeError, lambda: utils.validate_issn(issn))
+
+    def test_validate_issn_with_no_well_format_without_hyphen(self):
+        issn = u'217a9754'
+
+        self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
+
+    def test_validate_issn_with_no_well_format_with_hyphen(self):
+        issn = u'2-1799754'
+
+        self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
+
+    def test_validate_issn_with_size_smaller_than_eight(self):
+        issn = u'2179-975'
+
+        self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
+
+    def test_validate_issn_with_size_greater_than_eight(self):
+        issn = u'2179-975123'
+
+        self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
+
+    def test_validate_issn_with_no_numerical_issn(self):
+        issn = u'abcd-fghi'
+
+        self.assertRaises(ValueError, lambda: utils.validate_issn(issn))
+
+    def test_is_valid_issn_with_valid_issn(self):
+        issn = u'2179-975X'
+
+        self.assertTrue(utils.is_valid_issn(issn))
+
+    def test_is_valid_issn_with_invalid_issn(self):
+        issn = u'2179-9753'
+
+        self.assertFalse(utils.is_valid_issn(issn))
