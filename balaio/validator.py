@@ -25,21 +25,9 @@ STATUS_WARNING = 'w'
 STATUS_ERROR = 'e'
 
 
-def compare_registered_data_and_xml_data(registered_data, xml_data):
-    """
-    Compare registered data in Manager to data in XML
-    Returns [status, description]
-    """
-    status, description = [STATUS_OK, '']
-    if xml_data != registered_data:
-        status = STATUS_ERROR
-        description = 'Data in XML and Manager do not match.\nData in Manager: ' + registered_data + '\nData in XML: ' + xml_data
-    return [status, description]
-
-
 def etree_nodes_value(etree, xpath):
     """
-    Returns content of a given ``xpath`` of ``etree``
+    Returns text of a given ``xpath`` of ``etree``
     """
     return '\n'.join([node.text for node in etree.findall(xpath)])
 
@@ -60,7 +48,15 @@ class Manager(object):
             self._main = self._main.replace(key, param)
 
     def do_query(self, query, params={}):
-        return urllib2.open(self._main.replace('QUERY', query) + '&'.join([key + '=' + value for key, value in params.items()])).read()
+        """
+        Consulta SciLO Manager API
+        Returns JSON
+        """
+        try:
+            r = urllib2.open(self._main.replace('QUERY', query) + '&'.join([key + '=' + value for key, value in params.items()])).read()
+        except:
+            r = '{}'
+        return json.load(StringIO(r))
 
     def _item_id(self, query, data_label, match_value):
         """
@@ -99,8 +95,6 @@ class ValidationPipe(plumber.Pipe):
         super(ValidationPipe, self).__init__(data)
         self._notifier = notifier_dep()
         self._manager = manager_dep()
-        self._journal = {}
-        self._issue = {}
 
     def transform(self, data):
         # data = (Attempt, PackageAnalyzer)
@@ -119,19 +113,41 @@ class ValidationPipe(plumber.Pipe):
 
         return data
 
+    def compare_registered_data_and_xml_data(self, package_analyzer):
+        """
+        Compare registered data in Manager to data in XML
+        Returns [status, description]
+        """
+        registered_data = self._registered_data(package_analyzer)
+        xml_data = self._xml_data(package_analyzer)
+
+        if registered_data is None:
+            status, description = [STATUS_ERROR, self._registered_data_label + ' not found in Manager']
+        elif xml_data == '':
+            status, description = [STATUS_ERROR, self._xml_data_label + ' not found in XML']
+        elif xml_data == registered_data:
+            status, description = [STATUS_OK, xml_data]
+        else:
+            status = STATUS_ERROR
+            description = 'Data in XML and Manager do not match.' + '\n' + 'Data in Manager: ' + registered_data + '\n' + 'Data in XML: ' + xml_data
+        return [status, description]
+
 
 # Pipes to validate journal data
 class AbbrevJournalTitleValidationPipe(ValidationPipe):
     """
     Check if journal-meta/abbrev-journal-title[@abbrev-type='publisher'] is the same as registered in Manager
     """
-
     def validate(self, package_analyzer):
-        journal_data = self._manager.journal(package_analyzer.meta['journal_title'], 'title')
+        self._registered_data_label = 'title_iso'
+        self._xml_data_label = './/journal-meta/abbrev-journal-title[@abbrev-type="publisher"]'
+        return self.compare_registered_data_and_xml_data(package_analyzer)
 
-        xml_data = etree_nodes_value(package_analyzer.xml, './/journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
+    def _xml_data(self, package_analyzer):
+        return etree_nodes_value(package_analyzer.xml, self._xml_data_label)
 
-        return compare_registered_data_and_xml_data(journal_data.get('title_iso', ''), xml_data)
+    def _registered_data(self, package_analyzer):
+        return self._manager.journal(package_analyzer.meta['journal_title'], 'title').get(self._registered_data_label, None)
 
 
 # Pipes to validate issue data

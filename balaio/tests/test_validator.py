@@ -24,9 +24,6 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
         pkg_analyzer.xml
         self.mocker.result(xml)
 
-        #pkg_analyzer.meta['journal_title']
-        #self.mocker.result('Revista Brasileira ...')
-
         return (attempt, pkg_analyzer)
 
     def _validate(self, xml_string):
@@ -38,9 +35,6 @@ class FundingCheckingPipeTest(mocker.MockerTestCase):
 
         mock_manager()
         self.mocker.result(mock_manager)
-
-        #mock_manager.journal('title', 'Revista Brasileira ...')
-        #self.mocker.result(StringIO('{"journal":{"journal-title":"Revista Brasileira ..."}}'))
 
         data = self._make_data(xml_string)
         self.mocker.replay()
@@ -92,12 +86,12 @@ class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
         pkg_analyzer.xml
         self.mocker.result(xml)
 
-        pkg_analyzer.meta['journal_title']
-        self.mocker.result('Revista Brasileira ...')
+        pkg_analyzer.meta
+        self.mocker.result({'journal_title': 'Revista Brasileira ...'})
 
         return (attempt, pkg_analyzer)
 
-    def _validate(self, xml_string):
+    def _validate(self, xml_string, manager_result='{"journal-title":"Revista Brasileira ...", "title_iso": "Rev. Bras. ????"}'):
         mock_manager = self.mocker.mock()
         mock_notifier = self.mocker.mock()
 
@@ -107,8 +101,8 @@ class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
         mock_manager()
         self.mocker.result(mock_manager)
 
-        mock_manager.journal('title', 'Revista Brasileira ...')
-        self.mocker.result(StringIO('{"journal":{"journal-title":"Revista Brasileira ..."}}'))
+        mock_manager.journal('Revista Brasileira ...', 'title')
+        self.mocker.result(json.load(StringIO(manager_result)))
 
         data = self._make_data(xml_string)
         self.mocker.replay()
@@ -117,15 +111,28 @@ class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
         return pipe.validate(data[1])
 
     def test_abbrev_journal_title_is_valid(self):
-        expected = ['e', '<abbrev-journal-title abbrev-type="publisher">Rev. Bras. ????</abbrev-journal-title>']
+        expected = ['ok', 'Rev. Bras. ????']
 
         self.assertEquals(
             expected,
             self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev. Bras. ????</abbrev-journal-title></journal-meta></root>'))
 
-    def test_abbrev_journal_title_is_not_valid(self):
-        expected = ['e', '<abbrev-journal-title>abbrev-journal-titlenowledgements<p>1234</p></abbrev-journal-title>']
+    def test_abbrev_journal_title_not_found_in_xml(self):
+        expected = ['e', './/journal-meta/abbrev-journal-title[@abbrev-type="publisher"] not found in XML']
+        self.assertEquals(
+            expected,
+            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>'))
+
+    def test_abbrev_journal_title_not_found_in_manager(self):
+        expected = ['e', 'title_iso not found in Manager']
 
         self.assertEquals(
             expected,
-            self._validate('<root><abbrev-journal-title>abbrev-journal-titlenowledgements<p>1234</p></abbrev-journal-title></root>'))
+            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>', '{"journal-title":"Revista Brasileira ..."}'))
+
+    def test_abbrev_journal_title_not_matched(self):
+        expected = ['e', 'Data in XML and Manager do not match.\nData in Manager: Rev. Bras. ????\nData in XML: Rev Bras ????']
+
+        self.assertEquals(
+            expected,
+            self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev Bras ????</abbrev-journal-title></journal-meta></root>'))
