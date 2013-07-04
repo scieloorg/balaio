@@ -137,8 +137,8 @@ class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
 class ISSNCheckingPipeTest(mocker.MockerTestCase):
 
     def _make_pipe(self, *args, **kwargs):
-        from balaio.validator import ISSNCheckingPipe
-        return ISSNCheckingPipe(*args, **kwargs)
+        from balaio.validator import ISSNValidationPipe
+        return ISSNValidationPipe(*args, **kwargs)
 
     def _make_data(self, xml_string='<root></root>'):
         etree = ElementTree()
