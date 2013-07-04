@@ -10,7 +10,6 @@ from StringIO import StringIO
 import plumber
 
 # futurely scieloapi is package
-import scieloapi
 import utils
 from utils import SingletonMixin, Configuration
 import notifier
