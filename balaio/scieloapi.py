@@ -3,13 +3,6 @@ import urllib2
 from StringIO import StringIO
 
 
-def etree_nodes_value(etree, xpath):
-    """
-    Returns text of a given ``xpath`` of ``etree``
-    """
-    return '\n'.join([node.text for node in etree.findall(xpath)])
-
-
 class Manager(object):
     """
     Interface for SciELO API

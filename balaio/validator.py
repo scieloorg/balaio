@@ -49,7 +49,9 @@ class ValidationPipe(plumber.Pipe):
         registered_data = self._registered_data(package_analyzer)
         xml_data = self._xml_data(package_analyzer)
 
-        if registered_data is None:
+        if registered_data is None and xml_data == '':
+            status, description = [STATUS_OK, xml_data]
+        elif registered_data is None:
             status, description = [STATUS_ERROR, self._registered_data_label + ' not found in Manager']
         elif xml_data == '':
             status, description = [STATUS_ERROR, self._xml_data_label + ' not found in XML']
@@ -100,7 +102,25 @@ class AbbrevJournalTitleValidationPipe(ValidationPipe):
         return self.compare_registered_data_and_xml_data(package_analyzer)
 
     def _xml_data(self, package_analyzer):
-        return scieloapi.etree_nodes_value(package_analyzer.xml, self._xml_data_label)
+        node = package_analyzer.xml.find(self._xml_data_label)
+        return node.text if not node is None else ''
+
+    def _registered_data(self, package_analyzer):
+        return self._manager.journal(package_analyzer.meta['journal_title'], 'title').get(self._registered_data_label, None)
+
+
+class NLMJournalTitleValidationPipe(ValidationPipe):
+    """
+    Check if journal-meta/journal-id[@journal-id-type='nlm-ta'] is the same as registered in Manager
+    """
+    def validate(self, package_analyzer):
+        self._registered_data_label = 'medline_title'
+        self._xml_data_label = './/journal-meta/journal-id[@journal-id-type="nlm-ta"]'
+        return self.compare_registered_data_and_xml_data(package_analyzer)
+
+    def _xml_data(self, package_analyzer):
+        node = package_analyzer.xml.find(self._xml_data_label)
+        return node.text if not node is None else ''
 
     def _registered_data(self, package_analyzer):
         return self._manager.journal(package_analyzer.meta['journal_title'], 'title').get(self._registered_data_label, None)
@@ -109,7 +129,7 @@ class AbbrevJournalTitleValidationPipe(ValidationPipe):
 
 
 # Pipes to validate article data
-class FundingCheckingPipe(ValidationPipe):
+class FundingValidationPipe(ValidationPipe):
     """
     Check the absence/presence of funding-group and ack in the document
 
@@ -140,7 +160,8 @@ class FundingCheckingPipe(ValidationPipe):
         # if text contains any number
         return any((True for n in xrange(10) if str(n) in text))
 
-ppl = plumber.Pipeline(ISSNValidationPipe, FundingCheckingPipe)
+
+ppl = plumber.Pipeline(ISSNValidationPipe, AbbrevJournalTitleValidationPipe, NLMJournalTitleValidationPipe, FundingValidationPipe)
 
 if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
