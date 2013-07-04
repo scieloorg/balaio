@@ -62,6 +62,34 @@ class ValidationPipe(plumber.Pipe):
 
 
 # Pipes to validate journal data
+class ISSNValidationPipe(ValidationPipe):
+    """
+    Verify if the ISSN(s) exist on SciELO scieloapi.Manager and if it`s a valid ISSN.
+
+    Analyzed atribute from ``.//issn``: ``@pub-type="ppub"`` or ``@pub-type="epub"``
+
+    """
+    _stage_ = 'issn'
+
+    def validate(self, package_analyzer):
+
+        data = package_analyzer.xml
+
+        journal_eissn = data.findtext(".//issn[@pub-type='epub']")
+        journal_pissn = data.findtext(".//issn[@pub-type='ppub']")
+
+        if utils.is_valid_issn(journal_pissn) or utils.is_valid_issn(journal_eissn):
+            if journal_pissn:
+                #Validate journal_pissn against SciELO scieloapi.Manager
+                pass
+            if journal_eissn:
+                #Validate journal_eissn against SciELO scieloapi.Manager
+                pass
+            return [STATUS_OK, '']
+        else:
+            return [STATUS_ERROR, 'neither eletronic ISSN nor print ISSN are valid']
+
+
 class AbbrevJournalTitleValidationPipe(ValidationPipe):
     """
     Check if journal-meta/abbrev-journal-title[@abbrev-type='publisher'] is the same as registered in scieloapi.Manager
@@ -76,7 +104,6 @@ class AbbrevJournalTitleValidationPipe(ValidationPipe):
 
     def _registered_data(self, package_analyzer):
         return self._manager.journal(package_analyzer.meta['journal_title'], 'title').get(self._registered_data_label, None)
-
 
 # Pipes to validate issue data
 
@@ -113,35 +140,7 @@ class FundingCheckingPipe(ValidationPipe):
         # if text contains any number
         return any((True for n in xrange(10) if str(n) in text))
 
-
-class ISSNCheckingPipe(ValidationPipe):
-    """
-    Verify if the ISSN(s) exist on SciELO scieloapi.Manager and if it`s a valid ISSN.
-
-    Analyzed atribute from ``.//issn``: ``@pub-type="ppub"`` or ``@pub-type="epub"``
-
-    """
-    _stage_ = 'issn'
-
-    def validate(self, package_analyzer):
-
-        data = package_analyzer.xml
-
-        journal_eissn = data.findtext(".//issn[@pub-type='epub']")
-        journal_pissn = data.findtext(".//issn[@pub-type='ppub']")
-
-        if utils.is_valid_issn(journal_pissn) or utils.is_valid_issn(journal_eissn):
-            if journal_pissn:
-                #Validate journal_pissn against SciELO scieloapi.Manager
-                pass
-            if journal_eissn:
-                #Validate journal_eissn against SciELO scieloapi.Manager
-                pass
-            return [STATUS_OK, '']
-        else:
-            return [STATUS_ERROR, 'neither eletronic ISSN nor print ISSN are valid']
-
-ppl = plumber.Pipeline(ISSNCheckingPipe, FundingCheckingPipe)
+ppl = plumber.Pipeline(ISSNValidationPipe, FundingCheckingPipe)
 
 if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)

@@ -182,7 +182,7 @@ def setup_logging():
     rootLogger = logging.getLogger('')
     rootLogger.setLevel(logging.DEBUG)
     socketHandler = logging.handlers.SocketHandler('localhost',
-        logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+                                                   logging.handlers.DEFAULT_TCP_LOGGING_PORT)
     # don't bother with a formatter, since a socket handler sends the event as
     # an unformatted pickle
     rootLogger.addHandler(socketHandler)
