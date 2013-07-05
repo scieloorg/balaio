@@ -1,10 +1,8 @@
+#coding: utf-8
 import json
 import mocker
 from StringIO import StringIO
 from xml.etree.ElementTree import ElementTree
-
-from balaio import validator
-from balaio import notifier
 
 
 class FundingValidationPipeTest(mocker.MockerTestCase):
@@ -144,21 +142,37 @@ class ISSNCheckingPipeTest(mocker.MockerTestCase):
         from balaio.validator import ISSNValidationPipe
         return ISSNValidationPipe(*args, **kwargs)
 
-    def _make_data(self, xml_string='<root></root>'):
+    def _make_etree(self, xml):
         etree = ElementTree()
-        xml = etree.parse(StringIO(xml_string))
+        return etree.parse(StringIO(xml))
+
+    def _make_xml(self, issn_type, issn):
+        return """
+               <root>
+                   <journal-title>Acta Paulista de Enfermagem</journal-title>
+                   <issn pub-type='%s'>%s</issn>
+               </root>
+               """ % (issn_type, issn)
+
+    def _make_json(self, dict_data):
+        return json.load(StringIO(dict_data))
+
+    def test_pipe_issn_with_one_valid_ISSN(self):
+
+        xml = self._make_etree(self._make_xml('epub', '0102-6720'))
 
         attempt = self.mocker.mock()
         pkg_analyzer = self.mocker.mock()
+        mock_manager = self.mocker.mock()
+        mock_notifier = self.mocker.mock()
 
         pkg_analyzer.xml
         self.mocker.result(xml)
 
-        return (attempt, pkg_analyzer)
+        self.mocker.count(2)
 
-    def _validate(self, xml_string):
-        mock_manager = self.mocker.mock()
-        mock_notifier = self.mocker.mock()
+        pkg_analyzer.meta
+        self.mocker.result({"journal_title": "Acta Paulista de Enfermagem", "journal_eissn": "0102-6720"})
 
         mock_notifier()
         self.mocker.result(mock_notifier)
@@ -166,41 +180,93 @@ class ISSNCheckingPipeTest(mocker.MockerTestCase):
         mock_manager()
         self.mocker.result(mock_manager)
 
-        data = self._make_data(xml_string)
+        mock_manager.journal("Acta Paulista de Enfermagem", "title")
+        self.mocker.result(self._make_json('{"title": "Acta Paulista de Enfermagem", "eletronic_issn": "0102-6720"}'))
+
         self.mocker.replay()
 
-        pipe = self._make_pipe(data, mock_manager, mock_notifier)
-        return pipe.validate(data[1])
+        pipe = self._make_pipe((attempt, pkg_analyzer), mock_manager, mock_notifier)
 
-    def test_pipe_issn_with_one_valid_ISSN(self):
-        expected = ['ok', '']
-
-        self.assertEquals(
-            self._validate("<root><issn pub-type='epub'>0102-6720</issn></root>"), expected)
+        self.assertEquals(pipe.validate(pkg_analyzer), ['ok', '0102-6720'])
 
     def test_pipe_issn_with_one_invalid_ISSN(self):
-        expected = ['e', 'neither eletronic ISSN nor print ISSN are valid']
 
-        self.assertEquals(
-            self._validate("<root><issn pub-type='ppub'>1234-1234</issn></root>"), expected)
+        xml = self._make_etree(self._make_xml('epub', '1234-1234'))
 
-    def test_pipe_issn_with_two_valid_ISSN_eletronic_and_print(self):
-        expected = ['ok', '']
+        attempt = self.mocker.mock()
+        pkg_analyzer = self.mocker.mock()
+        mock_manager = self.mocker.mock()
+        mock_notifier = self.mocker.mock()
 
-        self.assertEquals(
-            self._validate("<root><issn pub-type='ppub'>0100-879X</issn><issn pub-type='epub'>1414-431X</issn></root>"), expected)
+        pkg_analyzer.xml
+        self.mocker.result(xml)
+
+        mock_notifier()
+        self.mocker.result(mock_notifier)
+
+        mock_manager()
+        self.mocker.result(mock_manager)
+
+        self.mocker.replay()
+
+        pipe = self._make_pipe((attempt, pkg_analyzer), mock_manager, mock_notifier)
+
+        self.assertEquals(pipe.validate(pkg_analyzer), ['e', 'neither eletronic ISSN nor print ISSN are valid'])
 
     def test_pipe_issn_with_strange_ISSN(self):
-        expected = ['e', 'neither eletronic ISSN nor print ISSN are valid']
 
-        self.assertEquals(
-            self._validate("<root><issn pub-type='ppub'>01ols0-OIN</issn></root>"), expected)
+        xml = self._make_etree(self._make_xml('epub', '01ols0-OIN'))
 
-    def test_pipe_issn_with_one_strange_ISSN_and_one_valid_ISSN(self):
-        expected = ['ok', '']
+        attempt = self.mocker.mock()
+        pkg_analyzer = self.mocker.mock()
+        mock_manager = self.mocker.mock()
+        mock_notifier = self.mocker.mock()
 
-        self.assertEquals(
-            self._validate("<root><issn pub-type='ppub'>01ols0-OIN</issn><issn pub-type='epub'>1414-431X</issn></root>"), expected)
+        pkg_analyzer.xml
+        self.mocker.result(xml)
+
+        mock_notifier()
+        self.mocker.result(mock_notifier)
+
+        mock_manager()
+        self.mocker.result(mock_manager)
+
+        self.mocker.replay()
+
+        pipe = self._make_pipe((attempt, pkg_analyzer), mock_manager, mock_notifier)
+
+        self.assertEquals(pipe.validate(pkg_analyzer), ['e', 'neither eletronic ISSN nor print ISSN are valid'])
+
+    def test_pipe_issn_with_unregistred_ISSN(self):
+        xml = self._make_etree(self._make_xml('epub', '0102-6720'))
+
+        attempt = self.mocker.mock()
+        pkg_analyzer = self.mocker.mock()
+        mock_manager = self.mocker.mock()
+        mock_notifier = self.mocker.mock()
+
+        pkg_analyzer.xml
+        self.mocker.result(xml)
+
+        self.mocker.count(2)
+
+        pkg_analyzer.meta
+        self.mocker.result({"journal_title": "Acta Paulista de Enfermagem", "journal_eissn": "0102-6720"})
+
+        mock_notifier()
+        self.mocker.result(mock_notifier)
+
+        mock_manager()
+        self.mocker.result(mock_manager)
+
+        mock_manager.journal("Acta Paulista de Enfermagem", "title")
+        self.mocker.result(self._make_json('{"title": "Acta Paulista de Enfermagem", "eletronic_issn": "0102-6820"}'))
+
+        self.mocker.replay()
+
+        pipe = self._make_pipe((attempt, pkg_analyzer), mock_manager, mock_notifier)
+
+        self.assertEquals(pipe.validate(pkg_analyzer), ['e', u'Data in XML and Manager do not match.\nData in Manager: 0102-6820\nData in XML: 0102-6720'])
 
 
 class NLMJournalTitleValidationPipeTest(mocker.MockerTestCase):
