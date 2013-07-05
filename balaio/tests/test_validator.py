@@ -131,7 +131,7 @@ class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
             self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev. Bras. ????</abbrev-journal-title></journal-meta></root>', '{"journal-title":"Revista Brasileira ..."}'))
 
     def test_abbrev_journal_title_not_matched(self):
-        expected = ['e', 'Data in XML and Manager do not match.\nData in Manager: Rev. Bras. ????\nData in XML: Rev Bras ????']
+        expected = ['e', u'Data in XML and Manager do not match.' + '\n' + 'Data in Manager: Rev. Bras. ????' + '\n' + 'Data in XML: Rev Bras ????']
 
         self.assertEquals(
             expected,
@@ -271,8 +271,83 @@ class NLMJournalTitleValidationPipeTest(mocker.MockerTestCase):
             self._validate('<root><journal-meta><journal-id journal-id-type="nlm-ta">Rev. Bras. ????</journal-id></journal-meta></root>', '{"journal-title":"Revista Brasileira ..."}'))
 
     def test_nlm_journal_title_not_matched(self):
-        expected = ['e', 'Data in XML and Manager do not match.\nData in Manager: Rev. Bras. ????\nData in XML: Rev Bras ????']
+        expected = ['e', u'Data in XML and Manager do not match.' + '\n' + 'Data in Manager: Rev. Bras. ????' + '\n' + 'Data in XML: Rev Bras ????']
 
         self.assertEquals(
             expected,
             self._validate('<root><journal-meta><journal-id journal-id-type="nlm-ta">Rev Bras ????</journal-id></journal-meta></root>'))
+
+
+class PublisherNameValidationPipeTest(mocker.MockerTestCase):
+
+    def _make_pipe(self, *args, **kwargs):
+        from balaio.validator import PublisherNameValidationPipe
+        return PublisherNameValidationPipe(*args, **kwargs)
+
+    def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
+
+        etree = ElementTree()
+        xml = etree.parse(StringIO(xml_string))
+
+        attempt = self.mocker.mock()
+        pkg_analyzer = self.mocker.mock()
+
+        pkg_analyzer.xml
+        self.mocker.result(xml)
+
+        pkg_analyzer.meta
+        self.mocker.result({'journal_title': 'Revista Brasileira ...'})
+
+        return (attempt, pkg_analyzer)
+
+    def _validate(self, xml_string, manager_result='{"journal-title":"Revista Brasileira ...", "publisher_name": "Publicador ????"}'):
+        mock_manager = self.mocker.mock()
+        mock_notifier = self.mocker.mock()
+
+        mock_notifier()
+        self.mocker.result(mock_notifier)
+
+        mock_manager()
+        self.mocker.result(mock_manager)
+
+        mock_manager.journal('Revista Brasileira ...', 'title')
+        self.mocker.result(json.load(StringIO(manager_result)))
+
+        data = self._make_data(xml_string)
+        self.mocker.replay()
+
+        pipe = self._make_pipe(data, mock_manager, mock_notifier)
+        return pipe.validate(data[1])
+
+    def test_publisher_name_is_valid(self):
+        expected = ['ok', 'Publicador   ????']
+
+        self.assertEquals(
+            expected,
+            self._validate('<root><journal-meta><publisher><publisher-name>Publicador   ????</publisher-name></publisher></journal-meta></root>'))
+
+    def test_publisher_name_not_found_in_xml_and_not_found_in_manager(self):
+        expected = ['e', 'Both publisher_name in Manager and .//journal-meta/publisher/publisher-name in XML are mandatory. But both are missing.']
+        self.assertEquals(
+            expected,
+            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>', '{"journal-title":"Revista Brasileira ..."}'))
+
+    def test_publisher_name_not_found_in_xml(self):
+        expected = ['e', './/journal-meta/publisher/publisher-name not found in XML']
+        self.assertEquals(
+            expected,
+            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>'))
+
+    def test_publisher_name_not_found_in_manager(self):
+        expected = ['e', 'publisher_name not found in Manager']
+
+        self.assertEquals(
+            expected,
+            self._validate('<root><journal-meta><publisher><publisher-name>Publicador   ????</publisher-name></publisher></journal-meta></root>', '{"journal-title":"Revista Brasileira ..."}'))
+
+    def test_publisher_name_not_matched(self):
+        expected = ['e', u'Data in XML and Manager do not match.' + '\n' + 'Data in Manager: Publicador ????' + '\n' + 'Data in XML: Publ~icador   ??***??']
+
+        self.assertEquals(
+            expected,
+            self._validate('<root><journal-meta><publisher><publisher-name>Publ~icador   ??***??</publisher-name></publisher></journal-meta></root>'))
