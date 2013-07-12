@@ -6,6 +6,7 @@ import plumber
 
 import utils
 import notifier
+import scieloapitoolbelt as sapi_tools
 
 
 STATUS_OK = 'ok'
@@ -66,6 +67,9 @@ class PISSNValidationPipe(ValidationPipe):
     """
     Verify if PISSN exists on SciELO Manager and if it's valid.
 
+    PISSN should not be mandatory, since SciELO is an electronic
+    library online.
+    If a PISSN is invalid, a warning is raised instead of an error.
     The analyzed atribute is ``.//issn[@pub-type="ppub"]``
     """
     _stage_ = 'issn'
@@ -74,12 +78,15 @@ class PISSNValidationPipe(ValidationPipe):
 
         data = package_analyzer.xml
 
-        journal_pissn = data.findtext(".//issn[@pub-type='ppub']")
+        pissn = data.findtext(".//issn[@pub-type='ppub']")
 
-        if utils.is_valid_issn(journal_pissn):
+        if not pissn:
             return [STATUS_OK, '']
-        else:
-            return [STATUS_ERROR, 'print ISSN is invalid']
+        elif utils.is_valid_issn(pissn):
+            if sapi_tools.has_any(self._scieloapi.journals.filter(print_issn=pissn, limit=1)):
+                return [STATUS_OK, '']
+
+        return [STATUS_WARNING, 'print ISSN is invalid']
 
 
 class EISSNValidationPipe(ValidationPipe):

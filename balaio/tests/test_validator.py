@@ -7,13 +7,42 @@ import mocker
 
 from balaio import validator
 
+
+class Patch(object):
+    def __init__(self, target, patch):
+        self.target = target
+        self.patch = patch
+        self._toggle()
+
+    def _toggle(self):
+        self.target, self.patch = self.patch, self.target
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self._toggle()
+
+
 #
 # Stubs are test doubles to be used when the test does not aim
 # to check inner aspects of a collaboration.
 #
 class ScieloAPIClientStub(object):
     def __init__(self, *args, **kwargs):
-        pass
+        self.journals = EndpointStub()
+
+
+class EndpointStub(object):
+
+    def get(self, *args, **kwargs):
+        return {}
+
+    def filter(self, *args, **kwargs):
+        return (_ for _ in range(5))
+
+    def all(self, *args, **kwargs):
+        return (_ for _ in range(5))
 
 
 class NotifierStub(object):
@@ -121,6 +150,16 @@ class PISSNValidationPipeTests(unittest.TestCase):
         pkg_analyzer_stub._xml_string = data
         return pkg_analyzer_stub
 
+    def test_missing_pissn_is_ok(self):
+        expected = ['ok', '']
+        data = "<root></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
     def test_one_valid_ISSN(self):
         expected = ['ok', '']
         data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
@@ -131,8 +170,12 @@ class PISSNValidationPipeTests(unittest.TestCase):
         self.assertEquals(
             vpipe.validate(pkg_analyzer_stub), expected)
 
-    def test_one_invalid_ISSN(self):
-        expected = ['error', 'print ISSN is invalid']
+    def test_one_invalid_ISSN_raises_warning(self):
+        """
+        Invalid PISSN raises a waning instead of an error since
+        it is not a blocking condition.
+        """
+        expected = ['warning', 'print ISSN is invalid']
         data = "<root><issn pub-type='ppub'>1234-1234</issn></root>"
 
         vpipe = self._makeOne(data)
