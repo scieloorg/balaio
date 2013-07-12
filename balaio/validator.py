@@ -1,15 +1,18 @@
 # coding: utf-8
+import sys
+
 import scieloapi
 import plumber
 
 import utils
 import notifier
 
-#config = utils.Configuration.from_env()
 
 STATUS_OK = 'ok'
 STATUS_WARNING = 'warning'
 STATUS_ERROR = 'error'
+
+#config = utils.Configuration.from_env()
 
 
 class ValidationPipe(plumber.Pipe):
@@ -58,3 +61,54 @@ class ValidationPipe(plumber.Pipe):
         """
         raise NotImplementedError()
 
+
+class PISSNValidationPipe(ValidationPipe):
+    """
+    Verify if PISSN exists on SciELO Manager and if it's valid.
+
+    The analyzed atribute is ``.//issn[@pub-type="ppub"]``
+    """
+    _stage_ = 'issn'
+
+    def validate(self, package_analyzer):
+
+        data = package_analyzer.xml
+
+        journal_pissn = data.findtext(".//issn[@pub-type='ppub']")
+
+        if utils.is_valid_issn(journal_pissn):
+            return [STATUS_OK, '']
+        else:
+            return [STATUS_ERROR, 'print ISSN is invalid']
+
+
+class EISSNValidationPipe(ValidationPipe):
+    """
+    Verify if EISSN exists on SciELO Manager and if it's valid.
+
+    The analyzed atribute is ``.//issn/@pub-type="epub"``
+    """
+    _stage_ = 'issn'
+
+    def validate(self, package_analyzer):
+
+        data = package_analyzer.xml
+
+        eissn = data.findtext(".//issn[@pub-type='epub']")
+
+        if utils.is_valid_issn(eissn):
+            #Validate journal_eissn against SciELO scieloapi.Manager
+            return [STATUS_OK, '']
+        else:
+            return [STATUS_ERROR, 'electronic ISSN is invalid']
+
+
+if __name__ == '__main__':
+    messages = utils.recv_messages(sys.stdin, utils.make_digest)
+    ppl = plumber.Pipeline(PISSNValidationPipe,
+                           EISSNValidationPipe)
+
+    try:
+        results = [msg for msg in ppl.run(messages)]
+    except KeyboardInterrupt:
+        sys.exit(0)

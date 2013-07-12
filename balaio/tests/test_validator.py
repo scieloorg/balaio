@@ -1,4 +1,7 @@
 # coding: utf-8
+from StringIO import StringIO
+from xml.etree.ElementTree import ElementTree
+
 import unittest
 import mocker
 
@@ -19,6 +22,19 @@ class NotifierStub(object):
 
     def validation_event(self, *args, **kwargs):
         pass
+
+
+class PackageAnalyzerStub(object):
+    def __init__(self, *args, **kwargs):
+        """
+        `_xml_string` needs to be patched.
+        """
+        self._xml_string = None
+
+    @property
+    def xml(self):
+        etree = ElementTree()
+        return etree.parse(StringIO(self._xml_string))
 
 
 #
@@ -92,4 +108,88 @@ class ValidationPipeTests(mocker.MockerTestCase):
             scieloapi=ScieloAPIClientStub(), notifier_dep=NotifierStub)
 
         self.assertRaises(NotImplementedError, lambda: vpipe.validate('foo'))
+
+
+class PISSNValidationPipeTests(unittest.TestCase):
+    def _makeOne(self, data):
+        return validator.PISSNValidationPipe(data,
+                                             scieloapi=ScieloAPIClientStub(),
+                                             notifier_dep=NotifierStub)
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_one_valid_ISSN(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_one_invalid_ISSN(self):
+        expected = ['error', 'print ISSN is invalid']
+        data = "<root><issn pub-type='ppub'>1234-1234</issn></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_two_valid_ISSN_eletronic_and_print(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='ppub'>0100-879X</issn><issn pub-type='epub'>1414-431X</issn></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+
+class EISSNValidationPipeTests(unittest.TestCase):
+    def _makeOne(self, data):
+        return validator.EISSNValidationPipe(data,
+                                             scieloapi=ScieloAPIClientStub(),
+                                             notifier_dep=NotifierStub)
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_one_valid_ISSN(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_one_invalid_ISSN(self):
+        expected = ['error', 'electronic ISSN is invalid']
+        data = "<root><issn pub-type='epub'>1234-1234</issn></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_two_valid_ISSN_eletronic_and_print(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='ppub'>0100-879X</issn><issn pub-type='epub'>1414-431X</issn></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
 
