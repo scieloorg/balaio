@@ -6,7 +6,7 @@ import plumber
 
 import utils
 import notifier
-import scieloapitoolbelt as sapi_tools
+import scieloapitoolbelt
 
 
 STATUS_OK = 'ok'
@@ -20,7 +20,11 @@ class ValidationPipe(plumber.Pipe):
     """
     Specialized Pipe which validates the data and notifies the result.
     """
-    def __init__(self, data, scieloapi=None, notifier_dep=notifier.Notifier):
+    def __init__(self,
+                 data,
+                 scieloapi=None,
+                 notifier_dep=notifier.Notifier,
+                 scieloapitools_dep=scieloapitoolbelt):
         """
         `data` is an iterable that will pass thru the pipe.
         `scieloapi` is an instance of scieloapi.Client.
@@ -28,6 +32,7 @@ class ValidationPipe(plumber.Pipe):
         super(ValidationPipe, self).__init__(data)
 
         self._notifier = notifier_dep()
+        self._sapi_tools = scieloapitools_dep
         if scieloapi:
             self._scieloapi = scieloapi
         else:
@@ -83,10 +88,14 @@ class PISSNValidationPipe(ValidationPipe):
         if not pissn:
             return [STATUS_OK, '']
         elif utils.is_valid_issn(pissn):
-            if sapi_tools.has_any(self._scieloapi.journals.filter(print_issn=pissn, limit=1)):
+            # check if the pissn is from a known journal
+            remote_journals = self._scieloapi.journals.filter(
+                print_issn=pissn, limit=1)
+
+            if self._sapi_tools.has_any(remote_journals):
                 return [STATUS_OK, '']
 
-        return [STATUS_WARNING, 'print ISSN is invalid']
+        return [STATUS_WARNING, 'print ISSN is invalid or unknown']
 
 
 class EISSNValidationPipe(ValidationPipe):

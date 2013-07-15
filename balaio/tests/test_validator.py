@@ -1,6 +1,7 @@
 # coding: utf-8
 from StringIO import StringIO
 from xml.etree.ElementTree import ElementTree
+import types
 
 import unittest
 import mocker
@@ -9,16 +10,26 @@ from balaio import validator
 
 
 class Patch(object):
-    def __init__(self, target, patch):
-        self.target = target
-        self.patch = patch
+    """
+    Helps patching instances to ease testing.
+    """
+    def __init__(self, target_object, target_attrname, patch):
+        self.target_object = target_object
+        self.target_attrname = target_attrname
+        if callable(patch):
+            self.patch = types.MethodType(patch, target_object, target_object.__class__)
+        else:
+            self.patch = patch
         self._toggle()
 
     def _toggle(self):
-        self.target, self.patch = self.patch, self.target
+        self._x = getattr(self.target_object, self.target_attrname)
+
+        setattr(self.target_object, self.target_attrname, self.patch)
+        self.patch = self._x
 
     def __enter__(self):
-        return self
+        return self.target_object
 
     def __exit__(self, *args, **kwargs):
         self._toggle()
@@ -64,6 +75,15 @@ class PackageAnalyzerStub(object):
     def xml(self):
         etree = ElementTree()
         return etree.parse(StringIO(self._xml_string))
+
+
+class ScieloAPIToolbeltStub(object):
+    """
+    The real implementation is not based on a class, but has the same API.
+    """
+    @staticmethod
+    def has_any(dataset):
+        return True
 
 
 #
@@ -140,10 +160,10 @@ class ValidationPipeTests(mocker.MockerTestCase):
 
 
 class PISSNValidationPipeTests(unittest.TestCase):
-    def _makeOne(self, data):
+    def _makeOne(self, data, scieloapi=ScieloAPIClientStub, notifier_dep=NotifierStub):
         return validator.PISSNValidationPipe(data,
-                                             scieloapi=ScieloAPIClientStub(),
-                                             notifier_dep=NotifierStub)
+                                             scieloapi=scieloapi(),
+                                             notifier_dep=notifier_dep)
 
     def _makePkgAnalyzerWithData(self, data):
         pkg_analyzer_stub = PackageAnalyzerStub()
@@ -175,7 +195,7 @@ class PISSNValidationPipeTests(unittest.TestCase):
         Invalid PISSN raises a waning instead of an error since
         it is not a blocking condition.
         """
-        expected = ['warning', 'print ISSN is invalid']
+        expected = ['warning', 'print ISSN is invalid or unknown']
         data = "<root><issn pub-type='ppub'>1234-1234</issn></root>"
 
         vpipe = self._makeOne(data)
@@ -189,6 +209,41 @@ class PISSNValidationPipeTests(unittest.TestCase):
         data = "<root><issn pub-type='ppub'>0100-879X</issn><issn pub-type='epub'>1414-431X</issn></root>"
 
         vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+
+    def test_valid_and_known_ISSN(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
+
+        scieloapitoolbelt_stub = ScieloAPIToolbeltStub()
+        scieloapitoolbelt_stub.has_any = lambda x: True
+
+        vpipe = validator.PISSNValidationPipe(data,
+                                              scieloapi=ScieloAPIClientStub(),
+                                              notifier_dep=NotifierStub,
+                                              scieloapitools_dep=scieloapitoolbelt_stub)
+
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_valid_and_unknown_ISSN(self):
+        expected = ['warning', 'print ISSN is invalid or unknown']
+        data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
+
+        scieloapitoolbelt_stub = ScieloAPIToolbeltStub()
+        scieloapitoolbelt_stub.has_any = lambda x: False
+
+        vpipe = validator.PISSNValidationPipe(data,
+                                              scieloapi=ScieloAPIClientStub(),
+                                              notifier_dep=NotifierStub,
+                                              scieloapitools_dep=scieloapitoolbelt_stub)
+
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
