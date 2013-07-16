@@ -126,7 +126,10 @@ class PackageAnalyzer(SPSMixin, Xray):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.restore_perms()
+        try:
+            self.restore_perms()
+        except OSError, exc:
+            logger.info('The package had been deleted before the permissions restore procedure: %s' % exc)
         self._cleanup_package_fp()
 
     @property

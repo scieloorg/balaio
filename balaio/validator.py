@@ -1,4 +1,5 @@
 # coding: utf-8
+import functools
 import sys
 
 import scieloapi
@@ -6,14 +7,13 @@ import plumber
 
 import utils
 import notifier
+import checkin
 import scieloapitoolbelt
 
 
 STATUS_OK = 'ok'
 STATUS_WARNING = 'warning'
 STATUS_ERROR = 'error'
-
-#config = utils.Configuration.from_env()
 
 
 class ValidationPipe(plumber.Pipe):
@@ -45,7 +45,7 @@ class ValidationPipe(plumber.Pipe):
         `item` is a pair comprised of instances of models.Attempt
         and checkin.PackageAnalyzer.
         """
-        attempt, package_analyzer = item
+        attempt, package_analyzer, journal = item
         result_status, result_description = self.validate(package_analyzer)
 
         message = {
@@ -66,6 +66,76 @@ class ValidationPipe(plumber.Pipe):
         representing the article package under validation.
         """
         raise NotImplementedError()
+
+
+class SetupPipe(plumber.Pipe):
+    def __init__(self,
+                 data,
+                 scieloapi=None,
+                 scieloapitools_dep=scieloapitoolbelt,
+                 pkganalyzer_dep=checkin.PackageAnalyzer):
+        """
+        `data` is an iterable that will pass thru the pipe.
+        `scieloapi` is an instance of scieloapi.Client.
+        """
+        super(SetupPipe, self).__init__(data)
+
+        self._pkg_analyzer = pkganalyzer_dep
+        self._sapi_tools = scieloapitools_dep
+        if scieloapi:
+            self._scieloapi = scieloapi
+        else:
+            raise ValueError('missing argument scieloapi')
+
+    def _fetch_journal_data(self, criteria):
+        """
+        Encapsulates the two-phase process of retrieving
+        data from one journal matching the criteria.
+        """
+        found_journals = self._scieloapi.journals.filter(
+            limit=1, **criteria)
+        return self._sapi_tools.get_one(found_journals)
+
+    def transform(self, attempt):
+        """
+        Adds some data that will be needed during validation
+        workflow.
+
+        `attempt` is an models.Attempt instance.
+        """
+        pkg_analyzer = self._pkg_analyzer(attempt.filepath)
+        pkg_analyzer.lock_package()
+
+        journal_pissn = attempt.articlepkg.journal_pissn
+
+        if journal_pissn:
+            try:
+                journal_data = self._fetch_journal_data(
+                    {'print_issn': journal_pissn})
+            except ValueError:
+                # unknown pissn
+                journal_data = None
+
+        journal_eissn = attempt.articlepkg.journal_eissn
+        if journal_eissn and not journal_data:
+            try:
+                journal_data = self._fetch_journal_data(
+                    {'eletronic_issn': journal_eissn})
+            except ValueError:
+                # unknown eissn
+                journal_data = None
+
+        if not journal_data:
+            # the package is not related to a known journal
+            # at least by its [ep]ISSN.
+            pass
+
+
+        return (attempt, pkg_analyzer, journal_data)
+
+
+class TearDownPipe(plumber.Pipe):
+    pass
 
 
 class PISSNValidationPipe(ValidationPipe):
@@ -112,17 +182,33 @@ class EISSNValidationPipe(ValidationPipe):
 
         eissn = data.findtext(".//issn[@pub-type='epub']")
 
-        if utils.is_valid_issn(eissn):
-            #Validate journal_eissn against SciELO scieloapi.Manager
-            return [STATUS_OK, '']
-        else:
-            return [STATUS_ERROR, 'electronic ISSN is invalid']
+        if eissn and utils.is_valid_issn(eissn):
+            remote_journals = self._scieloapi.journals.filter(
+                eletronic_issn=eissn, limit=1)
+
+            if self._sapi_tools.has_any(remote_journals):
+                return [STATUS_OK, '']
+
+        return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
 
 
 if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
-    ppl = plumber.Pipeline(PISSNValidationPipe,
-                           EISSNValidationPipe)
+    config = utils.Configuration.from_env()
+
+    scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
+                                 config.get('manager', 'api_key'))
+
+    # pipes are put in order and prepared to use the same
+    # scieloapi.Client instance.
+    pipes = [
+        SetupPipe,
+        PISSNValidationPipe,
+        EISSNValidationPipe,
+    ]
+    pipes = [functools.partial(p, scieloapi=scieloapi) for p in pipes]
+
+    ppl = plumber.Pipeline(*pipes)
 
     try:
         results = [msg for msg in ppl.run(messages)]

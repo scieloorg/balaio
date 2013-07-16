@@ -76,6 +76,9 @@ class PackageAnalyzerStub(object):
         etree = ElementTree()
         return etree.parse(StringIO(self._xml_string))
 
+    def lock_package(self):
+        return None
+
 
 class ScieloAPIToolbeltStub(object):
     """
@@ -84,6 +87,18 @@ class ScieloAPIToolbeltStub(object):
     @staticmethod
     def has_any(dataset):
         return True
+
+
+class ArticlePkgStub(object):
+    def __init__(self, *args, **kwargs):
+        self.journal_pissn = '0100-879X'
+        self.journal_eissn = '0100-879X'
+
+
+class AttemptStub(object):
+    def __init__(self, *args, **kwargs):
+        self.articlepkg = ArticlePkgStub()
+        self.filepath = '/tmp/foo/bar.zip'
 
 
 #
@@ -149,8 +164,8 @@ class ValidationPipeTests(mocker.MockerTestCase):
         self.mocker.replay()
 
         self.assertEqual(
-            validator.ValidationPipe.transform(mock_self, ['attempt', 'pkg_analyzer']),
-            ['attempt', 'pkg_analyzer'])
+            validator.ValidationPipe.transform(mock_self, ['attempt', 'pkg_analyzer', {}]),
+            ['attempt', 'pkg_analyzer', {}])
 
     def test_validate_raises_NotImplementedError(self):
         vpipe = validator.ValidationPipe([{'name': 'foo'}],
@@ -272,7 +287,7 @@ class EISSNValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_one_invalid_ISSN(self):
-        expected = ['error', 'electronic ISSN is invalid']
+        expected = ['error', 'electronic ISSN is invalid or unknown']
         data = "<root><issn pub-type='epub'>1234-1234</issn></root>"
 
         vpipe = self._makeOne(data)
@@ -290,4 +305,64 @@ class EISSNValidationPipeTests(unittest.TestCase):
 
         self.assertEquals(
             vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_valid_and_known_ISSN(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapitoolbelt_stub = ScieloAPIToolbeltStub()
+        scieloapitoolbelt_stub.has_any = lambda x: True
+
+        vpipe = validator.EISSNValidationPipe(data,
+                                              scieloapi=ScieloAPIClientStub(),
+                                              notifier_dep=NotifierStub,
+                                              scieloapitools_dep=scieloapitoolbelt_stub)
+
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_valid_and_unknown_ISSN(self):
+        expected = ['error', 'electronic ISSN is invalid or unknown']
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapitoolbelt_stub = ScieloAPIToolbeltStub()
+        scieloapitoolbelt_stub.has_any = lambda x: False
+
+        vpipe = validator.EISSNValidationPipe(data,
+                                              scieloapi=ScieloAPIClientStub(),
+                                              notifier_dep=NotifierStub,
+                                              scieloapitools_dep=scieloapitoolbelt_stub)
+
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+
+class SetupPipeTests(mocker.MockerTestCase):
+
+    def test_transform_returns_right_datastructure(self):
+        """
+        The right datastructure is a tuple in the form:
+        (<models.Attempt>, <checkin.PackageAnalyzer>, <dict>)
+        """
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda print_issn=None, eletronic_issn=None, limit=None: [{}]
+
+        vpipe = validator.SetupPipe(data,
+                                    scieloapi=scieloapi,
+                                    pkganalyzer_dep=PackageAnalyzerStub)
+
+        result = vpipe.transform(AttemptStub())
+
+        self.assertIsInstance(result, tuple)
+        self.assertIsInstance(result[0], AttemptStub)
+        self.assertIsInstance(result[1], PackageAnalyzerStub)
+        # index 2 is the return data from scieloapi.journals.filter
+        # so, testing its type actualy means nothing.
+        self.assertEqual(len(result), 3)
 
