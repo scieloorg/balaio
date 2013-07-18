@@ -206,8 +206,6 @@ def get_attempt(package):
         pkg_meta = pkg.meta
 
         if pkg.is_valid_package() and (pkg_meta['journal_eissn'] or pkg_meta['journal_pissn']):
-            # this is not very efficient, but will not degrade the performance.
-            # ideally the bind process must be made once in a process lifetime.
             Session = models.Session
 
             logging.debug('Binding a new sqlalchemy.engine')
