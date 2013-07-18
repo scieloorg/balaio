@@ -11,10 +11,7 @@ import utils
 
 
 __all__ = ['PackageAnalyzer', 'get_attempt']
-
 logger = logging.getLogger('balaio.checkin')
-config = utils.Configuration.from_env()
-
 utils.setup_logging()
 
 
@@ -199,6 +196,8 @@ def get_attempt(package):
     the expected models.ArticlePkg instance.
     - Verify if exist at least one ISSN.
     """
+    config = utils.Configuration.from_env()
+
     logger.info('Analysing package: %s' % package)
     with PackageAnalyzer(package) as pkg:
 
@@ -216,3 +215,4 @@ def get_attempt(package):
             errors = ', '.join(pkg.errors)
             logger.debug('Invalid package: %s. Errors: %s' % (package, errors))
             raise ValueError('the package is not valid: %s' % errors)
+

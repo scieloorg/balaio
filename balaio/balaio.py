@@ -8,6 +8,8 @@ import time
 import logging
 
 import utils
+import models
+
 
 logger = logging.getLogger('balaio.main')
 
@@ -88,11 +90,27 @@ if __name__ == '__main__':
     utils.setup_logging()
 
     parser = argparse.ArgumentParser(description=u'Balaio utility')
-    parser.add_argument('-c', action='store', dest='configfile',
-        required=True)
+    parser.add_argument('-c',
+                        action='store',
+                        dest='configfile',
+                        required=True)
+    parser.add_argument('--syncdb',
+                        help='Create the basic database infrastructure and exit',
+                        action='store_true')
 
     args = parser.parse_args()
     setenv(args.configfile)
+
+    if args.syncdb:
+        logger.info('The database infrastructure will be created')
+        config = utils.Configuration.from_env()
+
+        logger.debug('Creating a sqlalchemy.engine using %s' % args.configfile)
+        engine = models.create_engine_from_config(config)
+
+        models.Base.metadata.create_all(engine)
+        logger.info('Done. All databases had been created')
+        sys.exit(0)
 
     try:
         print 'Ready to rock!'
@@ -101,3 +119,4 @@ if __name__ == '__main__':
         print 'Terminating child processes...'
         logger.info('Terminating child processes')
         sys.exit(0)
+

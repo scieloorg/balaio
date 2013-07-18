@@ -10,7 +10,6 @@ import utils
 
 
 logger = logging.getLogger('balaio.monitor')
-config = utils.Configuration.from_env()
 mask = pyinotify.IN_CLOSE_WRITE | pyinotify.IN_CREATE
 
 
@@ -37,6 +36,7 @@ class EventHandler(pyinotify.ProcessEvent):
 
 
 if __name__ == '__main__':
+    config = utils.Configuration.from_env()
     utils.setup_logging()
 
     wm = pyinotify.WatchManager()
@@ -50,4 +50,5 @@ if __name__ == '__main__':
 
     logger.info('Watching %s' % config.get('monitor', 'watch_path'))
 
-    notifier.loop(pid_file=config.get('monitor', 'pid_file'))
+    notifier.loop()
+

@@ -86,6 +86,7 @@ class SetupPipe(plumber.Pipe):
             self._scieloapi = scieloapi
         else:
             raise ValueError('missing argument scieloapi')
+        self._issn_validator = utils.is_valid_issn
 
     def _fetch_journal_data(self, criteria):
         """
@@ -108,7 +109,7 @@ class SetupPipe(plumber.Pipe):
 
         journal_pissn = attempt.articlepkg.journal_pissn
 
-        if journal_pissn:
+        if journal_pissn and self._issn_validator(journal_pissn):
             try:
                 journal_data = self._fetch_journal_data(
                     {'print_issn': journal_pissn})
@@ -117,7 +118,7 @@ class SetupPipe(plumber.Pipe):
                 journal_data = None
 
         journal_eissn = attempt.articlepkg.journal_eissn
-        if journal_eissn and not journal_data:
+        if journal_eissn and self._issn_validator(journal_eissn) and not journal_data:
             try:
                 journal_data = self._fetch_journal_data(
                     {'eletronic_issn': journal_eissn})

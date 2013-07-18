@@ -88,6 +88,10 @@ class ScieloAPIToolbeltStub(object):
     def has_any(dataset):
         return True
 
+    @staticmethod
+    def get_one(dataset):
+        return dataset[0]
+
 
 class ArticlePkgStub(object):
     def __init__(self, *args, **kwargs):
@@ -366,3 +370,71 @@ class SetupPipeTests(mocker.MockerTestCase):
         # so, testing its type actualy means nothing.
         self.assertEqual(len(result), 3)
 
+    def test_fetch_journal_data_with_valid_criteria(self):
+        """
+        Valid criteria means a valid querystring param.
+        See a list at http://ref.scielo.org/nssk38
+
+        The behaviour defined by the Restful API is to
+        ignore the query for invalid criteria, and so
+        do we.
+        """
+        scieloapitools = ScieloAPIToolbeltStub()
+
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda **kwargs: [{'foo': 'bar'}]
+
+        vpipe = validator.SetupPipe(data,
+                                    scieloapi=scieloapi,
+                                    scieloapitools_dep=scieloapitools,
+                                    pkganalyzer_dep=PackageAnalyzerStub)
+
+        self.assertEqual(vpipe._fetch_journal_data({'print_issn': '1234-1234'}),
+                         {'foo': 'bar'})
+
+    def test_fetch_journal_data_with_unknown_issn_raises_ValueError(self):
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda **kwargs: []
+
+        vpipe = validator.SetupPipe(data,
+                                    scieloapi=scieloapi,
+                                    pkganalyzer_dep=PackageAnalyzerStub)
+
+        self.assertRaises(ValueError,
+                          lambda: vpipe._fetch_journal_data({'print_issn': '1234-1234'}))
+
+    def test_transform_grants_valid_issn_before_fetching(self):
+        stub_attempt = AttemptStub()
+        stub_attempt.articlepkg.journal_pissn = '0100-879X'
+        stub_attempt.articlepkg.journal_eissn = None
+
+        mock_issn_validator = self.mocker.mock()
+        mock_fetch_journal_data = self.mocker.mock()
+
+        with self.mocker.order():
+            mock_issn_validator('0100-879X')
+            self.mocker.result(True)
+
+            mock_fetch_journal_data({'print_issn': '0100-879X'})
+            self.mocker.result({'foo': 'bar'})
+
+            self.mocker.replay()
+
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapi = ScieloAPIClientStub()
+
+        vpipe = validator.SetupPipe(data,
+                                    scieloapi=scieloapi,
+                                    pkganalyzer_dep=PackageAnalyzerStub)
+
+        vpipe._issn_validator = mock_issn_validator
+        vpipe._fetch_journal_data = mock_fetch_journal_data
+
+        result = vpipe.transform(stub_attempt)
+
+    def test_missing_scieloapi_raises_ValueError(self):
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        self.assertRaises(ValueError, lambda: validator.SetupPipe(data))
