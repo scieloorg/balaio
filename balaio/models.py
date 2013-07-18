@@ -34,7 +34,7 @@ class Attempt(Base):
     __tablename__ = 'attempt'
 
     id = Column(Integer, primary_key=True)
-    package_md5 = Column(String(length=32), unique=True)
+    package_checksum = Column(String(length=32), unique=True)
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
     started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)
@@ -69,21 +69,4 @@ class ArticlePkg(Base):
 
     def __repr__(self):
         return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
-
-
-def get_or_create(model, **kwargs):
-        """
-        Try get the model by ```kwargs``` otherwise create the model.
-        """
-        ses = Session()
-
-        obj = ses.query(model).filter_by(**kwargs)
-
-        if ses.query(obj.exists()).scalar():
-            return obj.one()
-        else:
-            obj = model(**kwargs)
-            ses.add(obj)
-            ses.commit()
-            return obj
 
