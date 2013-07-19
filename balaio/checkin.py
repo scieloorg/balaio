@@ -7,6 +7,7 @@ import xml.etree.ElementTree as etree
 import logging
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.exc import IntegrityError
 
 import models
 import utils
@@ -230,8 +231,12 @@ def get_attempt(package):
 
                     logger.debug('Trying to generate an Attempt for package with chksum: %s and ArticlePkg: %s' % (
                         pkg.checksum, repr(article_pkg)))
-                    attempt = models.Attempt(package_checksum=pkg.checksum, articlepkg=article_pkg)
-                    session.add(attempt)
+                    try:
+                        attempt = models.Attempt(package_checksum=pkg.checksum, articlepkg=article_pkg)
+                        session.add(attempt)
+                    except IntegrityError:
+                        logging.debug('The package had already been analyzed')
+                        raise ValueError('The package had already been analyzed')
 
                     logging.debug('Done. An models.Attempt has been created')
                     session.commit()

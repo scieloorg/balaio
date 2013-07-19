@@ -9,6 +9,7 @@ import utils
 import notifier
 import checkin
 import scieloapitoolbelt
+import models
 
 
 STATUS_OK = 'ok'

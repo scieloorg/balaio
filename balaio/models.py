@@ -18,7 +18,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 
-Session = sessionmaker()
+Session = sessionmaker(expire_on_commit=False)
 Base = declarative_base()
 
 
@@ -52,7 +52,7 @@ class Attempt(Base):
         self.is_valid = True
 
     def __repr__(self):
-        return "<Attempt('%s, %s')>" % (self.id, self.package_md5)
+        return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
 
 
 class ArticlePkg(Base):
