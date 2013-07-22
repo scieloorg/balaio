@@ -147,6 +147,7 @@ if __name__ == '__main__':
 
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
                                  config.get('manager', 'api_key'))
+    notifier_dep = notifier.Notifier()
 
 
     pipes = [
@@ -155,7 +156,7 @@ if __name__ == '__main__':
         EISSNValidationPipe,
     ]
     ppl = vpipes.Pipeline(*pipes)
-    ppl.configure(scieloapi=scieloapi)
+    ppl.configure(scieloapi, notifier_dep)
 
     try:
         results = [msg for msg in ppl.run(messages)]

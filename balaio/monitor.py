@@ -10,7 +10,7 @@ import utils
 
 
 logger = logging.getLogger('balaio.monitor')
-mask = pyinotify.IN_CLOSE_WRITE | pyinotify.IN_CREATE
+mask = pyinotify.IN_CLOSE_WRITE
 
 
 class EventHandler(pyinotify.ProcessEvent):
