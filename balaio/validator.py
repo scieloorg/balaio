@@ -1,10 +1,9 @@
 # coding: utf-8
-import functools
 import sys
 
 import scieloapi
-import plumber
 
+import vpipes
 import utils
 import notifier
 import checkin
@@ -17,59 +16,7 @@ STATUS_WARNING = 'warning'
 STATUS_ERROR = 'error'
 
 
-class ValidationPipe(plumber.Pipe):
-    """
-    Specialized Pipe which validates the data and notifies the result.
-    """
-    def __init__(self,
-                 data,
-                 scieloapi=None,
-                 notifier_dep=notifier.Notifier,
-                 scieloapitools_dep=scieloapitoolbelt):
-        """
-        `data` is an iterable that will pass thru the pipe.
-        `scieloapi` is an instance of scieloapi.Client.
-        """
-        super(ValidationPipe, self).__init__(data)
-
-        self._notifier = notifier_dep()
-        self._sapi_tools = scieloapitools_dep
-        if scieloapi:
-            self._scieloapi = scieloapi
-        else:
-            raise ValueError('missing argument scieloapi')
-
-    def transform(self, item):
-        """
-        Performs a transformation to one `item` of data iterator.
-
-        `item` is a pair comprised of instances of models.Attempt
-        and checkin.PackageAnalyzer.
-        """
-        attempt, package_analyzer, journal = item
-        result_status, result_description = self.validate(package_analyzer)
-
-        message = {
-            'stage': self._stage_,
-            'status': result_status,
-            'description': result_description,
-        }
-
-        self._notifier.validation_event(message)
-
-        return item
-
-    def validate(self, package):
-        """
-        Performs the validation of `package`.
-
-        `package` is a checkin.PackageAnalyzer instance,
-        representing the article package under validation.
-        """
-        raise NotImplementedError()
-
-
-class SetupPipe(plumber.Pipe):
+class SetupPipe(vpipes.Pipe):
     def __init__(self,
                  data,
                  scieloapi=None,
@@ -136,11 +83,11 @@ class SetupPipe(plumber.Pipe):
         return (attempt, pkg_analyzer, journal_data)
 
 
-class TearDownPipe(plumber.Pipe):
+class TearDownPipe(vpipes.Pipe):
     pass
 
 
-class PISSNValidationPipe(ValidationPipe):
+class PISSNValidationPipe(vpipes.ValidationPipe):
     """
     Verify if PISSN exists on SciELO Manager and if it's valid.
 
@@ -170,7 +117,7 @@ class PISSNValidationPipe(ValidationPipe):
         return [STATUS_WARNING, 'print ISSN is invalid or unknown']
 
 
-class EISSNValidationPipe(ValidationPipe):
+class EISSNValidationPipe(vpipes.ValidationPipe):
     """
     Verify if EISSN exists on SciELO Manager and if it's valid.
 
@@ -201,18 +148,17 @@ if __name__ == '__main__':
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
                                  config.get('manager', 'api_key'))
 
-    # pipes are put in order and prepared to use the same
-    # scieloapi.Client instance.
+
     pipes = [
         SetupPipe,
         PISSNValidationPipe,
         EISSNValidationPipe,
     ]
-    pipes = [functools.partial(p, scieloapi=scieloapi) for p in pipes]
-
-    ppl = plumber.Pipeline(*pipes)
+    ppl = vpipes.Pipeline(*pipes)
+    ppl.configure(scieloapi=scieloapi)
 
     try:
         results = [msg for msg in ppl.run(messages)]
     except KeyboardInterrupt:
         sys.exit(0)
+
