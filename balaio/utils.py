@@ -13,7 +13,9 @@ import logging, logging.handlers
 
 
 stdout_lock = threading.Lock()
-
+# flag to indicate if the process have
+# already defined a logger handler.
+has_logger = False
 
 class SingletonMixin(object):
     """
@@ -177,16 +179,20 @@ def prefix_file(filename, prefix):
 def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
 
-
 def setup_logging():
-    rootLogger = logging.getLogger('')
-    rootLogger.setLevel(logging.DEBUG)
-    socketHandler = logging.handlers.SocketHandler('localhost',
-                                                   logging.handlers.DEFAULT_TCP_LOGGING_PORT)
-    # don't bother with a formatter, since a socket handler sends the event as
-    # an unformatted pickle
-    rootLogger.addHandler(socketHandler)
-
+    global has_logger
+    # avoid setting up more than once per process
+    if has_logger:
+        return None
+    else:
+        rootLogger = logging.getLogger('')
+        rootLogger.setLevel(logging.DEBUG)
+        socketHandler = logging.handlers.SocketHandler('localhost',
+                                                       logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+        # don't bother with a formatter, since a socket handler sends the event as
+        # an unformatted pickle
+        rootLogger.addHandler(socketHandler)
+        has_logger = True
 
 def validate_issn(issn):
     """

@@ -238,7 +238,7 @@ def get_attempt(package):
                         logging.debug('The package had already been analyzed')
                         raise ValueError('The package had already been analyzed')
 
-                    logging.debug('Done. An models.Attempt has been created')
+                    logging.debug('Created %s' % attempt)
                     session.commit()
                 except:
                     logging.error('The transaction was aborted due to an exception')
