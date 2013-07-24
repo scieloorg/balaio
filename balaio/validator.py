@@ -1,5 +1,6 @@
 # coding: utf-8
 import sys
+import logging
 
 import scieloapi
 
@@ -11,6 +12,8 @@ import scieloapitoolbelt
 import models
 
 
+logger = logging.getLogger('balaio.validator')
+
 STATUS_OK = 'ok'
 STATUS_WARNING = 'warning'
 STATUS_ERROR = 'error'
@@ -20,6 +23,7 @@ class SetupPipe(vpipes.Pipe):
     def __init__(self,
                  data,
                  scieloapi=None,
+                 notifier_dep=None,
                  scieloapitools_dep=scieloapitoolbelt,
                  pkganalyzer_dep=checkin.PackageAnalyzer):
         """
@@ -52,6 +56,7 @@ class SetupPipe(vpipes.Pipe):
 
         `attempt` is an models.Attempt instance.
         """
+        logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
         pkg_analyzer = self._pkg_analyzer(attempt.filepath)
         pkg_analyzer.lock_package()
 
@@ -142,18 +147,18 @@ class EISSNValidationPipe(vpipes.ValidationPipe):
 
 
 if __name__ == '__main__':
-    messages = utils.recv_messages(sys.stdin, utils.make_digest)
+    utils.setup_logging()
     config = utils.Configuration.from_env()
 
+    messages = utils.recv_messages(sys.stdin, utils.make_digest)
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
                                  config.get('manager', 'api_key'))
     notifier_dep = notifier.Notifier()
 
-
     pipes = [
         SetupPipe,
-        PISSNValidationPipe,
-        EISSNValidationPipe,
+        #PISSNValidationPipe,
+        #EISSNValidationPipe,
     ]
     ppl = vpipes.Pipeline(*pipes)
     ppl.configure(scieloapi, notifier_dep)

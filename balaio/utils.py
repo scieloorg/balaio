@@ -12,6 +12,7 @@ import threading
 import logging, logging.handlers
 
 
+logger = logging.getLogger('balaio.utils')
 stdout_lock = threading.Lock()
 # flag to indicate if the process have
 # already defined a logger handler.
@@ -132,9 +133,13 @@ def send_message(stream, message, digest, pickle_dep=pickle):
     header = '%s %s\n' % (data_digest, len(serialized))
 
     with stdout_lock:
+        logger.debug('Stream %s is locked' % stream)
         stream.write(header)
         stream.write(serialized)
         stream.flush()
+
+    logger.debug('Stream %s is unlocked' % stream)
+    logger.debug('Message sent with header: %s' % header)
 
 
 def recv_messages(stream, digest, pickle_dep=pickle):
@@ -160,10 +165,12 @@ def recv_messages(stream, digest, pickle_dep=pickle):
         in_digest, in_length = header.split(' ')
         in_message = stream.read(int(in_length))
 
+        logger.debug('Received message header: %s message: %s' % (header, in_message))
+
         if in_digest == digest(in_message):
             yield pickle_dep.loads(in_message)
         else:
-            # log the failure
+            logger.error('Received a corrupted message: %s, %s' % (header, in_message))
             continue
 
 

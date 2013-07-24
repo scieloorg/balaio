@@ -54,8 +54,7 @@ class ValidationPipe(plumber.Pipe):
         `item` is a pair comprised of instances of models.Attempt
         and checkin.PackageAnalyzer.
         """
-        attempt, package_analyzer, journal = item
-        result_status, result_description = self.validate(package_analyzer)
+        result_status, result_description = self.validate(item)
 
         message = {
             'stage': self._stage_,
