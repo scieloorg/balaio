@@ -232,7 +232,9 @@ def get_attempt(package):
                     logger.debug('Trying to generate an Attempt for package with chksum: %s and ArticlePkg: %s' % (
                         pkg.checksum, repr(article_pkg)))
                     try:
-                        attempt = models.Attempt(package_checksum=pkg.checksum, articlepkg=article_pkg)
+                        attempt = models.Attempt(package_checksum=pkg.checksum,
+                                                 articlepkg=article_pkg,
+                                                 filepath=package)
                         session.add(attempt)
                     except IntegrityError:
                         logging.debug('The package had already been analyzed')

@@ -57,6 +57,7 @@ class SetupPipe(vpipes.Pipe):
         `attempt` is an models.Attempt instance.
         """
         logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
+
         pkg_analyzer = self._pkg_analyzer(attempt.filepath)
         pkg_analyzer.lock_package()
 
