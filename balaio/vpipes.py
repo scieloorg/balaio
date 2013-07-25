@@ -17,15 +17,17 @@ class Pipeline(plumber.Pipeline):
         pipes before running the pipeline.
         """
         new_pipes = []
-
-        for pipe in self._pipes:
+        def make_wrapper(pipe):
             def config_wrap(data):
                 logger.debug('Running config wrapper for %s with data %s' % (pipe, data))
                 p = pipe(data)
                 p.configure(*args)
                 return p
+            return config_wrap
 
-            logger.debug('%s as a wrapper to %s' % (config_wrap, pipe))
+        for p in self._pipes:
+            config_wrap = make_wrapper(p)
+            logger.debug('%s as a wrapper to %s' % (config_wrap, p))
             new_pipes.append(config_wrap)
 
         self._pipes = new_pipes
