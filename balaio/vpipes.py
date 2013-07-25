@@ -1,14 +1,17 @@
+import logging
+
 import plumber
 
 import scieloapitoolbelt
 
 
+logger = logging.getLogger(__name__)
 Pipe = plumber.Pipe
 
 
 class Pipeline(plumber.Pipeline):
 
-    def configure(self, scieloapi, notifier):
+    def configure(self, *args):
         """
         Allow you to pass keyword arguments to all
         pipes before running the pipeline.
@@ -17,35 +20,37 @@ class Pipeline(plumber.Pipeline):
 
         for pipe in self._pipes:
             def config_wrap(data):
-                return pipe(data, scieloapi=scieloapi, notifier_dep=notifier)
+                logger.debug('Running config wrapper for %s with data %s' % (pipe, data))
+                p = pipe(data)
+                p.configure(*args)
+                return p
+
+            logger.debug('%s as a wrapper to %s' % (config_wrap, pipe))
             new_pipes.append(config_wrap)
 
         self._pipes = new_pipes
+        logger.debug('self._pipes are now %s' % self._pipes)
+
+class ConfigMixin(object):
+    """
+    Allows a Pipe to be configurable.
+    """
+    def configure(self, *args):
+        requires = getattr(self, '__requires__', None)
+        if not requires:
+            raise NotImplementedError('missing attribute __requires__')
+
+        for attr_name, dep in zip(requires, args):
+            setattr(self, attr_name, dep)
+
+        logger.debug('%s is now configured' % self)
 
 
-class ValidationPipe(plumber.Pipe):
+class ValidationPipe(ConfigMixin, plumber.Pipe):
     """
     Specialized Pipe which validates the data and notifies the result.
     """
-    def __init__(self,
-                 data,
-                 scieloapi=None,
-                 notifier_dep=None,
-                 scieloapitools_dep=scieloapitoolbelt):
-        """
-        `data` is an iterable that will pass thru the pipe.
-        `scieloapi` is an instance of scieloapi.Client.
-        """
-        super(ValidationPipe, self).__init__(data)
-
-        if not notifier_dep:
-            raise ValueError('missing argument notifier')
-        if not scieloapi:
-            raise ValueError('missing argument scieloapi')
-
-        self._notifier = notifier_dep
-        self._scieloapi = scieloapi
-        self._sapi_tools = scieloapitools_dep
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools']
 
     def transform(self, item):
         """
@@ -54,6 +59,8 @@ class ValidationPipe(plumber.Pipe):
         `item` is a pair comprised of instances of models.Attempt
         and checkin.PackageAnalyzer.
         """
+        logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
+
         result_status, result_description = self.validate(item)
 
         message = {

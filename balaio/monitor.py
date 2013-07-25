@@ -35,8 +35,12 @@ class Monitor(object):
             try:
                 attempt = checkin.get_attempt(filepath)
             except ValueError as e:
-                utils.mark_as_failed(filepath)
-                logger.debug('Failed during checkin: %s:' % (filepath, e))
+                try:
+                    utils.mark_as_failed(filepath)
+                except OSError as e:
+                    logger.debug('The file is gone before marked as failed. %s' % e)
+
+                logger.debug('Failed during checkin: %s: %s' % (filepath, e))
             else:
                 utils.send_message(sys.stdout, attempt, utils.make_digest)
                 logging.debug('Message sent for %s: %s, %s' % (filepath,
