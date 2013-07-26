@@ -11,7 +11,7 @@ Pipe = plumber.Pipe
 
 class Pipeline(plumber.Pipeline):
 
-    def configure(self, *args):
+    def configure(self, **kwargs):
         """
         Allow you to pass keyword arguments to all
         pipes before running the pipeline.
@@ -21,7 +21,7 @@ class Pipeline(plumber.Pipeline):
             def config_wrap(data):
                 logger.debug('Running config wrapper for %s with data %s' % (pipe, data))
                 p = pipe(data)
-                p.configure(*args)
+                p.configure(**kwargs)
                 return p
             return config_wrap
 
@@ -37,12 +37,14 @@ class ConfigMixin(object):
     """
     Allows a Pipe to be configurable.
     """
-    def configure(self, *args):
+    def configure(self, **kwargs):
         requires = getattr(self, '__requires__', None)
+        logger.debug('%s requires the dependencies: %s' % (self, ', '.join(requires)))
+
         if not requires:
             raise NotImplementedError('missing attribute __requires__')
 
-        for attr_name, dep in zip(requires, args):
+        for attr_name, dep in [[k, v] for k, v in kwargs.items() if k in requires]:
             setattr(self, attr_name, dep)
 
         logger.debug('%s is now configured' % self)

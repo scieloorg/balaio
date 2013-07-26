@@ -19,8 +19,8 @@ STATUS_WARNING = 'warning'
 STATUS_ERROR = 'error'
 
 
-class SetupPipe(vpipes.Pipe):
-    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
+class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer', '_issn_validator']
 
     def _fetch_journal_data(self, criteria):
         """
@@ -66,36 +66,17 @@ class SetupPipe(vpipes.Pipe):
             logger.info('%s is not related to a known journal' % attempt)
             attempt.is_valid = False
 
-        return_value = tuple(attempt, pkg_analyzer, journal_data)
-        logger.debug('%s returning %s' % (self.__class__.__name__, return_value))
+        return_value = (attempt, pkg_analyzer, journal_data)
+        logger.debug('%s returning %s' % (self.__class__.__name__, ','.join([repr(val) for val in return_value])))
         return return_value
 
 
-class TearDownPipe(vpipes.Pipe):
-    def __init__(self,
-                 data,
-                 scieloapi=None,
-                 notifier_dep=None,
-                 scieloapitools_dep=scieloapitoolbelt,
-                 pkganalyzer_dep=checkin.PackageAnalyzer):
-        """
-        `data` is an iterable that will pass thru the pipe.
-        `scieloapi` is an instance of scieloapi.Client.
-        """
-        super(TearDownPipe, self).__init__(data)
-
-        self._pkg_analyzer = pkganalyzer_dep
-        self._sapi_tools = scieloapitools_dep
-        if scieloapi:
-            self._scieloapi = scieloapi
-        else:
-            raise ValueError('missing argument scieloapi')
-        self._issn_validator = utils.is_valid_issn
+class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
 
     def transform(self, item):
-        logger.debug('%s started trying to process %s' % (self.__class__.__name__, item))
-        #attempt, pkg_analyzer, journal_data = item
-        return
+        logger.debug('%s started processing %s' % (self.__class__.__name__, item))
+        attempt, pkg_analyzer, journal_data = item
 
         pkg_analyzer.restore_perms()
 
@@ -161,20 +142,6 @@ class EISSNValidationPipe(vpipes.ValidationPipe):
         return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
 
 
-class A(vpipes.ConfigMixin, vpipes.Pipe):
-    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
-    def transform(self, data):
-        logger.info('A received %s' % data)
-        return 'foo'
-
-
-class B(vpipes.ConfigMixin, vpipes.Pipe):
-    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
-    def transform(self, data):
-        logger.info('B received %s' % data)
-        return data
-
-
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()
@@ -184,9 +151,14 @@ if __name__ == '__main__':
                                  config.get('manager', 'api_key'))
     notifier_dep = notifier.Notifier()
 
-    ppl = vpipes.Pipeline(B, A)
+    ppl = vpipes.Pipeline(SetupPipe, TearDownPipe)
 
-    ppl.configure(scieloapi, notifier_dep, scieloapitoolbelt, checkin.PackageAnalyzer)
+    # add all dependencies to a registry-ish thing
+    ppl.configure(_scieloapi=scieloapi,
+                  _notifier=notifier_dep,
+                  _sapi_tools=scieloapitoolbelt,
+                  _pkg_analyzer=checkin.PackageAnalyzer,
+                  _issn_validator=utils.is_valid_issn)
 
     try:
         results = [msg for msg in ppl.run(messages)]
