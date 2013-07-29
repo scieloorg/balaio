@@ -61,10 +61,10 @@ class ValidationPipe(ConfigMixin, plumber.Pipe):
         """
         Performs a transformation to one `item` of data iterator.
 
-        `item` is a pair comprised of instances of models.Attempt
-        and checkin.PackageAnalyzer.
+        `item` is a pair comprised of instances of models.Attempt, a
+        checkin.PackageAnalyzer and a dict of journal data.
         """
-        logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
+        logger.debug('%s started processing %s' % (self.__class__.__name__, item[0]))
 
         result_status, result_description = self.validate(item)
 
