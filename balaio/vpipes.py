@@ -33,6 +33,7 @@ class Pipeline(plumber.Pipeline):
         self._pipes = new_pipes
         logger.debug('self._pipes are now %s' % self._pipes)
 
+
 class ConfigMixin(object):
     """
     Allows a Pipe to be configurable.

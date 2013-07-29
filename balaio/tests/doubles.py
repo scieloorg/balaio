@@ -8,10 +8,10 @@ class Patch(object):
     """
     Helps patching instances to ease testing.
     """
-    def __init__(self, target_object, target_attrname, patch):
+    def __init__(self, target_object, target_attrname, patch, instance_method=False):
         self.target_object = target_object
         self.target_attrname = target_attrname
-        if callable(patch):
+        if callable(patch) and instance_method:
             self.patch = types.MethodType(patch, target_object, target_object.__class__)
         else:
             self.patch = patch
@@ -75,17 +75,22 @@ class PackageAnalyzerStub(object):
         return None
 
 
-class ScieloAPIToolbeltStub(object):
+def get_ScieloAPIToolbeltStubModule():
     """
-    The real implementation is not based on a class, but has the same API.
+    Factory of scieloapitoolbelt modules. Using a factory
+    is easier to keep the tests isolated.
     """
-    @staticmethod
+    sapi_tools = types.ModuleType('scieloapitoolbelt')
+
     def has_any(dataset):
         return True
+    sapi_tools.has_any = has_any
 
-    @staticmethod
     def get_one(dataset):
         return dataset[0]
+    sapi_tools.get_one = get_one
+
+    return sapi_tools
 
 
 class ArticlePkgStub(object):

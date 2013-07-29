@@ -25,10 +25,16 @@ class ConstantsTests(unittest.TestCase):
 # Pipes
 #
 class PISSNValidationPipeTests(unittest.TestCase):
-    def _makeOne(self, data, scieloapi=ScieloAPIClientStub, notifier_dep=NotifierStub):
-        return validator.PISSNValidationPipe(data,
-                                             scieloapi=scieloapi(),
-                                             notifier_dep=notifier_dep)
+    def _makeOne(self, data, **kwargs):
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+
+        vpipe = validator.PISSNValidationPipe(data)
+        vpipe.configure(_scieloapi=_scieloapi,
+                        _notifier=_notifier,
+                        _sapi_tools=_sapi_tools)
+        return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
         pkg_analyzer_stub = PackageAnalyzerStub()
@@ -84,13 +90,10 @@ class PISSNValidationPipeTests(unittest.TestCase):
         expected = ['ok', '']
         data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
 
-        scieloapitoolbelt_stub = ScieloAPIToolbeltStub()
+        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
         scieloapitoolbelt_stub.has_any = lambda x: True
 
-        vpipe = validator.PISSNValidationPipe(data,
-                                              scieloapi=ScieloAPIClientStub(),
-                                              notifier_dep=NotifierStub,
-                                              scieloapitools_dep=scieloapitoolbelt_stub)
+        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
 
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
@@ -101,13 +104,10 @@ class PISSNValidationPipeTests(unittest.TestCase):
         expected = ['warning', 'print ISSN is invalid or unknown']
         data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
 
-        scieloapitoolbelt_stub = ScieloAPIToolbeltStub()
+        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
         scieloapitoolbelt_stub.has_any = lambda x: False
 
-        vpipe = validator.PISSNValidationPipe(data,
-                                              scieloapi=ScieloAPIClientStub(),
-                                              notifier_dep=NotifierStub,
-                                              scieloapitools_dep=scieloapitoolbelt_stub)
+        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
 
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
@@ -116,10 +116,17 @@ class PISSNValidationPipeTests(unittest.TestCase):
 
 
 class EISSNValidationPipeTests(unittest.TestCase):
-    def _makeOne(self, data):
-        return validator.EISSNValidationPipe(data,
-                                             scieloapi=ScieloAPIClientStub(),
-                                             notifier_dep=NotifierStub)
+    def _makeOne(self, data, **kwargs):
+        vpipe =  validator.EISSNValidationPipe(data)
+
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+
+        vpipe.configure(_scieloapi=_scieloapi,
+                        _notifier=_notifier,
+                        _sapi_tools=_sapi_tools)
+        return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
         pkg_analyzer_stub = PackageAnalyzerStub()
@@ -160,13 +167,10 @@ class EISSNValidationPipeTests(unittest.TestCase):
         expected = ['ok', '']
         data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
 
-        scieloapitoolbelt_stub = ScieloAPIToolbeltStub()
+        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
         scieloapitoolbelt_stub.has_any = lambda x: True
 
-        vpipe = validator.EISSNValidationPipe(data,
-                                              scieloapi=ScieloAPIClientStub(),
-                                              notifier_dep=NotifierStub,
-                                              scieloapitools_dep=scieloapitoolbelt_stub)
+        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
 
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
@@ -177,13 +181,10 @@ class EISSNValidationPipeTests(unittest.TestCase):
         expected = ['error', 'electronic ISSN is invalid or unknown']
         data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
 
-        scieloapitoolbelt_stub = ScieloAPIToolbeltStub()
+        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
         scieloapitoolbelt_stub.has_any = lambda x: False
 
-        vpipe = validator.EISSNValidationPipe(data,
-                                              scieloapi=ScieloAPIClientStub(),
-                                              notifier_dep=NotifierStub,
-                                              scieloapitools_dep=scieloapitoolbelt_stub)
+        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
 
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
@@ -192,6 +193,22 @@ class EISSNValidationPipeTests(unittest.TestCase):
 
 
 class SetupPipeTests(mocker.MockerTestCase):
+
+    def _makeOne(self, data, **kwargs):
+        from balaio import utils
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
+
+        vpipe = validator.SetupPipe(data)
+        vpipe.configure(_scieloapi=_scieloapi,
+                        _notifier=_notifier,
+                        _sapi_tools=_sapi_tools,
+                        _pkg_analyzer=_pkg_analyzer,
+                        _issn_validator=_issn_validator)
+        return vpipe
 
     def test_transform_returns_right_datastructure(self):
         """
@@ -203,9 +220,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         scieloapi = ScieloAPIClientStub()
         scieloapi.journals.filter = lambda print_issn=None, eletronic_issn=None, limit=None: [{}]
 
-        vpipe = validator.SetupPipe(data,
-                                    scieloapi=scieloapi,
-                                    pkganalyzer_dep=PackageAnalyzerStub)
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
 
         result = vpipe.transform(AttemptStub())
 
@@ -225,17 +240,11 @@ class SetupPipeTests(mocker.MockerTestCase):
         ignore the query for invalid criteria, and so
         do we.
         """
-        scieloapitools = ScieloAPIToolbeltStub()
-
         data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
         scieloapi = ScieloAPIClientStub()
         scieloapi.journals.filter = lambda **kwargs: [{'foo': 'bar'}]
 
-        vpipe = validator.SetupPipe(data,
-                                    scieloapi=scieloapi,
-                                    scieloapitools_dep=scieloapitools,
-                                    pkganalyzer_dep=PackageAnalyzerStub)
-
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
         self.assertEqual(vpipe._fetch_journal_data({'print_issn': '1234-1234'}),
                          {'foo': 'bar'})
 
@@ -244,10 +253,12 @@ class SetupPipeTests(mocker.MockerTestCase):
         scieloapi = ScieloAPIClientStub()
         scieloapi.journals.filter = lambda **kwargs: []
 
-        vpipe = validator.SetupPipe(data,
-                                    scieloapi=scieloapi,
-                                    pkganalyzer_dep=PackageAnalyzerStub)
+        sapi_tools = get_ScieloAPIToolbeltStubModule()
+        def _get_one(dataset):
+            raise ValueError()
+        sapi_tools.get_one = _get_one
 
+        vpipe = self._makeOne(data, _scieloapi=scieloapi, _sapi_tools=sapi_tools)
         self.assertRaises(ValueError,
                           lambda: vpipe._fetch_journal_data({'print_issn': '1234-1234'}))
 
@@ -270,17 +281,9 @@ class SetupPipeTests(mocker.MockerTestCase):
 
         data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
 
-        scieloapi = ScieloAPIClientStub()
-
-        vpipe = validator.SetupPipe(data,
-                                    scieloapi=scieloapi,
-                                    pkganalyzer_dep=PackageAnalyzerStub)
-
+        vpipe = self._makeOne(data)
         vpipe._issn_validator = mock_issn_validator
         vpipe._fetch_journal_data = mock_fetch_journal_data
 
         result = vpipe.transform(stub_attempt)
 
-    def test_missing_scieloapi_raises_ValueError(self):
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
-        self.assertRaises(ValueError, lambda: validator.SetupPipe(data))
