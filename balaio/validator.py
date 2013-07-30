@@ -41,25 +41,26 @@ class ValidationPipe(plumber.Pipe):
 
         return data
 
-    def compare_registered_data_and_xml_data(self, package_analyzer):
+    def compare_registered_data_and_xml_data(self, package_analyzer, mandatory=False):
         """
-        Compare registered data in scieloapi.Manager to data in XML
+        Compares the data registered in SciELO Manager and the data in XML ignoring blank spaces and lower/uppercase
         Returns [status, description]
         """
         registered_data = self._registered_data(package_analyzer)
         xml_data = self._xml_data(package_analyzer)
 
         if registered_data is None and xml_data == '':
-            status, description = [STATUS_OK, xml_data]
+            status, description = [STATUS_ERROR, 'Both ' + self._registered_data_label + ' in Manager and ' + self._xml_data_label + ' in XML are mandatory. But both are missing.'] if mandatory is True else [STATUS_OK, xml_data]
         elif registered_data is None:
             status, description = [STATUS_ERROR, self._registered_data_label + ' not found in Manager']
         elif xml_data == '':
             status, description = [STATUS_ERROR, self._xml_data_label + ' not found in XML']
-        elif xml_data == registered_data:
+        elif xml_data.lower().replace(' ', '') == registered_data.lower().replace(' ', ''):
             status, description = [STATUS_OK, xml_data]
         else:
             status = STATUS_ERROR
             description = 'Data in XML and Manager do not match.' + '\n' + 'Data in Manager: ' + registered_data + '\n' + 'Data in XML: ' + xml_data
+            # + '\n' + xml_data.lower().replace(' ', '-') + '\n' + registered_data.lower().replace(' ', '-')
         return [status, description]
 
 
@@ -73,13 +74,6 @@ class ISSNValidationPipe(ValidationPipe):
     """
     _stage_ = 'issn'
 
-    def _xml_data(self, package_analyzer):
-        node = package_analyzer.xml.findtext(".//issn[@pub-type='epub']")
-        return node if node else ''
-
-    def _registered_data(self, package_analyzer):
-        return self._manager.journal(package_analyzer.meta['journal_title'], 'title').get(self._registered_data_label, None)
-
     def validate(self, package_analyzer):
 
         data = package_analyzer.xml
@@ -88,53 +82,106 @@ class ISSNValidationPipe(ValidationPipe):
         journal_pissn = data.findtext(".//issn[@pub-type='ppub']")
 
         if utils.is_valid_issn(journal_pissn) or utils.is_valid_issn(journal_eissn):
-
             if journal_pissn:
-                self._registered_data_label = 'print_issn'
-                self._xml_data_label = journal_pissn
-                return self.compare_registered_data_and_xml_data(package_analyzer)
-
+                #Validate journal_pissn against SciELO scieloapi.Manager
+                pass
             if journal_eissn:
-                self._registered_data_label = 'eletronic_issn'
-                self._xml_data_label = journal_eissn
-                return self.compare_registered_data_and_xml_data(package_analyzer)
+                #Validate journal_eissn against SciELO scieloapi.Manager
+                pass
+            return [STATUS_OK, '']
         else:
             return [STATUS_ERROR, 'neither eletronic ISSN nor print ISSN are valid']
 
 
 class AbbrevJournalTitleValidationPipe(ValidationPipe):
     """
-    Check if journal-meta/abbrev-journal-title[@abbrev-type='publisher'] is the same as registered in scieloapi.Manager
+    Check if journal-meta/abbrev-journal-title[@abbrev-type='publisher'] and the data registered in SciELO Manager matches
     """
+    def validate(self, package_analyzer):
+        # set registered data label in order to display it in description
+        self._registered_data_label = 'title_iso'
+        # set xml data label (xpath) in order to display it in description
+        self._xml_data_label = './/journal-meta/abbrev-journal-title[@abbrev-type="publisher"]'
+        return self.compare_registered_data_and_xml_data(package_analyzer, mandatory=True)
 
     def _xml_data(self, package_analyzer):
-        node = package_analyzer.xml.findtext(self._xml_data_label)
-        return node if node else ''
+        """
+        Returns the content of ``self._xml_data_label`` (xpath in XML)
+        """
+        node = package_analyzer.xml.find(self._xml_data_label)
+        return node.text if not node is None else ''
 
     def _registered_data(self, package_analyzer):
-        return self._manager.journal(package_analyzer.meta['journal_title'], 'title').get(self._registered_data_label, None)
-
-    def validate(self, package_analyzer):
-        self._registered_data_label = 'title_iso'
-        self._xml_data_label = './/journal-meta/abbrev-journal-title[@abbrev-type="publisher"]'
-        return self.compare_registered_data_and_xml_data(package_analyzer)
+        """
+        Returns the data registered in SciELO Manager
+        Gets a single journal by ``package_analyzer.meta[journal_title]``
+        then returns the registered data identified by ``self.registered_data_label``
+        """
+        # gets a single journal by ``package_analyzer.meta[journal_title]``
+        journal_data = self._manager.journal(package_analyzer.meta['journal_title'], 'title')
+        # returns the registered data identified by ``self._registered_data_label``
+        return journal_data.get(self._registered_data_label, None)
 
 
 class NLMJournalTitleValidationPipe(ValidationPipe):
     """
-    Check if journal-meta/journal-id[@journal-id-type='nlm-ta'] is the same as registered in Manager
+    Check if journal-meta/journal-id[@journal-id-type='nlm-ta'] and the data registered in SciELO Manager matches
     """
     def validate(self, package_analyzer):
+        # set registered data label in order to display it in description
         self._registered_data_label = 'medline_title'
+        # set xml data label (xpath) in order to display it in description
         self._xml_data_label = './/journal-meta/journal-id[@journal-id-type="nlm-ta"]'
         return self.compare_registered_data_and_xml_data(package_analyzer)
 
     def _xml_data(self, package_analyzer):
-        node = package_analyzer.xml.findtext(self._xml_data_label)
-        return node if node else ''
+        """
+        Returns the content of ``self._xml_data_label`` (xpath in XML)
+        """
+        node = package_analyzer.xml.find(self._xml_data_label)
+        return node.text if not node is None else ''
 
     def _registered_data(self, package_analyzer):
-        return self._manager.journal(package_analyzer.meta['journal_title'], 'title').get(self._registered_data_label, None)
+        """
+        Returns the data registered in SciELO Manager
+        Gets a single journal by ``package_analyzer.meta[journal_title]``
+        then returns the registered data identified by ``self.registered_data_label``
+        """
+        # gets a single journal by ``package_analyzer.meta[journal_title]``
+        journal_data = self._manager.journal(package_analyzer.meta['journal_title'], 'title')
+        # returns the registered data identified by ``self._registered_data_label``
+        return journal_data.get(self._registered_data_label, None)
+
+
+class PublisherNameValidationPipe(ValidationPipe):
+    """
+    Check if journal-meta/publisher/publisher-name and the data registered in SciELO Manager matches
+    """
+    def validate(self, package_analyzer):
+        # FIXME se varios publisher_name, qual seria o separador? quebra de linha?
+        # set registered data label in order to display it in description
+        self._registered_data_label = 'publisher_name'
+        # set xml data label (xpath) in order to display it in description
+        self._xml_data_label = './/journal-meta/publisher/publisher-name'
+        return self.compare_registered_data_and_xml_data(package_analyzer, mandatory=True)
+
+    def _xml_data(self, package_analyzer):
+        """
+        Returns the content of ``self._xml_data_label`` (xpath in XML)
+        """
+        node = package_analyzer.xml.find(self._xml_data_label)
+        return node.text if not node is None else ''
+
+    def _registered_data(self, package_analyzer):
+        """
+        Returns the data registered in SciELO Manager
+        Gets a single journal by ``package_analyzer.meta[journal_title]``
+        then returns the registered data identified by ``self.registered_data_label``
+        """
+        # gets a single journal by ``package_analyzer.meta[journal_title]``
+        journal_data = self._manager.journal(package_analyzer.meta['journal_title'], 'title')
+        # returns the registered data identified by ``self._registered_data_label``
+        return journal_data.get(self._registered_data_label, None)
 
 # Pipes to validate issue data
 
