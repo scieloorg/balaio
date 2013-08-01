@@ -82,8 +82,6 @@ class Notifier(SingletonMixin):
         """
         ``settings`` is an instance of ConfigParser.ConfigParser.
         """
-        assert isinstance(request_dep, Request)
-
         self._request = request_dep
         self._url, self._username, self._apikey = _extract_settings(settings)
 

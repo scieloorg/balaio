@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     DateTime,
     String,
+    Boolean,
 )
 from sqlalchemy.orm import (
     relationship,
@@ -16,25 +17,30 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import utils
 
-config = utils.Configuration.from_env()
-
-engine = create_engine(config.get('app', 'db_dsn'),
-                       echo=config.getboolean('app', 'debug'))
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(expire_on_commit=False)
 Base = declarative_base()
+
+
+def create_engine_from_config(config):
+    """
+    Create a sqlalchemy.engine using values from utils.Configuration.
+    """
+    return create_engine(config.get('app', 'db_dsn'),
+                         echo=config.getboolean('app', 'debug'))
 
 
 class Attempt(Base):
     __tablename__ = 'attempt'
 
     id = Column(Integer, primary_key=True)
-    package_md5 = Column(String(length=32), unique=True)
+    package_checksum = Column(String(length=32), unique=True)
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
     started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)
     collection_uri = Column(String)
+    filepath = Column(String)
+    is_valid = Column(Boolean)
 
     articlepkg = relationship('ArticlePkg',
                               backref=backref('attempts',
@@ -43,9 +49,10 @@ class Attempt(Base):
     def __init__(self, *args, **kwargs):
         super(Attempt, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
+        self.is_valid = True
 
     def __repr__(self):
-        return "<Attempt('%s, %s')>" % (self.id, self.package_md5)
+        return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
 
 
 class ArticlePkg(Base):
@@ -63,27 +70,3 @@ class ArticlePkg(Base):
     def __repr__(self):
         return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
 
-
-def get_or_create(model, **kwargs):
-        """
-        Try get the model by ```kwargs``` otherwise create the model.
-        """
-        ses = Session()
-
-        obj = ses.query(model).filter_by(**kwargs)
-
-        if ses.query(obj.exists()).scalar():
-            return obj.one()
-        else:
-            obj = model(**kwargs)
-            ses.add(obj)
-            ses.commit()
-            return obj
-
-
-if __name__ == '__main__':
-    import sys
-
-    # Create the DB structure
-    if 'syncdb' in sys.argv:
-        Base.metadata.create_all(engine)

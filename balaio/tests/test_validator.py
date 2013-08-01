@@ -1,419 +1,289 @@
-#coding: utf-8
-import json
+# coding: utf-8
+import unittest
 import mocker
-from StringIO import StringIO
-from xml.etree.ElementTree import ElementTree
 
+from balaio import validator
+from balaio.tests.doubles import *
 
-class FundingValidationPipeTest(mocker.MockerTestCase):
 
-    def _make_pipe(self, *args, **kwargs):
-        from balaio.validator import FundingValidationPipe
-        return FundingValidationPipe(*args, **kwargs)
+#
+# Module level constants
+#
+class ConstantsTests(unittest.TestCase):
 
-    def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
+    def test_STATUS_OK_value(self):
+        self.assertEqual(validator.STATUS_OK, 'ok')
 
-        etree = ElementTree()
-        xml = etree.parse(StringIO(xml_string))
+    def test_STATUS_WARNING_value(self):
+        self.assertEqual(validator.STATUS_WARNING, 'warning')
 
-        attempt = self.mocker.mock()
-        pkg_analyzer = self.mocker.mock()
+    def test_STATUS_ERROR_value(self):
+        self.assertEqual(validator.STATUS_ERROR, 'error')
 
-        pkg_analyzer.xml
-        self.mocker.result(xml)
 
-        return (attempt, pkg_analyzer)
+#
+# Pipes
+#
+class PISSNValidationPipeTests(unittest.TestCase):
+    def _makeOne(self, data, **kwargs):
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
 
-    def _validate(self, xml_string):
-        mock_manager = self.mocker.mock()
-        mock_notifier = self.mocker.mock()
+        vpipe = validator.PISSNValidationPipe(data)
+        vpipe.configure(_scieloapi=_scieloapi,
+                        _notifier=_notifier,
+                        _sapi_tools=_sapi_tools)
+        return vpipe
 
-        mock_notifier()
-        self.mocker.result(mock_notifier)
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
 
-        mock_manager()
-        self.mocker.result(mock_manager)
-
-        data = self._make_data(xml_string)
-        self.mocker.replay()
-
-        pipe = self._make_pipe(data, mock_manager, mock_notifier)
-        return pipe.validate(data[1])
-
-    def test_no_funding_group_and_no_ack(self):
-        expected = ['w', 'no funding-group and no ack']
-
-        self.assertEquals(
-            expected,
-            self._validate('<root></root>'))
-
-    def test_no_funding_group_and_ack_has_no_number(self):
-        expected = ['ok', '<ack>acknowle<sub />dgements</ack>']
-
-        self.assertEquals(
-            expected,
-            self._validate('<root><ack>acknowle<sub/>dgements</ack></root>'))
-
-    def test_no_funding_group_and_ack_has_number(self):
-        expected = ['e', '<ack>acknowledgements<p>1234</p></ack>']
-
-        self.assertEquals(
-            expected,
-            self._validate('<root><ack>acknowledgements<p>1234</p></ack></root>'))
-
-    def test_funding_group(self):
-        expected = ['ok', '<funding-group>funding data</funding-group>']
-
-        self.assertEquals(expected, self._validate('<root><ack>acknowledgements<funding-group>funding data</funding-group></ack></root>'))
-
-
-class AbbrevJournalTitleValidationPipeTest(mocker.MockerTestCase):
-
-    def _make_pipe(self, *args, **kwargs):
-        from balaio.validator import AbbrevJournalTitleValidationPipe
-        return AbbrevJournalTitleValidationPipe(*args, **kwargs)
-
-    def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
-
-        etree = ElementTree()
-        xml = etree.parse(StringIO(xml_string))
-
-        attempt = self.mocker.mock()
-        pkg_analyzer = self.mocker.mock()
-
-        pkg_analyzer.xml
-        self.mocker.result(xml)
-
-        pkg_analyzer.meta
-        self.mocker.result({'journal_title': 'Revista Brasileira ...'})
-
-        return (attempt, pkg_analyzer)
-
-    def _validate(self, xml_string, manager_result='{"journal-title":"Revista Brasileira ...", "title_iso": "Rev. Bras. ????"}'):
-        mock_manager = self.mocker.mock()
-        mock_notifier = self.mocker.mock()
-
-        mock_notifier()
-        self.mocker.result(mock_notifier)
-
-        mock_manager()
-        self.mocker.result(mock_manager)
-
-        mock_manager.journal('Revista Brasileira ...', 'title')
-        self.mocker.result(json.load(StringIO(manager_result)))
-
-        data = self._make_data(xml_string)
-        self.mocker.replay()
-
-        pipe = self._make_pipe(data, mock_manager, mock_notifier)
-        return pipe.validate(data[1])
-
-    def test_abbrev_journal_title_is_valid(self):
-        expected = ['ok', 'Rev. Bras. ????']
-
-        self.assertEquals(
-            expected,
-            self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev. Bras. ????</abbrev-journal-title></journal-meta></root>'))
-
-    def test_abbrev_journal_title_not_found_in_xml(self):
-        expected = ['e', './/journal-meta/abbrev-journal-title[@abbrev-type="publisher"] not found in XML']
-        self.assertEquals(
-            expected,
-            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>'))
-
-    def test_abbrev_journal_title_not_found_in_manager(self):
-        expected = ['e', 'title_iso not found in Manager']
-
-        self.assertEquals(
-            expected,
-            self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev. Bras. ????</abbrev-journal-title></journal-meta></root>', '{"journal-title":"Revista Brasileira ..."}'))
-
-    def test_abbrev_journal_title_not_matched(self):
-        expected = ['e', u'Data in XML and Manager do not match.' + '\n' + 'Data in Manager: Rev. Bras. ????' + '\n' + 'Data in XML: Rev Bras ????']
-
-        self.assertEquals(
-            expected,
-            self._validate('<root><journal-meta><abbrev-journal-title abbrev-type="publisher">Rev Bras ????</abbrev-journal-title></journal-meta></root>'))
-
-
-class ISSNCheckingPipeTest(mocker.MockerTestCase):
-
-    def _make_pipe(self, *args, **kwargs):
-        from balaio.validator import ISSNValidationPipe
-        return ISSNValidationPipe(*args, **kwargs)
-
-    def _make_etree(self, xml):
-        etree = ElementTree()
-        return etree.parse(StringIO(xml))
-
-    def _make_xml(self, issn_type, issn):
-        return """
-               <root>
-                   <journal-title>Acta Paulista de Enfermagem</journal-title>
-                   <issn pub-type='%s'>%s</issn>
-               </root>
-               """ % (issn_type, issn)
-
-    def _make_json(self, dict_data):
-        return json.load(StringIO(dict_data))
-
-    def test_pipe_issn_with_one_valid_ISSN(self):
-
-        xml = self._make_etree(self._make_xml('epub', '0102-6720'))
-
-        attempt = self.mocker.mock()
-        pkg_analyzer = self.mocker.mock()
-        mock_manager = self.mocker.mock()
-        mock_notifier = self.mocker.mock()
-
-        pkg_analyzer.xml
-        self.mocker.result(xml)
-
-        self.mocker.count(2)
-
-        pkg_analyzer.meta
-        self.mocker.result({"journal_title": "Acta Paulista de Enfermagem", "journal_eissn": "0102-6720"})
-
-        mock_notifier()
-        self.mocker.result(mock_notifier)
-
-        mock_manager()
-        self.mocker.result(mock_manager)
-
-        mock_manager.journal("Acta Paulista de Enfermagem", "title")
-        self.mocker.result(self._make_json('{"title": "Acta Paulista de Enfermagem", "eletronic_issn": "0102-6720"}'))
-
-        self.mocker.replay()
-
-        pipe = self._make_pipe((attempt, pkg_analyzer), mock_manager, mock_notifier)
-
-        self.assertEquals(pipe.validate(pkg_analyzer), ['ok', '0102-6720'])
-
-    def test_pipe_issn_with_one_invalid_ISSN(self):
-
-        xml = self._make_etree(self._make_xml('epub', '1234-1234'))
-
-        attempt = self.mocker.mock()
-        pkg_analyzer = self.mocker.mock()
-        mock_manager = self.mocker.mock()
-        mock_notifier = self.mocker.mock()
-
-        pkg_analyzer.xml
-        self.mocker.result(xml)
-
-        mock_notifier()
-        self.mocker.result(mock_notifier)
-
-        mock_manager()
-        self.mocker.result(mock_manager)
-
-        self.mocker.replay()
-
-        pipe = self._make_pipe((attempt, pkg_analyzer), mock_manager, mock_notifier)
-
-        self.assertEquals(pipe.validate(pkg_analyzer), ['e', 'neither eletronic ISSN nor print ISSN are valid'])
-
-    def test_pipe_issn_with_strange_ISSN(self):
-
-        xml = self._make_etree(self._make_xml('epub', '01ols0-OIN'))
-
-        attempt = self.mocker.mock()
-        pkg_analyzer = self.mocker.mock()
-        mock_manager = self.mocker.mock()
-        mock_notifier = self.mocker.mock()
-
-        pkg_analyzer.xml
-        self.mocker.result(xml)
-
-        mock_notifier()
-        self.mocker.result(mock_notifier)
-
-        mock_manager()
-        self.mocker.result(mock_manager)
-
-        self.mocker.replay()
-
-        pipe = self._make_pipe((attempt, pkg_analyzer), mock_manager, mock_notifier)
-
-        self.assertEquals(pipe.validate(pkg_analyzer), ['e', 'neither eletronic ISSN nor print ISSN are valid'])
-
-    def test_pipe_issn_with_unregistred_ISSN(self):
-        xml = self._make_etree(self._make_xml('epub', '0102-6720'))
-
-        attempt = self.mocker.mock()
-        pkg_analyzer = self.mocker.mock()
-        mock_manager = self.mocker.mock()
-        mock_notifier = self.mocker.mock()
-
-        pkg_analyzer.xml
-        self.mocker.result(xml)
-
-        self.mocker.count(2)
-
-        pkg_analyzer.meta
-        self.mocker.result({"journal_title": "Acta Paulista de Enfermagem", "journal_eissn": "0102-6720"})
-
-        mock_notifier()
-        self.mocker.result(mock_notifier)
-
-        mock_manager()
-        self.mocker.result(mock_manager)
-
-        mock_manager.journal("Acta Paulista de Enfermagem", "title")
-        self.mocker.result(self._make_json('{"title": "Acta Paulista de Enfermagem", "eletronic_issn": "0102-6820"}'))
-
-        self.mocker.replay()
-
-        pipe = self._make_pipe((attempt, pkg_analyzer), mock_manager, mock_notifier)
-
-        self.assertEquals(pipe.validate(pkg_analyzer), ['e', u'Data in XML and Manager do not match.\nData in Manager: 0102-6820\nData in XML: 0102-6720'])
-
-
-class NLMJournalTitleValidationPipeTest(mocker.MockerTestCase):
-
-    def _make_pipe(self, *args, **kwargs):
-        from balaio.validator import NLMJournalTitleValidationPipe
-        return NLMJournalTitleValidationPipe(*args, **kwargs)
-
-    def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
-
-        etree = ElementTree()
-        xml = etree.parse(StringIO(xml_string))
-
-        attempt = self.mocker.mock()
-        pkg_analyzer = self.mocker.mock()
-
-        pkg_analyzer.xml
-        self.mocker.result(xml)
-
-        pkg_analyzer.meta
-        self.mocker.result({'journal_title': 'Revista Brasileira ...'})
-
-        return (attempt, pkg_analyzer)
-
-    def _validate(self, xml_string, manager_result='{"journal-title":"Revista Brasileira ...", "medline_title": "Rev. Bras. ????"}'):
-        mock_manager = self.mocker.mock()
-        mock_notifier = self.mocker.mock()
-
-        mock_notifier()
-        self.mocker.result(mock_notifier)
-
-        mock_manager()
-        self.mocker.result(mock_manager)
-
-        mock_manager.journal('Revista Brasileira ...', 'title')
-        self.mocker.result(json.load(StringIO(manager_result)))
-
-        data = self._make_data(xml_string)
-        self.mocker.replay()
-
-        pipe = self._make_pipe(data, mock_manager, mock_notifier)
-        return pipe.validate(data[1])
-
-    def test_nlm_journal_title_is_valid(self):
-        expected = ['ok', 'Rev. Bras. ????']
-
-        self.assertEquals(
-            expected,
-            self._validate('<root><journal-meta><journal-id journal-id-type="nlm-ta">Rev. Bras. ????</journal-id></journal-meta></root>'))
-
-    def test_nlm_journal_not_found_in_xml_and_not_found_in_manager(self):
+    def test_missing_pissn_is_ok(self):
         expected = ['ok', '']
-        self.assertEquals(
-            expected,
-            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>', '{"journal-title":"Revista Brasileira ..."}'))
+        data = "<root></root>"
 
-    def test_nlm_journal_title_not_found_in_xml(self):
-        expected = ['e', './/journal-meta/journal-id[@journal-id-type="nlm-ta"] not found in XML']
-        self.assertEquals(
-            expected,
-            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>'))
-
-    def test_nlm_journal_title_not_found_in_manager(self):
-        expected = ['e', 'medline_title not found in Manager']
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            expected,
-            self._validate('<root><journal-meta><journal-id journal-id-type="nlm-ta">Rev. Bras. ????</journal-id></journal-meta></root>', '{"journal-title":"Revista Brasileira ..."}'))
+            vpipe.validate(pkg_analyzer_stub), expected)
 
-    def test_nlm_journal_title_not_matched(self):
-        expected = ['e', u'Data in XML and Manager do not match.' + '\n' + 'Data in Manager: Rev. Bras. ????' + '\n' + 'Data in XML: Rev Bras ????']
+    def test_one_valid_ISSN(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
 
-        self.assertEquals(
-            expected,
-            self._validate('<root><journal-meta><journal-id journal-id-type="nlm-ta">Rev Bras ????</journal-id></journal-meta></root>'))
-
-
-class PublisherNameValidationPipeTest(mocker.MockerTestCase):
-
-    def _make_pipe(self, *args, **kwargs):
-        from balaio.validator import PublisherNameValidationPipe
-        return PublisherNameValidationPipe(*args, **kwargs)
-
-    def _make_data(self, xml_string='<root><journal-title>Revista Brasileira ...</journal-title></root>'):
-
-        etree = ElementTree()
-        xml = etree.parse(StringIO(xml_string))
-
-        attempt = self.mocker.mock()
-        pkg_analyzer = self.mocker.mock()
-
-        pkg_analyzer.xml
-        self.mocker.result(xml)
-
-        pkg_analyzer.meta
-        self.mocker.result({'journal_title': 'Revista Brasileira ...'})
-
-        return (attempt, pkg_analyzer)
-
-    def _validate(self, xml_string, manager_result='{"journal-title":"Revista Brasileira ...", "publisher_name": "Publicador ????"}'):
-        mock_manager = self.mocker.mock()
-        mock_notifier = self.mocker.mock()
-
-        mock_notifier()
-        self.mocker.result(mock_notifier)
-
-        mock_manager()
-        self.mocker.result(mock_manager)
-
-        mock_manager.journal('Revista Brasileira ...', 'title')
-        self.mocker.result(json.load(StringIO(manager_result)))
-
-        data = self._make_data(xml_string)
-        self.mocker.replay()
-
-        pipe = self._make_pipe(data, mock_manager, mock_notifier)
-        return pipe.validate(data[1])
-
-    def test_publisher_name_is_valid(self):
-        expected = ['ok', 'Publicador   ????']
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            expected,
-            self._validate('<root><journal-meta><publisher><publisher-name>Publicador   ????</publisher-name></publisher></journal-meta></root>'))
+            vpipe.validate(pkg_analyzer_stub), expected)
 
-    def test_publisher_name_not_found_in_xml_and_not_found_in_manager(self):
-        expected = ['e', 'Both publisher_name in Manager and .//journal-meta/publisher/publisher-name in XML are mandatory. But both are missing.']
-        self.assertEquals(
-            expected,
-            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>', '{"journal-title":"Revista Brasileira ..."}'))
+    def test_one_invalid_ISSN_raises_warning(self):
+        """
+        Invalid PISSN raises a waning instead of an error since
+        it is not a blocking condition.
+        """
+        expected = ['warning', 'print ISSN is invalid or unknown']
+        data = "<root><issn pub-type='ppub'>1234-1234</issn></root>"
 
-    def test_publisher_name_not_found_in_xml(self):
-        expected = ['e', './/journal-meta/publisher/publisher-name not found in XML']
-        self.assertEquals(
-            expected,
-            self._validate('<root><abbrev-journal-title>titulo abreviado</abbrev-journal-title></root>'))
-
-    def test_publisher_name_not_found_in_manager(self):
-        expected = ['e', 'publisher_name not found in Manager']
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            expected,
-            self._validate('<root><journal-meta><publisher><publisher-name>Publicador   ????</publisher-name></publisher></journal-meta></root>', '{"journal-title":"Revista Brasileira ..."}'))
+            vpipe.validate(pkg_analyzer_stub), expected)
 
-    def test_publisher_name_not_matched(self):
-        expected = ['e', u'Data in XML and Manager do not match.' + '\n' + 'Data in Manager: Publicador ????' + '\n' + 'Data in XML: Publ~icador   ??***??']
+    def test_two_valid_ISSN_eletronic_and_print(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='ppub'>0100-879X</issn><issn pub-type='epub'>1414-431X</issn></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            expected,
-            self._validate('<root><journal-meta><publisher><publisher-name>Publ~icador   ??***??</publisher-name></publisher></journal-meta></root>'))
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+
+    def test_valid_and_known_ISSN(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
+
+        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
+        scieloapitoolbelt_stub.has_any = lambda x: True
+
+        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
+
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_valid_and_unknown_ISSN(self):
+        expected = ['warning', 'print ISSN is invalid or unknown']
+        data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
+
+        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
+        scieloapitoolbelt_stub.has_any = lambda x: False
+
+        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
+
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+
+class EISSNValidationPipeTests(unittest.TestCase):
+    def _makeOne(self, data, **kwargs):
+        vpipe =  validator.EISSNValidationPipe(data)
+
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+
+        vpipe.configure(_scieloapi=_scieloapi,
+                        _notifier=_notifier,
+                        _sapi_tools=_sapi_tools)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_one_valid_ISSN(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_one_invalid_ISSN(self):
+        expected = ['error', 'electronic ISSN is invalid or unknown']
+        data = "<root><issn pub-type='epub'>1234-1234</issn></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_two_valid_ISSN_eletronic_and_print(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='ppub'>0100-879X</issn><issn pub-type='epub'>1414-431X</issn></root>"
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_valid_and_known_ISSN(self):
+        expected = ['ok', '']
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
+        scieloapitoolbelt_stub.has_any = lambda x: True
+
+        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
+
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_valid_and_unknown_ISSN(self):
+        expected = ['error', 'electronic ISSN is invalid or unknown']
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
+        scieloapitoolbelt_stub.has_any = lambda x: False
+
+        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
+
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+
+class SetupPipeTests(mocker.MockerTestCase):
+
+    def _makeOne(self, data, **kwargs):
+        from balaio import utils
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
+
+        vpipe = validator.SetupPipe(data)
+        vpipe.configure(_scieloapi=_scieloapi,
+                        _notifier=_notifier,
+                        _sapi_tools=_sapi_tools,
+                        _pkg_analyzer=_pkg_analyzer,
+                        _issn_validator=_issn_validator)
+        return vpipe
+
+    def test_transform_returns_right_datastructure(self):
+        """
+        The right datastructure is a tuple in the form:
+        (<models.Attempt>, <checkin.PackageAnalyzer>, <dict>)
+        """
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda print_issn=None, eletronic_issn=None, limit=None: [{}]
+
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
+
+        result = vpipe.transform(AttemptStub())
+
+        self.assertIsInstance(result, tuple)
+        self.assertIsInstance(result[0], AttemptStub)
+        self.assertIsInstance(result[1], PackageAnalyzerStub)
+        # index 2 is the return data from scieloapi.journals.filter
+        # so, testing its type actualy means nothing.
+        self.assertEqual(len(result), 3)
+
+    def test_fetch_journal_data_with_valid_criteria(self):
+        """
+        Valid criteria means a valid querystring param.
+        See a list at http://ref.scielo.org/nssk38
+
+        The behaviour defined by the Restful API is to
+        ignore the query for invalid criteria, and so
+        do we.
+        """
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda **kwargs: [{'foo': 'bar'}]
+
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
+        self.assertEqual(vpipe._fetch_journal_data({'print_issn': '1234-1234'}),
+                         {'foo': 'bar'})
+
+    def test_fetch_journal_data_with_unknown_issn_raises_ValueError(self):
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda **kwargs: []
+
+        sapi_tools = get_ScieloAPIToolbeltStubModule()
+        def _get_one(dataset):
+            raise ValueError()
+        sapi_tools.get_one = _get_one
+
+        vpipe = self._makeOne(data, _scieloapi=scieloapi, _sapi_tools=sapi_tools)
+        self.assertRaises(ValueError,
+                          lambda: vpipe._fetch_journal_data({'print_issn': '1234-1234'}))
+
+    def test_transform_grants_valid_issn_before_fetching(self):
+        stub_attempt = AttemptStub()
+        stub_attempt.articlepkg.journal_pissn = '0100-879X'
+        stub_attempt.articlepkg.journal_eissn = None
+
+        mock_issn_validator = self.mocker.mock()
+        mock_fetch_journal_data = self.mocker.mock()
+
+        with self.mocker.order():
+            mock_issn_validator('0100-879X')
+            self.mocker.result(True)
+
+            mock_fetch_journal_data({'print_issn': '0100-879X'})
+            self.mocker.result({'foo': 'bar'})
+
+            self.mocker.replay()
+
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        vpipe = self._makeOne(data)
+        vpipe._issn_validator = mock_issn_validator
+        vpipe._fetch_journal_data = mock_fetch_journal_data
+
+        result = vpipe.transform(stub_attempt)
+

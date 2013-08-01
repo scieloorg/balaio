@@ -6,15 +6,15 @@ import itertools
 import xml.etree.ElementTree as etree
 import logging
 
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.exc import IntegrityError
+
 import models
 import utils
 
 
 __all__ = ['PackageAnalyzer', 'get_attempt']
-
 logger = logging.getLogger('balaio.checkin')
-config = utils.Configuration.from_env()
-
 utils.setup_logging()
 
 
@@ -126,7 +126,10 @@ class PackageAnalyzer(SPSMixin, Xray):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.restore_perms()
+        try:
+            self.restore_perms()
+        except OSError, exc:
+            logger.info('The package had been deleted before the permissions restore procedure: %s' % exc)
         self._cleanup_package_fp()
 
     @property
@@ -196,20 +199,64 @@ def get_attempt(package):
     the expected models.ArticlePkg instance.
     - Verify if exist at least one ISSN.
     """
+    config = utils.Configuration.from_env()
+
     logger.info('Analysing package: %s' % package)
+
     with PackageAnalyzer(package) as pkg:
+        try:
+            pkg_meta = pkg.meta
 
-        if pkg.is_valid_package() and (pkg.meta['journal_eissn'] or pkg.meta['journal_pissn']):
-            article = models.get_or_create(models.ArticlePkg, **pkg.meta)
-            pkg_checksum = pkg.checksum
+            if pkg.is_valid_package() and (pkg_meta['journal_eissn'] or pkg_meta['journal_pissn']):
+                Session = models.Session
 
-            attempt_meta = {'package_md5': pkg_checksum,
-                            'articlepkg_id': article.id}
-            logger.debug('Trying to generate an Attempt for package with chksum: %s and ArticlePkg: %s' % (attempt_meta['package_md5'], attempt_meta['articlepkg_id']))
-            attempt = models.get_or_create(models.Attempt, **attempt_meta)
+                logging.debug('Binding a new sqlalchemy.engine')
+                Session.configure(bind=models.create_engine_from_config(config))
 
-            return attempt
-        else:
-            errors = ', '.join(pkg.errors)
-            logger.debug('Invalid package: %s. Errors: %s' % (package, errors))
-            raise ValueError('the package is not valid: %s' % errors)
+                logging.debug('Creating a transactional session scope')
+                session = Session()
+
+                try:
+                    logging.debug('Getting a models.ArticlePkg')
+                    try:
+                        article_pkg = session.query(models.ArticlePkg).filter_by(article_title=pkg_meta['article_title']).one()
+                    except MultipleResultsFound as e:
+                        logging.error('Multiple results trying to get a models.ArticlePkg for article_title=%s. %s' % (
+                            pkg_meta['article_title'], e))
+                        raise ValueError('Impossible to find a models.ArticlePkg matching criteria')
+                    except NoResultFound as e:
+                        logging.debug('Creating a new models.ArticlePkg')
+                        article_pkg = models.ArticlePkg(**pkg_meta)
+                        session.add(article_pkg)
+
+                    logger.debug('Trying to generate an Attempt for package with chksum: %s and ArticlePkg: %s' % (
+                        pkg.checksum, repr(article_pkg)))
+                    try:
+                        attempt = models.Attempt(package_checksum=pkg.checksum,
+                                                 articlepkg=article_pkg,
+                                                 filepath=package)
+                        session.add(attempt)
+                    except IntegrityError:
+                        logging.debug('The package had already been analyzed')
+                        raise ValueError('The package had already been analyzed')
+
+                    logging.debug('Created %s' % attempt)
+                    session.commit()
+                except:
+                    logging.error('The transaction was aborted due to an exception')
+                    session.rollback()
+                    raise
+                finally:
+                    logging.debug('Closing the transactional session scope')
+                    session.close()
+
+                return attempt
+            else:
+                errors = ', '.join(pkg.errors)
+                logger.debug('Invalid package: %s. Errors: %s' % (package, errors))
+                raise ValueError('the package is not valid: %s' % errors)
+
+        except IOError as e:
+            logger.error('The package %s had been deleted during analisys' % package)
+            raise ValueError('The package %s had been deleted during analisys' % package)
+

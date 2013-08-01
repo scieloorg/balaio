@@ -12,8 +12,11 @@ import threading
 import logging, logging.handlers
 
 
+logger = logging.getLogger('balaio.utils')
 stdout_lock = threading.Lock()
-
+# flag to indicate if the process have
+# already defined a logger handler.
+has_logger = False
 
 class SingletonMixin(object):
     """
@@ -130,9 +133,13 @@ def send_message(stream, message, digest, pickle_dep=pickle):
     header = '%s %s\n' % (data_digest, len(serialized))
 
     with stdout_lock:
+        logger.debug('Stream %s is locked' % stream)
         stream.write(header)
         stream.write(serialized)
         stream.flush()
+
+    logger.debug('Stream %s is unlocked' % stream)
+    logger.debug('Message sent with header: %s' % header)
 
 
 def recv_messages(stream, digest, pickle_dep=pickle):
@@ -158,10 +165,12 @@ def recv_messages(stream, digest, pickle_dep=pickle):
         in_digest, in_length = header.split(' ')
         in_message = stream.read(int(in_length))
 
+        logger.debug('Received message header: %s message: %s' % (header, in_message))
+
         if in_digest == digest(in_message):
             yield pickle_dep.loads(in_message)
         else:
-            # log the failure
+            logger.error('Received a corrupted message: %s, %s' % (header, in_message))
             continue
 
 
@@ -177,16 +186,20 @@ def prefix_file(filename, prefix):
 def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
 
-
 def setup_logging():
-    rootLogger = logging.getLogger('')
-    rootLogger.setLevel(logging.DEBUG)
-    socketHandler = logging.handlers.SocketHandler('localhost',
-                                                   logging.handlers.DEFAULT_TCP_LOGGING_PORT)
-    # don't bother with a formatter, since a socket handler sends the event as
-    # an unformatted pickle
-    rootLogger.addHandler(socketHandler)
-
+    global has_logger
+    # avoid setting up more than once per process
+    if has_logger:
+        return None
+    else:
+        rootLogger = logging.getLogger('')
+        rootLogger.setLevel(logging.DEBUG)
+        socketHandler = logging.handlers.SocketHandler('localhost',
+                                                       logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+        # don't bother with a formatter, since a socket handler sends the event as
+        # an unformatted pickle
+        rootLogger.addHandler(socketHandler)
+        has_logger = True
 
 def validate_issn(issn):
     """
