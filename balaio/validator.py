@@ -87,61 +87,6 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
             logger.info('%s is invalid. Finished.' % attempt)
 
 
-
-class PISSNValidationPipe(vpipes.ValidationPipe):
-    """
-    Verify if PISSN exists on SciELO Manager and if it's valid.
-
-    PISSN should not be mandatory, since SciELO is an electronic
-    library online.
-    If a PISSN is invalid, a warning is raised instead of an error.
-    The analyzed atribute is ``.//issn[@pub-type="ppub"]``
-    """
-    _stage_ = 'issn'
-
-    def validate(self, package_analyzer):
-
-        data = package_analyzer.xml
-
-        pissn = data.findtext(".//issn[@pub-type='ppub']")
-
-        if not pissn:
-            return [STATUS_OK, '']
-        elif utils.is_valid_issn(pissn):
-            # check if the pissn is from a known journal
-            remote_journals = self._scieloapi.journals.filter(
-                print_issn=pissn, limit=1)
-
-            if self._sapi_tools.has_any(remote_journals):
-                return [STATUS_OK, '']
-
-        return [STATUS_WARNING, 'print ISSN is invalid or unknown']
-
-
-class EISSNValidationPipe(vpipes.ValidationPipe):
-    """
-    Verify if EISSN exists on SciELO Manager and if it's valid.
-
-    The analyzed atribute is ``.//issn/@pub-type="epub"``
-    """
-    _stage_ = 'issn'
-
-    def validate(self, package_analyzer):
-
-        data = package_analyzer.xml
-
-        eissn = data.findtext(".//issn[@pub-type='epub']")
-
-        if eissn and utils.is_valid_issn(eissn):
-            remote_journals = self._scieloapi.journals.filter(
-                eletronic_issn=eissn, limit=1)
-
-            if self._sapi_tools.has_any(remote_journals):
-                return [STATUS_OK, '']
-
-        return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
-
-
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()
