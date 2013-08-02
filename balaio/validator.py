@@ -87,82 +87,39 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
             logger.info('%s is invalid. Finished.' % attempt)
 
 
-class PISSNValidationPipe(vpipes.ValidationPipe):
-    """
-    Verify if PISSN exists on SciELO Manager and if it's valid.
-
-    PISSN should not be mandatory, since SciELO is an electronic
-    library online.
-    If a PISSN is invalid, a warning is raised instead of an error.
-    The analyzed atribute is ``.//issn[@pub-type="ppub"]``
-    """
-    _stage_ = 'issn'
-
-    def validate(self, package_analyzer):
-
-        data = package_analyzer.xml
-
-        pissn = data.findtext(".//issn[@pub-type='ppub']")
-
-        if not pissn:
-            return [STATUS_OK, '']
-        elif utils.is_valid_issn(pissn):
-            # check if the pissn is from a known journal
-            remote_journals = self._scieloapi.journals.filter(
-                print_issn=pissn, limit=1)
-
-            if self._sapi_tools.has_any(remote_journals):
-                return [STATUS_OK, '']
-
-        return [STATUS_WARNING, 'print ISSN is invalid or unknown']
-
-
-class EISSNValidationPipe(vpipes.ValidationPipe):
-    """
-    Verify if EISSN exists on SciELO Manager and if it's valid.
-
-    The analyzed atribute is ``.//issn/@pub-type="epub"``
-    """
-    _stage_ = 'issn'
-
-    def validate(self, package_analyzer):
-
-        data = package_analyzer.xml
-
-        eissn = data.findtext(".//issn[@pub-type='epub']")
-
-        if eissn and utils.is_valid_issn(eissn):
-            remote_journals = self._scieloapi.journals.filter(
-                eletronic_issn=eissn, limit=1)
-
-            if self._sapi_tools.has_any(remote_journals):
-                return [STATUS_OK, '']
-
-        return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
-
-
 class PublisherNameValidationPipe(vpipes.ValidationPipe):
     """
     Validate the publisher name in article. It must be same as registered in journal data
     """
-    def validate(item):
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
+    _stage_ = 'PublisherNameValidationPipe'
+
+    def validate(self, item):
         """
         Performs a validation to one `item` of data iterator.
 
         `item` is a tuple comprised of instances of models.Attempt, a
         checkin.PackageAnalyzer and a dict of journal data.
         """
+
+        def normalize_str(s):
+            return ' '.join(s.upper().split())
+
         attempt, package_analyzer, journal_data = item
-        data = package_analyzer.xml
-        publisher_name = data.findtext('.//publisher-name')
         j_publisher_name = journal_data.get('publisher_name', None)
         if j_publisher_name is None:
-            r = [STATUS_ERROR, 'Missing publisher-name in journal']
+            r = [STATUS_ERROR, 'Missing publisher_name in journal']
         else:
-            if publisher_name.replace(' ', '-').upper() == j_publisher_name.replace(' ', '-').upper():
-                r = [STATUS_OK, '']
+            data = package_analyzer.xml
+            publisher_name = data.findtext('.//publisher-name')
+
+            if publisher_name is None:
+                r = [STATUS_ERROR, 'Missing publisher-name in article']
             else:
-                r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + publisher_name + ' [article]']
+                if normalize_str(publisher_name) == normalize_str(j_publisher_name):
+                    r = [STATUS_OK, '']
+                else:
+                    r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + publisher_name + ' [article]']
         return r
 
 
@@ -188,4 +145,3 @@ if __name__ == '__main__':
         results = [msg for msg in ppl.run(messages)]
     except KeyboardInterrupt:
         sys.exit(0)
-
