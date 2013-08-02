@@ -87,7 +87,6 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
             logger.info('%s is invalid. Finished.' % attempt)
 
 
-
 class PISSNValidationPipe(vpipes.ValidationPipe):
     """
     Verify if PISSN exists on SciELO Manager and if it's valid.
@@ -140,6 +139,24 @@ class EISSNValidationPipe(vpipes.ValidationPipe):
                 return [STATUS_OK, '']
 
         return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
+
+
+class PublisherNameValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate the publisher name in article. It must be same as registered in journal data
+    """
+    def validate(item):
+        """
+        Performs a validation to one `item` of data iterator.
+
+        `item` is a tuple comprised of instances of models.Attempt, a
+        checkin.PackageAnalyzer and a dict of journal data.
+        """
+        attempt, package_analyzer, journal_data = item
+        data = package_analyzer.xml
+        publisher_name = data.findtext('.//publisher-name')
+        if publisher_name.replace(' ', '-').upper() != journal_data['publisher-name'].replace(' ', '-').upper():
+            return [STATUS_ERROR, journal_data['publisher-name'] + ' [registered]\n' + publisher_name + ' [found]']
 
 
 if __name__ == '__main__':
