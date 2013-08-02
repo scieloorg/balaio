@@ -155,8 +155,15 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         attempt, package_analyzer, journal_data = item
         data = package_analyzer.xml
         publisher_name = data.findtext('.//publisher-name')
-        if publisher_name.replace(' ', '-').upper() != journal_data['publisher-name'].replace(' ', '-').upper():
-            return [STATUS_ERROR, journal_data['publisher-name'] + ' [registered]\n' + publisher_name + ' [found]']
+        j_publisher_name = journal_data.get('publisher_name', None)
+        if j_publisher_name is None:
+            r = [STATUS_ERROR, 'Missing publisher-name in journal']
+        else:
+            if publisher_name.replace(' ', '-').upper() == j_publisher_name.replace(' ', '-').upper():
+                r = [STATUS_OK, '']
+            else:
+                r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + publisher_name + ' [article]']
+        return r
 
 
 if __name__ == '__main__':

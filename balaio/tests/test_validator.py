@@ -36,10 +36,6 @@ class PISSNValidationPipeTests(unittest.TestCase):
                         _sapi_tools=_sapi_tools)
         return vpipe
 
-    def _makePkgAnalyzerWithData(self, data):
-        pkg_analyzer_stub = PackageAnalyzerStub()
-        pkg_analyzer_stub._xml_string = data
-        return pkg_analyzer_stub
 
     def test_missing_pissn_is_ok(self):
         expected = ['ok', '']
@@ -284,6 +280,42 @@ class SetupPipeTests(mocker.MockerTestCase):
         vpipe = self._makeOne(data)
         vpipe._issn_validator = mock_issn_validator
         vpipe._fetch_journal_data = mock_fetch_journal_data
+        #result = vpipe.transform(stub_attempt)
+        #return result
 
-        result = vpipe.transform(stub_attempt)
 
+class PublisherNameValidationPipeTests(mocker.MockerTestCase):
+    """
+    docstring for PublisherNameValidationPipeTests
+    """
+    def _makeOne(self, data, **kwargs):
+        from balaio import utils
+        #_scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        #_notifier = kwargs.get('_notifier', NotifierStub())
+        #_sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        #_issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
+
+        vpipe = validator.PublisherNameValidationPipe(data)
+        vpipe.configure(_pkg_analyzer=_pkg_analyzer)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_data_is_valid(self):
+        expected = [STATUS_OK, '']
+        xml = '<root><publisher-name>publicador da revista brasileira de ....</publisher-name></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {'publisher_name': 'publicador da revista brasileira de ....'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
