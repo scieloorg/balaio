@@ -192,10 +192,10 @@ class EISSNValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
 
-class ArticleReferencePipeTests(unittest.TestCase):
+class ReferenceJournalTypeValidationPipeTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-        vpipe = validator.ArticleReferencePipe(data)
+        vpipe = validator.ReferenceJournalTypeValidationPipe(data)
 
         _scieloapi = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', NotifierStub())

@@ -142,11 +142,13 @@ class EISSNValidationPipe(vpipes.ValidationPipe):
         return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
 
 
-class ArticleReferencePipe(vpipes.ValidationPipe):
+class ReferenceJournalTypeValidationPipe(vpipes.ValidationPipe):
     """
+    Validate the references type journal.
     Verify if exists reference list
     Verify if exists some missing tags in reference list
     Verify if exists content on tags: ``source``, ``article-title`` and ``year`` of reference list
+    Analized tag: ``.//ref-list/ref/element-citation[@citation-type='journal']``
     """
     _stage_ = 'references'
     __requires__ = ['_notifier', '_pkg_analyzer']
@@ -177,7 +179,7 @@ if __name__ == '__main__':
                                  config.get('manager', 'api_key'))
     notifier_dep = notifier.Notifier()
 
-    ppl = vpipes.Pipeline(SetupPipe, ArticleReferencePipe, TearDownPipe)
+    ppl = vpipes.Pipeline(SetupPipe, ReferenceJournalTypeValidationPipe, TearDownPipe)
 
     # add all dependencies to a registry-ish thing
     ppl.configure(_scieloapi=scieloapi,
