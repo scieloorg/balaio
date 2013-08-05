@@ -186,6 +186,7 @@ def prefix_file(filename, prefix):
 def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
 
+
 def setup_logging():
     global has_logger
     # avoid setting up more than once per process
@@ -200,6 +201,14 @@ def setup_logging():
         # an unformatted pickle
         rootLogger.addHandler(socketHandler)
         has_logger = True
+
+
+def normalize_message(message):
+    """
+    Function to normalize message ensuring that the message is in uppercase
+    """
+    return ' '.join(message.upper().split())
+
 
 def validate_issn(issn):
     """

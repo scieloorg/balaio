@@ -87,59 +87,37 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
             logger.info('%s is invalid. Finished.' % attempt)
 
 
-
-class PISSNValidationPipe(vpipes.ValidationPipe):
+class PublisherNameValidationPipe(vpipes.ValidationPipe):
     """
-    Verify if PISSN exists on SciELO Manager and if it's valid.
-
-    PISSN should not be mandatory, since SciELO is an electronic
-    library online.
-    If a PISSN is invalid, a warning is raised instead of an error.
-    The analyzed atribute is ``.//issn[@pub-type="ppub"]``
+    Validate the publisher name in article. It must be same as registered in journal data
     """
-    _stage_ = 'issn'
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
+    _stage_ = 'Publisher Name'
 
-    def validate(self, package_analyzer):
+    def validate(self, item):
+        """
+        Performs a validation to one `item` of data iterator.
 
-        data = package_analyzer.xml
+        `item` is a tuple comprised of instances of models.Attempt, a
+        checkin.PackageAnalyzer and a dict of journal data.
+        """
 
-        pissn = data.findtext(".//issn[@pub-type='ppub']")
+        attempt, package_analyzer, journal_data = item
+        publisher_name = journal_data.get('publisher_name', None)
 
-        if not pissn:
-            return [STATUS_OK, '']
-        elif utils.is_valid_issn(pissn):
-            # check if the pissn is from a known journal
-            remote_journals = self._scieloapi.journals.filter(
-                print_issn=pissn, limit=1)
+        if publisher_name:
+            data = package_analyzer.xml
+            xml_publisher_name = data.findtext('.//publisher-name')
 
-            if self._sapi_tools.has_any(remote_journals):
-                return [STATUS_OK, '']
-
-        return [STATUS_WARNING, 'print ISSN is invalid or unknown']
-
-
-class EISSNValidationPipe(vpipes.ValidationPipe):
-    """
-    Verify if EISSN exists on SciELO Manager and if it's valid.
-
-    The analyzed atribute is ``.//issn/@pub-type="epub"``
-    """
-    _stage_ = 'issn'
-
-    def validate(self, package_analyzer):
-
-        data = package_analyzer.xml
-
-        eissn = data.findtext(".//issn[@pub-type='epub']")
-
-        if eissn and utils.is_valid_issn(eissn):
-            remote_journals = self._scieloapi.journals.filter(
-                eletronic_issn=eissn, limit=1)
-
-            if self._sapi_tools.has_any(remote_journals):
-                return [STATUS_OK, '']
-
-        return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
+            if xml_publisher_name:
+                if utils.normalize_message(xml_publisher_name) == utils.normalize_message(publisher_name):
+                    return [STATUS_OK, '']
+                else:
+                    return [STATUS_ERROR, publisher_name + ' [journal]\n' + xml_publisher_name + ' [article]']
+            else:
+                return [STATUS_ERROR, 'Missing publisher-name in article']
+        else:
+            return [STATUS_ERROR, 'Missing publisher_name in journal']
 
 
 class ArticleReferencePipe(vpipes.ValidationPipe):
@@ -159,11 +137,11 @@ class ArticleReferencePipe(vpipes.ValidationPipe):
             for ref in references:
                 try:
                     if not (ref.find('source').text and ref.find('article-title').text and ref.find('year').text):
-                        return [STATUS_ERROR, 'missing content on reference tags: source, article-title or year']
+                        return [STATUS_ERROR, utils.normalize_message('missing content on reference tags: source, article-title or year')]
                 except AttributeError:
-                    return [STATUS_ERROR, 'missing some tag in reference list']
+                    return [STATUS_ERROR, utils.normalize_message('missing some tag in reference list')]
         else:
-            return [STATUS_WARNING, 'this xml does not have reference list']
+            return [STATUS_WARNING, utils.normalize_message('this xml does not have reference list')]
 
         return [STATUS_OK, '']
 
@@ -177,7 +155,7 @@ if __name__ == '__main__':
                                  config.get('manager', 'api_key'))
     notifier_dep = notifier.Notifier()
 
-    ppl = vpipes.Pipeline(SetupPipe, ArticleReferencePipe, TearDownPipe)
+    ppl = vpipes.Pipeline(SetupPipe, PublisherNameValidationPipe, ArticleReferencePipe, TearDownPipe)
 
     # add all dependencies to a registry-ish thing
     ppl.configure(_scieloapi=scieloapi,
@@ -190,4 +168,3 @@ if __name__ == '__main__':
         results = [msg for msg in ppl.run(messages)]
     except KeyboardInterrupt:
         sys.exit(0)
-

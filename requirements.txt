@@ -1,4 +1,4 @@
-pyinotify
+#pyinotify
 sqlalchemy
 git+git://github.com/gustavofonseca/plumber.git#egg=plumber
 git+git://github.com/scieloorg/scieloapi.py.git#egg=scieloapi
