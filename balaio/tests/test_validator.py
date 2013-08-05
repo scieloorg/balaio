@@ -192,15 +192,15 @@ class EISSNValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
 
-class ReferenceJournalTypeValidationPipeTests(unittest.TestCase):
+class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-        vpipe = validator.ReferenceJournalTypeValidationPipe(data)
+        vpipe = validator.JournalReferenceTypeValidationPipe(data)
 
-        _scieloapi = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', NotifierStub())
 
-        vpipe.configure(_scieloapi=_scieloapi,
+        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
                         _notifier=_notifier)
         return vpipe
 
@@ -215,7 +215,7 @@ class ReferenceJournalTypeValidationPipeTests(unittest.TestCase):
             <root>
               <ref-list>
                 <ref id="B23">
-                  <element-citation citation-type="journal">
+                  <element-citation publication-type="journal">
                     <person-group person-group-type="author">
                       <name>
                         <surname><![CDATA[Winkler]]></surname>
@@ -270,7 +270,7 @@ class ReferenceJournalTypeValidationPipeTests(unittest.TestCase):
             <root>
               <ref-list>
                 <ref id="B23">
-                  <element-citation citation-type="journal">
+                  <element-citation publication-type="journal">
                     <person-group person-group-type="author">
                       <name>
                         <surname><![CDATA[Winkler]]></surname>
@@ -303,7 +303,7 @@ class ReferenceJournalTypeValidationPipeTests(unittest.TestCase):
             <root>
               <ref-list>
                 <ref id="B23">
-                  <element-citation citation-type="journal">
+                  <element-citation publication-type="journal">
                     <person-group person-group-type="author">
                       <name>
                         <surname><![CDATA[Winkler]]></surname>
