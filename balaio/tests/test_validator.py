@@ -215,7 +215,7 @@ class ArticleReferencePipeTests(unittest.TestCase):
             <root>
               <ref-list>
                 <ref id="B23">
-                  <nlm-citation citation-type="journal">
+                  <element-citation citation-type="journal">
                     <person-group person-group-type="author">
                       <name>
                         <surname><![CDATA[Winkler]]></surname>
@@ -231,7 +231,7 @@ class ArticleReferencePipeTests(unittest.TestCase):
                     <year>2013</year>
                     <volume>49</volume>
                     <page-range>641-46</page-range>
-                  </nlm-citation>
+                  </element-citation>
                 </ref>
               </ref-list>
             </root>'''
@@ -270,7 +270,7 @@ class ArticleReferencePipeTests(unittest.TestCase):
             <root>
               <ref-list>
                 <ref id="B23">
-                  <nlm-citation citation-type="journal">
+                  <element-citation citation-type="journal">
                     <person-group person-group-type="author">
                       <name>
                         <surname><![CDATA[Winkler]]></surname>
@@ -286,7 +286,7 @@ class ArticleReferencePipeTests(unittest.TestCase):
                     <year></year>
                     <volume>49</volume>
                     <page-range>641-46</page-range>
-                  </nlm-citation>
+                  </element-citation>
                 </ref>
               </ref-list>
             </root>'''
@@ -303,7 +303,7 @@ class ArticleReferencePipeTests(unittest.TestCase):
             <root>
               <ref-list>
                 <ref id="B23">
-                  <nlm-citation citation-type="journal">
+                  <element-citation citation-type="journal">
                     <person-group person-group-type="author">
                       <name>
                         <surname><![CDATA[Winkler]]></surname>
@@ -318,7 +318,7 @@ class ArticleReferencePipeTests(unittest.TestCase):
                     <year>2013</year>
                     <volume>49</volume>
                     <page-range>641-46</page-range>
-                  </nlm-citation>
+                  </element-citation>
                 </ref>
               </ref-list>
             </root>'''

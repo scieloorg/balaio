@@ -153,7 +153,7 @@ class ArticleReferencePipe(vpipes.ValidationPipe):
 
     def validate(self, package_analyzer):
 
-        references = package_analyzer.xml.findall(".//ref-list/ref/nlm-citation[@citation-type='journal']")
+        references = package_analyzer.xml.findall(".//ref-list/ref/element-citation[@citation-type='journal']")
 
         if references:
             for ref in references:
