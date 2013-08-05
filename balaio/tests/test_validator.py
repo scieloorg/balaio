@@ -192,10 +192,10 @@ class EISSNValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
 
-class ReferenceJournalTypeValidationPipeTests(unittest.TestCase):
+class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-        vpipe = validator.ReferenceJournalTypeValidationPipe(data)
+        vpipe = validator.JournalReferenceTypeValidationPipe(data)
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', NotifierStub())
