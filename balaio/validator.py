@@ -1,6 +1,7 @@
 # coding: utf-8
 import sys
 import logging
+from xml.etree.ElementTree import ElementTree as etree
 
 import scieloapi
 
@@ -87,7 +88,6 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
             logger.info('%s is invalid. Finished.' % attempt)
 
 
-
 class PISSNValidationPipe(vpipes.ValidationPipe):
     """
     Verify if PISSN exists on SciELO Manager and if it's valid.
@@ -140,6 +140,48 @@ class EISSNValidationPipe(vpipes.ValidationPipe):
                 return [STATUS_OK, '']
 
         return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
+
+
+class FundingGroupValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate Funding Group according to the following rules:
+    Funding group is mandatory only if there is contract number in the article,
+    and this data is usually in acknowledge
+    """
+    _stage_ = 'Funding group validation'
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
+
+    def validate(self, item):
+        """
+        Validate funding-group according to the following rules
+
+        :param item: a tuple of (Attempt, PackageAnalyzer, journal_data)
+        :returns: [STATUS_ERROR, ack content], if no founding-group, but Acknowledgments (ack) has number
+        :returns: [STATUS_OK, founding-group content], if founding-group is present
+        :returns: [STATUS_OK, ack content], if no founding-group, but Acknowledgments has no numbers
+        :returns: [STATUS_OK, 'no funding-group and no ack'], if founding-group and Acknowledgments (ack) are absents
+        """
+        def _contains_number(self, text):
+            """
+            Check if it has any number
+
+            :param text: string
+            :returns: True if there is any number in text
+            """
+            return any((True for n in xrange(10) if str(n) in text))
+
+        attempt, pkg_analyzer, journal_data = item
+
+        xml_tree = pkg_analyzer.xml
+
+        funding_nodes = xml_tree.findall('.//funding-group')
+
+        status, description = [STATUS_OK, etree.tostring(funding_nodes[0])] if funding_nodes != [] else [STATUS_WARNING, 'no funding-group']
+        if not status == STATUS_OK:
+            ack_node = xml_tree.findall('.//ack')
+            description = etree.tostring(ack_node[0]) if ack_node != [] else 'no funding-group and no ack'
+            status = STATUS_ERROR if self._contains_number(description) else STATUS_OK if description != 'no funding-group and no ack' else STATUS_WARNING
+        return [status, description]
 
 
 if __name__ == '__main__':

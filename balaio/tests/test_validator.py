@@ -85,7 +85,6 @@ class PISSNValidationPipeTests(unittest.TestCase):
         self.assertEquals(
             vpipe.validate(pkg_analyzer_stub), expected)
 
-
     def test_valid_and_known_ISSN(self):
         expected = ['ok', '']
         data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
@@ -117,7 +116,7 @@ class PISSNValidationPipeTests(unittest.TestCase):
 
 class EISSNValidationPipeTests(unittest.TestCase):
     def _makeOne(self, data, **kwargs):
-        vpipe =  validator.EISSNValidationPipe(data)
+        vpipe = validator.EISSNValidationPipe(data)
 
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _notifier = kwargs.get('_notifier', NotifierStub())
@@ -287,3 +286,27 @@ class SetupPipeTests(mocker.MockerTestCase):
 
         result = vpipe.transform(stub_attempt)
 
+
+class FundingGroupValidationPipeTests(mocker.MockerTestCase):
+
+    def _makeOne(self, data, **kwargs):
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+
+        vpipe = validator.FundingGroupValidationPipe(data)
+        vpipe.configure(_scieloapi=_scieloapi,
+                        _notifier=_notifier,
+                        _sapi_tools=_sapi_tools,
+                        _pkg_analyzer=_pkg_analyzer)
+        return vpipe
+
+    def test_no_funding_group_and_no_ack(self):
+        expected = [validator.STATUS_OK, 'no funding-group and no ack']
+        data = '<root></root>'
+
+        vpipe = self._makeOne(data)
+
+        self.assertEquals(expected,
+            vpipe.validate()))
