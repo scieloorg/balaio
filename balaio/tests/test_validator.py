@@ -119,6 +119,144 @@ class SetupPipeTests(mocker.MockerTestCase):
         result = vpipe.transform(stub_attempt)
 
 
+class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
+
+    def _makeOne(self, data, **kwargs):
+        vpipe = validator.JournalReferenceTypeValidationPipe(data)
+
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _notifier = kwargs.get('_notifier', NotifierStub())
+
+        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
+                        _notifier=_notifier)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_valid_reference_list(self):
+        expected = ['ok', '']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <person-group person-group-type="author">
+                      <name>
+                        <surname><![CDATA[Winkler]]></surname>
+                        <given-names><![CDATA[JD]]></given-names>
+                      </name>
+                      <name>
+                        <surname><![CDATA[Sánchez-Villagra]]></surname>
+                        <given-names><![CDATA[MR]]></given-names>
+                      </name>
+                    </person-group>
+                    <article-title xml:lang="en"><![CDATA[A nesting site and egg morphology of a Miocene turtle from Urumaco, Venezuela: evidence of marine adaptations in Pelomedusoides]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <year>2013</year>
+                    <volume>49</volume>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_valid_without_reference_list(self):
+        expected = ['warning', 'this xml does not have reference list']
+        data = '''
+            <root>
+              <journal-meta>
+                <journal-id>0001-3765</journal-id>
+                <journal-title><![CDATA[Anais da Academia Brasileira de Ciências]]></journal-title>
+                <abbrev-journal-title><![CDATA[An. Acad. Bras. Ciênc.]]></abbrev-journal-title>
+                <issn>0001-3765</issn>
+                <publisher>
+                  <publisher-name><![CDATA[Academia Brasileira de Ciências]]></publisher-name>
+                </publisher>
+              </journal-meta>
+              <ref-list></ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_invalid_content_on_reference_list(self):
+        expected = ['error', 'missing content on reference tags: source, article-title or year']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <person-group person-group-type="author">
+                      <name>
+                        <surname><![CDATA[Winkler]]></surname>
+                        <given-names><![CDATA[JD]]></given-names>
+                      </name>
+                      <name>
+                        <surname><![CDATA[Sánchez-Villagra]]></surname>
+                        <given-names><![CDATA[MR]]></given-names>
+                      </name>
+                    </person-group>
+                    <article-title xml:lang="en"><![CDATA[A nesting site and egg morphology of a Miocene turtle from Urumaco, Venezuela: evidence of marine adaptations in Pelomedusoides]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <year></year>
+                    <volume>49</volume>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_missing_any_tag(self):
+        expected = ['error', 'missing some tag in reference list']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <person-group person-group-type="author">
+                      <name>
+                        <surname><![CDATA[Winkler]]></surname>
+                        <given-names><![CDATA[JD]]></given-names>
+                      </name>
+                      <name>
+                        <surname><![CDATA[Sánchez-Villagra]]></surname>
+                        <given-names><![CDATA[MR]]></given-names>
+                      </name>
+                    </person-group>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <year>2013</year>
+                    <volume>49</volume>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+
 class PublisherNameValidationPipeTests(mocker.MockerTestCase):
     """
     docstring for PublisherNameValidationPipeTests

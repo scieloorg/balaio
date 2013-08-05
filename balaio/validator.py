@@ -106,19 +106,46 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         j_publisher_name = journal_data.get('publisher_name', None)
         if j_publisher_name:
             data = package_analyzer.xml
-            publisher_name = data.findtext('.//publisher-name')
+            xml_publisher_name = data.findtext('.//publisher-name')
 
-            if publisher_name is None:
-                r = [STATUS_ERROR, 'Missing publisher-name in article']
-            else:
-                if utils.normalize_data_for_comparison(publisher_name) == utils.normalize_data_for_comparison(j_publisher_name):
+            if xml_publisher_name:
+                if utils.normalize_data_for_comparison(xml_publisher_name) == utils.normalize_data_for_comparison(j_publisher_name):
                     r = [STATUS_OK, '']
                 else:
-                    r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + publisher_name + ' [article]']
+                    r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + xml_publisher_name + ' [article]']
+            else:
+                r = [STATUS_ERROR, 'Missing publisher-name in article']
         else:
             r = [STATUS_ERROR, 'Missing publisher_name in journal']
         return r
 
+
+class JournalReferenceTypeValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate the references type journal.
+    Verify if exists reference list
+    Verify if exists some missing tags in reference list
+    Verify if exists content on tags: ``source``, ``article-title`` and ``year`` of reference list
+    Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']``
+    """
+    _stage_ = 'references'
+    __requires__ = ['_notifier', '_pkg_analyzer']
+
+    def validate(self, package_analyzer):
+
+        references = package_analyzer.xml.findall(".//ref-list/ref/element-citation[@publication-type='journal']")
+
+        if references:
+            for ref in references:
+                try:
+                    if not (ref.find('source').text and ref.find('article-title').text and ref.find('year').text):
+                        return [STATUS_ERROR, 'missing content on reference tags: source, article-title or year']
+                except AttributeError:
+                    return [STATUS_ERROR, 'missing some tag in reference list']
+        else:
+            return [STATUS_WARNING, 'this xml does not have reference list']
+
+        return [STATUS_OK, '']
 
 if __name__ == '__main__':
     utils.setup_logging()
@@ -129,7 +156,10 @@ if __name__ == '__main__':
                                  config.get('manager', 'api_key'))
     notifier_dep = notifier.Notifier()
 
-    ppl = vpipes.Pipeline(SetupPipe, TearDownPipe)
+    ppl = vpipes.Pipeline(SetupPipe,
+                          PublisherNameValidationPipe,
+                          JournalReferenceTypeValidationPipe,
+                          TearDownPipe)
 
     # add all dependencies to a registry-ish thing
     ppl.configure(_scieloapi=scieloapi,
