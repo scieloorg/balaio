@@ -142,6 +142,32 @@ class EISSNValidationPipe(vpipes.ValidationPipe):
         return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
 
 
+class ArticleReferencePipe(vpipes.ValidationPipe):
+    """
+    Verify if exists reference list
+    Verify if exists some missing tags in reference list
+    Verify if exists content on tags: ``source``, ``article-title`` and ``year`` of reference list
+    """
+    _stage_ = 'references'
+    __requires__ = ['_notifier', '_pkg_analyzer']
+
+    def validate(self, package_analyzer):
+
+        references = package_analyzer.xml.findall(".//ref-list/ref/nlm-citation[@citation-type='journal']")
+
+        if references:
+            for ref in references:
+                try:
+                    if not (ref.find('source').text and ref.find('article-title').text and ref.find('year').text):
+                        return [STATUS_ERROR, 'missing content on reference tags: source, article-title or year']
+                except AttributeError:
+                    return [STATUS_ERROR, 'missing some tag in reference list']
+        else:
+            return [STATUS_WARNING, 'this xml does not have reference list']
+
+        return [STATUS_OK, '']
+
+
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()
@@ -151,7 +177,7 @@ if __name__ == '__main__':
                                  config.get('manager', 'api_key'))
     notifier_dep = notifier.Notifier()
 
-    ppl = vpipes.Pipeline(SetupPipe, TearDownPipe)
+    ppl = vpipes.Pipeline(SetupPipe, ArticleReferencePipe, TearDownPipe)
 
     # add all dependencies to a registry-ish thing
     ppl.configure(_scieloapi=scieloapi,
