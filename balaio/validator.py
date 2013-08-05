@@ -102,24 +102,21 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         checkin.PackageAnalyzer and a dict of journal data.
         """
 
-        def normalize_str(s):
-            return ' '.join(s.upper().split())
-
         attempt, package_analyzer, journal_data = item
         j_publisher_name = journal_data.get('publisher_name', None)
-        if j_publisher_name is None:
-            r = [STATUS_ERROR, 'Missing publisher_name in journal']
-        else:
+        if j_publisher_name:
             data = package_analyzer.xml
             publisher_name = data.findtext('.//publisher-name')
 
             if publisher_name is None:
                 r = [STATUS_ERROR, 'Missing publisher-name in article']
             else:
-                if normalize_str(publisher_name) == normalize_str(j_publisher_name):
+                if utils.normalize_data_for_comparison(publisher_name) == utils.normalize_data_for_comparison(j_publisher_name):
                     r = [STATUS_OK, '']
                 else:
                     r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + publisher_name + ' [article]']
+        else:
+            r = [STATUS_ERROR, 'Missing publisher_name in journal']
         return r
 
 

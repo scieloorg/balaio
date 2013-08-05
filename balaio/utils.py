@@ -253,3 +253,7 @@ def is_valid_issn(issn):
         return bool(validate_issn(issn))
     except (ValueError, TypeError):
         return False
+
+
+def normalize_data_for_comparison(data):
+    return ' '.join(data.upper().split())
