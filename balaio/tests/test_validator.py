@@ -290,23 +290,68 @@ class SetupPipeTests(mocker.MockerTestCase):
 class FundingGroupValidationPipeTests(mocker.MockerTestCase):
 
     def _makeOne(self, data, **kwargs):
-        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _notifier = kwargs.get('_notifier', NotifierStub())
-        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
 
         vpipe = validator.FundingGroupValidationPipe(data)
-        vpipe.configure(_scieloapi=_scieloapi,
-                        _notifier=_notifier,
-                        _sapi_tools=_sapi_tools,
+        vpipe.configure(_notifier=_notifier,
                         _pkg_analyzer=_pkg_analyzer)
         return vpipe
 
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
     def test_no_funding_group_and_no_ack(self):
         expected = [validator.STATUS_OK, 'no funding-group and no ack']
-        data = '<root></root>'
+        xml = '<root></root>'
 
-        vpipe = self._makeOne(data)
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+        data = (None, stub_package_analyzer, {})
 
-        self.assertEquals(expected,
-            vpipe.validate()))
+        vpipe = self._makeOne(xml)
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_no_funding_group_and_ack_has_no_number(self):
+        expected = [validator.STATUS_OK, '<ack>acknowle<sub />dgements</ack>']
+        xml = '<root><ack>acknowle<sub/>dgements</ack></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+        data = (stub_attempt, stub_package_analyzer, {})
+
+        vpipe = self._makeOne(xml)
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_no_funding_group_and_ack_has_number(self):
+        expected = [validator.STATUS_OK, '<ack>acknowledgements<p>1234</p></ack>']
+        xml = '<root><ack>acknowledgements<p>1234</p></ack></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+        data = (stub_attempt, stub_package_analyzer, {})
+
+        vpipe = self._makeOne(xml)
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_funding_group(self):
+        expected = [validator.STATUS_OK, '<funding-group>funding data</funding-group>']
+        xml = '<root><ack>acknowledgements<funding-group>funding data</funding-group></ack></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+        data = (stub_attempt, stub_package_analyzer, {})
+
+        vpipe = self._makeOne(xml)
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    

@@ -149,7 +149,7 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
     and this data is usually in acknowledge
     """
     _stage_ = 'Funding group validation'
-    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
+    __requires__ = ['_notifier', '_pkg_analyzer']
 
     def validate(self, item):
         """
