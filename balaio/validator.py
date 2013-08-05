@@ -87,6 +87,87 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
             logger.info('%s is invalid. Finished.' % attempt)
 
 
+
+class PISSNValidationPipe(vpipes.ValidationPipe):
+    """
+    Verify if PISSN exists on SciELO Manager and if it's valid.
+
+    PISSN should not be mandatory, since SciELO is an electronic
+    library online.
+    If a PISSN is invalid, a warning is raised instead of an error.
+    The analyzed atribute is ``.//issn[@pub-type="ppub"]``
+    """
+    _stage_ = 'issn'
+
+    def validate(self, package_analyzer):
+
+        data = package_analyzer.xml
+
+        pissn = data.findtext(".//issn[@pub-type='ppub']")
+
+        if not pissn:
+            return [STATUS_OK, '']
+        elif utils.is_valid_issn(pissn):
+            # check if the pissn is from a known journal
+            remote_journals = self._scieloapi.journals.filter(
+                print_issn=pissn, limit=1)
+
+            if self._sapi_tools.has_any(remote_journals):
+                return [STATUS_OK, '']
+
+        return [STATUS_WARNING, 'print ISSN is invalid or unknown']
+
+
+class EISSNValidationPipe(vpipes.ValidationPipe):
+    """
+    Verify if EISSN exists on SciELO Manager and if it's valid.
+
+    The analyzed atribute is ``.//issn/@pub-type="epub"``
+    """
+    _stage_ = 'issn'
+
+    def validate(self, package_analyzer):
+
+        data = package_analyzer.xml
+
+        eissn = data.findtext(".//issn[@pub-type='epub']")
+
+        if eissn and utils.is_valid_issn(eissn):
+            remote_journals = self._scieloapi.journals.filter(
+                eletronic_issn=eissn, limit=1)
+
+            if self._sapi_tools.has_any(remote_journals):
+                return [STATUS_OK, '']
+
+        return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
+
+
+class ArticleReferencePipe(vpipes.ValidationPipe):
+    """
+    Verify if exists reference list
+    Verify if exists some missing tags in reference list
+    Verify if exists content on tags: ``source``, ``article-title`` and ``year`` of reference list
+    """
+    _stage_ = 'references'
+    __requires__ = ['_notifier', '_pkg_analyzer']
+
+    def validate(self, package_analyzer):
+
+        references = package_analyzer.xml.findall(".//ref-list/ref/nlm-citation[@citation-type='journal']")
+
+        if references:
+            for ref in references:
+                try:
+                    if not (ref.find('source').text and ref.find('article-title').text and ref.find('year').text):
+                        return [STATUS_ERROR, 'missing content on reference tags: source, article-title or year']
+                except AttributeError:
+                    return [STATUS_ERROR, 'missing some tag in reference list']
+        else:
+            return [STATUS_WARNING, 'this xml does not have reference list']
+
+        return [STATUS_OK, '']
+
+
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()
@@ -96,7 +177,7 @@ if __name__ == '__main__':
                                  config.get('manager', 'api_key'))
     notifier_dep = notifier.Notifier()
 
-    ppl = vpipes.Pipeline(SetupPipe, TearDownPipe)
+    ppl = vpipes.Pipeline(SetupPipe, ArticleReferencePipe, TearDownPipe)
 
     # add all dependencies to a registry-ish thing
     ppl.configure(_scieloapi=scieloapi,
