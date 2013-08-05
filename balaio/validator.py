@@ -87,7 +87,6 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
             logger.info('%s is invalid. Finished.' % attempt)
 
 
-
 class PISSNValidationPipe(vpipes.ValidationPipe):
     """
     Verify if PISSN exists on SciELO Manager and if it's valid.
@@ -148,14 +147,14 @@ class ReferenceJournalTypeValidationPipe(vpipes.ValidationPipe):
     Verify if exists reference list
     Verify if exists some missing tags in reference list
     Verify if exists content on tags: ``source``, ``article-title`` and ``year`` of reference list
-    Analized tag: ``.//ref-list/ref/element-citation[@citation-type='journal']``
+    Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']``
     """
     _stage_ = 'references'
     __requires__ = ['_notifier', '_pkg_analyzer']
 
     def validate(self, package_analyzer):
 
-        references = package_analyzer.xml.findall(".//ref-list/ref/element-citation[@citation-type='journal']")
+        references = package_analyzer.xml.findall(".//ref-list/ref/element-citation[@publication-type='journal']")
 
         if references:
             for ref in references:
@@ -192,4 +191,3 @@ if __name__ == '__main__':
         results = [msg for msg in ppl.run(messages)]
     except KeyboardInterrupt:
         sys.exit(0)
-
