@@ -1,6 +1,7 @@
 # coding: utf-8
 import sys
 import logging
+import xml.etree.ElementTree as etree
 
 import scieloapi
 
@@ -172,6 +173,57 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
                 return [STATUS_ERROR, 'missing abbreviated title on xml']
         else:
             return [STATUS_ERROR, 'missing abbreviated title on source']
+
+
+
+class FundingGroupValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate Funding Group according to the following rules:
+    Funding group is mandatory only if there is contract number in the article,
+    and this data is usually in acknowledge
+    """
+    _stage_ = 'Funding group validation'
+    __requires__ = ['_notifier', '_pkg_analyzer']
+
+    def validate(self, item):
+        """
+        Validate funding-group according to the following rules
+
+        :param item: a tuple of (Attempt, PackageAnalyzer, journal_data)
+        :returns: [STATUS_WARNING, ack content], if no founding-group, but Acknowledgments (ack) has number
+        :returns: [STATUS_OK, founding-group content], if founding-group is present
+        :returns: [STATUS_OK, ack content], if no founding-group, but Acknowledgments has no numbers
+        :returns: [STATUS_WARNING, 'no funding-group and no ack'], if founding-group and Acknowledgments (ack) are absents
+        """
+        def _contains_number(text):
+            """
+            Check if it has any number
+
+            :param text: string
+            :returns: True if there is any number in text
+            """
+            return any((True for n in xrange(10) if str(n) in text))
+
+        attempt, pkg_analyzer, journal_data = item
+
+        xml_tree = pkg_analyzer.xml
+
+        funding_nodes = xml_tree.findall('.//funding-group')
+
+        status, description = [STATUS_OK, etree.tostring(funding_nodes[0])] if funding_nodes != [] else [STATUS_WARNING, 'no funding-group']
+        if status == STATUS_WARNING:
+            ack_node = xml_tree.findall('.//ack')
+            ack_text = etree.tostring(ack_node[0]) if ack_node != [] else ''
+
+            if ack_text == '':
+                description = 'no funding-group and no ack'
+            elif _contains_number(ack_text):
+                description = ack_text + ' looks to have contract number. If so, it must be identified using funding-group'
+            else:
+                description = ack_text
+                status = STATUS_OK
+
+        return [status, description]
 
 
 if __name__ == '__main__':
