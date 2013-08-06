@@ -110,7 +110,7 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
             xml_publisher_name = data.findtext('.//publisher-name')
 
             if xml_publisher_name:
-                if utils.normalize_data_for_comparison(xml_publisher_name) == utils.normalize_data_for_comparison(j_publisher_name):
+                if utils.normalize_data(xml_publisher_name) == utils.normalize_data(j_publisher_name):
                     r = [STATUS_OK, '']
                 else:
                     r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + xml_publisher_name + ' [article]']
@@ -129,7 +129,7 @@ class JournalReferenceTypeValidationPipe(vpipes.ValidationPipe):
     Verify if exists content on tags: ``source``, ``article-title`` and ``year`` of reference list
     Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']``
     """
-    _stage_ = 'references'
+    _stage_ = 'References'
     __requires__ = ['_notifier', '_pkg_analyzer']
 
     def validate(self, package_analyzer):
@@ -147,6 +147,33 @@ class JournalReferenceTypeValidationPipe(vpipes.ValidationPipe):
             return [STATUS_WARNING, 'this xml does not have reference list']
 
         return [STATUS_OK, '']
+
+
+class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
+    """
+    Checks exist abbreviated title on source and xml
+    Verify if abbreviated title of the xml is equal to source
+    """
+    _stage_ = 'Journal Abbreviated Title Validation'
+    __requires__ = ['_notifier', '_pkg_analyser', '_scieloapi']
+
+    def validate(self, item):
+
+        attempt, pkg_analyzer, journal_data = item
+        abbrev_title = journal_data.get('short_title')
+
+        if abbrev_title:
+            abbrev_title_xml = pkg_analyzer.xml.find('.//journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
+            if abbrev_title_xml is not None:
+                if utils.normalize_data(abbrev_title) == utils.normalize_data(abbrev_title_xml.text):
+                    return [STATUS_OK, '']
+                else:
+                    return [STATUS_ERROR, 'the abbreviated title in xml is defferent from the abbreviated title in the source']
+            else:
+                return [STATUS_ERROR, 'missing abbreviated title on xml']
+        else:
+            return [STATUS_ERROR, 'missing abbreviated title on source']
+
 
 
 class FundingGroupValidationPipe(vpipes.ValidationPipe):

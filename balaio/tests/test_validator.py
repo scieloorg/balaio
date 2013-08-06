@@ -137,7 +137,7 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
         return pkg_analyzer_stub
 
     def test_valid_reference_list(self):
-        expected = ['ok', '']
+        expected = [validator.STATUS_OK, '']
         data = '''
             <root>
               <ref-list>
@@ -170,7 +170,7 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_valid_without_reference_list(self):
-        expected = ['warning', 'this xml does not have reference list']
+        expected = [validator.STATUS_WARNING, 'this xml does not have reference list']
         data = '''
             <root>
               <journal-meta>
@@ -192,7 +192,7 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_invalid_content_on_reference_list(self):
-        expected = ['error', 'missing content on reference tags: source, article-title or year']
+        expected = [validator.STATUS_ERROR, 'missing content on reference tags: source, article-title or year']
         data = '''
             <root>
               <ref-list>
@@ -225,7 +225,7 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_missing_any_tag(self):
-        expected = ['error', 'missing some tag in reference list']
+        expected = [validator.STATUS_ERROR, 'missing some tag in reference list']
         data = '''
             <root>
               <ref-list>
@@ -255,6 +255,90 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
 
         self.assertEquals(
             vpipe.validate(pkg_analyzer_stub), expected)
+
+
+class JournalAbbreviatedTitleValidationTests(unittest.TestCase):
+
+    def _makeOne(self, data, **kwargs):
+        vpipe = validator.JournalAbbreviatedTitleValidationPipe(data)
+
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _notifier = kwargs.get('_notifier', NotifierStub())
+
+        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
+                        _notifier=_notifier,
+                        _scieloapi=_scieloapi)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_valid_abbreviated_title(self):
+        expected = [validator.STATUS_OK, '']
+        xml = '''
+            <front><journal-meta><abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Acad. Bras. Ciênc.]]></abbrev-journal-title></journal-meta></front>'''
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {'short_title': u'An. Acad. Bras. Ciênc.'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_invalid_abbreviated_title(self):
+        expected = [validator.STATUS_ERROR, 'the abbreviated title in xml is defferent from the abbreviated title in the source']
+        xml = '''
+            <front><journal-meta><abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Academia Bras. Ciênc.]]></abbrev-journal-title></journal-meta></front>'''
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {'short_title': u'An. Acad. Bras. Ciênc.'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_if_exists_abbreviated_title_tag_on_source(self):
+        expected = [validator.STATUS_ERROR, 'missing abbreviated title on source']
+        xml = '''
+            <front><journal-meta><abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Academia Bras. Ciênc.]]></abbrev-journal-title></journal-meta></front>'''
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_if_exists_abbreviated_title_tag_on_xml(self):
+        expected = [validator.STATUS_ERROR, 'missing abbreviated title on xml']
+        xml = '''
+            <front><journal-meta></journal-meta></front>'''
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {'short_title': u'An. Acad. Bras. Ciênc.'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
 
 
 class PublisherNameValidationPipeTests(mocker.MockerTestCase):
