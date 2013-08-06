@@ -424,3 +424,71 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
                          vpipe.validate(data))
+
+
+class FundingGroupValidationPipeTests(mocker.MockerTestCase):
+
+    def _makeOne(self, data, **kwargs):
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+
+        vpipe = validator.FundingGroupValidationPipe(data)
+        vpipe.configure(_notifier=_notifier,
+                        _pkg_analyzer=_pkg_analyzer)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_no_funding_group_and_no_ack(self):
+        expected = [validator.STATUS_WARNING, 'no funding-group and no ack']
+        xml = '<root></root>'
+
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+        data = (None, stub_package_analyzer, {})
+
+        vpipe = self._makeOne(xml)
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_no_funding_group_and_ack_has_no_number(self):
+        expected = [validator.STATUS_OK, '<ack>acknowle<sub />dgements</ack>']
+        xml = '<root><ack>acknowle<sub/>dgements</ack></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+        data = (stub_attempt, stub_package_analyzer, {})
+
+        vpipe = self._makeOne(xml)
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_no_funding_group_and_ack_has_number(self):
+        expected = [validator.STATUS_WARNING, '<ack>acknowledgements<p>1234</p></ack> looks to have contract number. If so, it must be identified using funding-group']
+        xml = '<root><ack>acknowledgements<p>1234</p></ack></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+        data = (stub_attempt, stub_package_analyzer, {})
+
+        vpipe = self._makeOne(xml)
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_funding_group(self):
+        expected = [validator.STATUS_OK, '<funding-group>funding data</funding-group>']
+        xml = '<root><ack>acknowledgements<funding-group>funding data</funding-group></ack></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+        data = (stub_attempt, stub_package_analyzer, {})
+
+        vpipe = self._makeOne(xml)
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
