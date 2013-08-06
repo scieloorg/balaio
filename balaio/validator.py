@@ -1,7 +1,7 @@
 # coding: utf-8
 import sys
 import logging
-from xml.etree.ElementTree import ElementTree as etree
+import xml.etree.ElementTree as etree
 
 import scieloapi
 
@@ -88,58 +88,65 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
             logger.info('%s is invalid. Finished.' % attempt)
 
 
-class PISSNValidationPipe(vpipes.ValidationPipe):
+class PublisherNameValidationPipe(vpipes.ValidationPipe):
     """
-    Verify if PISSN exists on SciELO Manager and if it's valid.
+    Validate the publisher name in article. It must be same as registered in journal data
+    """
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
+    _stage_ = 'PublisherNameValidationPipe'
 
-    PISSN should not be mandatory, since SciELO is an electronic
-    library online.
-    If a PISSN is invalid, a warning is raised instead of an error.
-    The analyzed atribute is ``.//issn[@pub-type="ppub"]``
+    def validate(self, item):
+        """
+        Performs a validation to one `item` of data iterator.
+
+        `item` is a tuple comprised of instances of models.Attempt, a
+        checkin.PackageAnalyzer and a dict of journal data.
+        """
+
+        attempt, package_analyzer, journal_data = item
+        j_publisher_name = journal_data.get('publisher_name', None)
+        if j_publisher_name:
+            data = package_analyzer.xml
+            xml_publisher_name = data.findtext('.//publisher-name')
+
+            if xml_publisher_name:
+                if utils.normalize_data_for_comparison(xml_publisher_name) == utils.normalize_data_for_comparison(j_publisher_name):
+                    r = [STATUS_OK, '']
+                else:
+                    r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + xml_publisher_name + ' [article]']
+            else:
+                r = [STATUS_ERROR, 'Missing publisher-name in article']
+        else:
+            r = [STATUS_ERROR, 'Missing publisher_name in journal']
+        return r
+
+
+class JournalReferenceTypeValidationPipe(vpipes.ValidationPipe):
     """
-    _stage_ = 'issn'
+    Validate the references type journal.
+    Verify if exists reference list
+    Verify if exists some missing tags in reference list
+    Verify if exists content on tags: ``source``, ``article-title`` and ``year`` of reference list
+    Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']``
+    """
+    _stage_ = 'references'
+    __requires__ = ['_notifier', '_pkg_analyzer']
 
     def validate(self, package_analyzer):
 
-        data = package_analyzer.xml
+        references = package_analyzer.xml.findall(".//ref-list/ref/element-citation[@publication-type='journal']")
 
-        pissn = data.findtext(".//issn[@pub-type='ppub']")
+        if references:
+            for ref in references:
+                try:
+                    if not (ref.find('source').text and ref.find('article-title').text and ref.find('year').text):
+                        return [STATUS_ERROR, 'missing content on reference tags: source, article-title or year']
+                except AttributeError:
+                    return [STATUS_ERROR, 'missing some tag in reference list']
+        else:
+            return [STATUS_WARNING, 'this xml does not have reference list']
 
-        if not pissn:
-            return [STATUS_OK, '']
-        elif utils.is_valid_issn(pissn):
-            # check if the pissn is from a known journal
-            remote_journals = self._scieloapi.journals.filter(
-                print_issn=pissn, limit=1)
-
-            if self._sapi_tools.has_any(remote_journals):
-                return [STATUS_OK, '']
-
-        return [STATUS_WARNING, 'print ISSN is invalid or unknown']
-
-
-class EISSNValidationPipe(vpipes.ValidationPipe):
-    """
-    Verify if EISSN exists on SciELO Manager and if it's valid.
-
-    The analyzed atribute is ``.//issn/@pub-type="epub"``
-    """
-    _stage_ = 'issn'
-
-    def validate(self, package_analyzer):
-
-        data = package_analyzer.xml
-
-        eissn = data.findtext(".//issn[@pub-type='epub']")
-
-        if eissn and utils.is_valid_issn(eissn):
-            remote_journals = self._scieloapi.journals.filter(
-                eletronic_issn=eissn, limit=1)
-
-            if self._sapi_tools.has_any(remote_journals):
-                return [STATUS_OK, '']
-
-        return [STATUS_ERROR, 'electronic ISSN is invalid or unknown']
+        return [STATUS_OK, '']
 
 
 class FundingGroupValidationPipe(vpipes.ValidationPipe):
@@ -156,12 +163,12 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
         Validate funding-group according to the following rules
 
         :param item: a tuple of (Attempt, PackageAnalyzer, journal_data)
-        :returns: [STATUS_ERROR, ack content], if no founding-group, but Acknowledgments (ack) has number
+        :returns: [STATUS_WARNING, ack content], if no founding-group, but Acknowledgments (ack) has number
         :returns: [STATUS_OK, founding-group content], if founding-group is present
         :returns: [STATUS_OK, ack content], if no founding-group, but Acknowledgments has no numbers
-        :returns: [STATUS_OK, 'no funding-group and no ack'], if founding-group and Acknowledgments (ack) are absents
+        :returns: [STATUS_WARNING, 'no funding-group and no ack'], if founding-group and Acknowledgments (ack) are absents
         """
-        def _contains_number(self, text):
+        def _contains_number(text):
             """
             Check if it has any number
 
@@ -177,10 +184,18 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
         funding_nodes = xml_tree.findall('.//funding-group')
 
         status, description = [STATUS_OK, etree.tostring(funding_nodes[0])] if funding_nodes != [] else [STATUS_WARNING, 'no funding-group']
-        if not status == STATUS_OK:
+        if status == STATUS_WARNING:
             ack_node = xml_tree.findall('.//ack')
-            description = etree.tostring(ack_node[0]) if ack_node != [] else 'no funding-group and no ack'
-            status = STATUS_ERROR if self._contains_number(description) else STATUS_OK if description != 'no funding-group and no ack' else STATUS_WARNING
+            ack_text = etree.tostring(ack_node[0]) if ack_node != [] else ''
+
+            if ack_text == '':
+                description = 'no funding-group and no ack'
+            elif _contains_number(ack_text):
+                description = ack_text + ' looks to have contract number. If so, it must be identified using funding-group'
+            else:
+                description = ack_text
+                status = STATUS_OK
+
         return [status, description]
 
 
@@ -193,7 +208,10 @@ if __name__ == '__main__':
                                  config.get('manager', 'api_key'))
     notifier_dep = notifier.Notifier()
 
-    ppl = vpipes.Pipeline(SetupPipe, TearDownPipe)
+    ppl = vpipes.Pipeline(SetupPipe,
+                          PublisherNameValidationPipe,
+                          JournalReferenceTypeValidationPipe,
+                          TearDownPipe)
 
     # add all dependencies to a registry-ish thing
     ppl.configure(_scieloapi=scieloapi,
@@ -206,4 +224,3 @@ if __name__ == '__main__':
         results = [msg for msg in ppl.run(messages)]
     except KeyboardInterrupt:
         sys.exit(0)
-

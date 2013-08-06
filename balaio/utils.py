@@ -186,6 +186,7 @@ def prefix_file(filename, prefix):
 def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
 
+
 def setup_logging():
     global has_logger
     # avoid setting up more than once per process
@@ -200,6 +201,7 @@ def setup_logging():
         # an unformatted pickle
         rootLogger.addHandler(socketHandler)
         has_logger = True
+
 
 def validate_issn(issn):
     """
@@ -253,3 +255,7 @@ def is_valid_issn(issn):
         return bool(validate_issn(issn))
     except (ValueError, TypeError):
         return False
+
+
+def normalize_data_for_comparison(data):
+    return ' '.join(data.upper().split())
