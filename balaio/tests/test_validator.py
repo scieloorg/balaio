@@ -24,172 +24,99 @@ class ConstantsTests(unittest.TestCase):
 #
 # Pipes
 #
-class PISSNValidationPipeTests(unittest.TestCase):
+class SetupPipeTests(mocker.MockerTestCase):
+
     def _makeOne(self, data, **kwargs):
+        from balaio import utils
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _notifier = kwargs.get('_notifier', NotifierStub())
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
 
-        vpipe = validator.PISSNValidationPipe(data)
+        vpipe = validator.SetupPipe(data)
         vpipe.configure(_scieloapi=_scieloapi,
                         _notifier=_notifier,
-                        _sapi_tools=_sapi_tools)
+                        _sapi_tools=_sapi_tools,
+                        _pkg_analyzer=_pkg_analyzer,
+                        _issn_validator=_issn_validator)
         return vpipe
 
-    def _makePkgAnalyzerWithData(self, data):
-        pkg_analyzer_stub = PackageAnalyzerStub()
-        pkg_analyzer_stub._xml_string = data
-        return pkg_analyzer_stub
-
-    def test_missing_pissn_is_ok(self):
-        expected = ['ok', '']
-        data = "<root></root>"
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_one_valid_ISSN(self):
-        expected = ['ok', '']
-        data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_one_invalid_ISSN_raises_warning(self):
+    def test_transform_returns_right_datastructure(self):
         """
-        Invalid PISSN raises a waning instead of an error since
-        it is not a blocking condition.
+        The right datastructure is a tuple in the form:
+        (<models.Attempt>, <checkin.PackageAnalyzer>, <dict>)
         """
-        expected = ['warning', 'print ISSN is invalid or unknown']
-        data = "<root><issn pub-type='ppub'>1234-1234</issn></root>"
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
 
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda print_issn=None, eletronic_issn=None, limit=None: [{}]
 
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
 
-    def test_two_valid_ISSN_eletronic_and_print(self):
-        expected = ['ok', '']
-        data = "<root><issn pub-type='ppub'>0100-879X</issn><issn pub-type='epub'>1414-431X</issn></root>"
+        result = vpipe.transform(AttemptStub())
 
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+        self.assertIsInstance(result, tuple)
+        self.assertIsInstance(result[0], AttemptStub)
+        self.assertIsInstance(result[1], PackageAnalyzerStub)
+        # index 2 is the return data from scieloapi.journals.filter
+        # so, testing its type actualy means nothing.
+        self.assertEqual(len(result), 3)
 
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+    def test_fetch_journal_data_with_valid_criteria(self):
+        """
+        Valid criteria means a valid querystring param.
+        See a list at http://ref.scielo.org/nssk38
 
+        The behaviour defined by the Restful API is to
+        ignore the query for invalid criteria, and so
+        do we.
+        """
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda **kwargs: [{'foo': 'bar'}]
 
-    def test_valid_and_known_ISSN(self):
-        expected = ['ok', '']
-        data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
+        self.assertEqual(vpipe._fetch_journal_data({'print_issn': '1234-1234'}),
+                         {'foo': 'bar'})
 
-        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
-        scieloapitoolbelt_stub.has_any = lambda x: True
+    def test_fetch_journal_data_with_unknown_issn_raises_ValueError(self):
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda **kwargs: []
 
-        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
+        sapi_tools = get_ScieloAPIToolbeltStubModule()
+        def _get_one(dataset):
+            raise ValueError()
+        sapi_tools.get_one = _get_one
 
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+        vpipe = self._makeOne(data, _scieloapi=scieloapi, _sapi_tools=sapi_tools)
+        self.assertRaises(ValueError,
+                          lambda: vpipe._fetch_journal_data({'print_issn': '1234-1234'}))
 
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+    def test_transform_grants_valid_issn_before_fetching(self):
+        stub_attempt = AttemptStub()
+        stub_attempt.articlepkg.journal_pissn = '0100-879X'
+        stub_attempt.articlepkg.journal_eissn = None
 
-    def test_valid_and_unknown_ISSN(self):
-        expected = ['warning', 'print ISSN is invalid or unknown']
-        data = "<root><issn pub-type='ppub'>0102-6720</issn></root>"
+        mock_issn_validator = self.mocker.mock()
+        mock_fetch_journal_data = self.mocker.mock()
 
-        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
-        scieloapitoolbelt_stub.has_any = lambda x: False
+        with self.mocker.order():
+            mock_issn_validator('0100-879X')
+            self.mocker.result(True)
 
-        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
+            mock_fetch_journal_data({'print_issn': '0100-879X'})
+            self.mocker.result({'foo': 'bar'})
 
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+            self.mocker.replay()
 
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-
-class EISSNValidationPipeTests(unittest.TestCase):
-    def _makeOne(self, data, **kwargs):
-        vpipe =  validator.EISSNValidationPipe(data)
-
-        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
-        _notifier = kwargs.get('_notifier', NotifierStub())
-        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
-
-        vpipe.configure(_scieloapi=_scieloapi,
-                        _notifier=_notifier,
-                        _sapi_tools=_sapi_tools)
-        return vpipe
-
-    def _makePkgAnalyzerWithData(self, data):
-        pkg_analyzer_stub = PackageAnalyzerStub()
-        pkg_analyzer_stub._xml_string = data
-        return pkg_analyzer_stub
-
-    def test_one_valid_ISSN(self):
-        expected = ['ok', '']
         data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
 
         vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_one_invalid_ISSN(self):
-        expected = ['error', 'electronic ISSN is invalid or unknown']
-        data = "<root><issn pub-type='epub'>1234-1234</issn></root>"
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_two_valid_ISSN_eletronic_and_print(self):
-        expected = ['ok', '']
-        data = "<root><issn pub-type='ppub'>0100-879X</issn><issn pub-type='epub'>1414-431X</issn></root>"
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_valid_and_known_ISSN(self):
-        expected = ['ok', '']
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
-
-        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
-        scieloapitoolbelt_stub.has_any = lambda x: True
-
-        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
-
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_valid_and_unknown_ISSN(self):
-        expected = ['error', 'electronic ISSN is invalid or unknown']
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
-
-        scieloapitoolbelt_stub = get_ScieloAPIToolbeltStubModule()
-        scieloapitoolbelt_stub.has_any = lambda x: False
-
-        vpipe = self._makeOne(data, _sapi_tools=scieloapitoolbelt_stub)
-
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+        vpipe._issn_validator = mock_issn_validator
+        vpipe._fetch_journal_data = mock_fetch_journal_data
+        result = vpipe.transform(stub_attempt)
 
 
 class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
@@ -330,98 +257,86 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
 
-class SetupPipeTests(mocker.MockerTestCase):
-
+class PublisherNameValidationPipeTests(mocker.MockerTestCase):
+    """
+    docstring for PublisherNameValidationPipeTests
+    """
     def _makeOne(self, data, **kwargs):
         from balaio import utils
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _notifier = kwargs.get('_notifier', NotifierStub())
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        _issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
+        #_issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
 
-        vpipe = validator.SetupPipe(data)
+        vpipe = validator.PublisherNameValidationPipe(data)
         vpipe.configure(_scieloapi=_scieloapi,
                         _notifier=_notifier,
                         _sapi_tools=_sapi_tools,
-                        _pkg_analyzer=_pkg_analyzer,
-                        _issn_validator=_issn_validator)
+                        _pkg_analyzer=_pkg_analyzer)
         return vpipe
 
-    def test_transform_returns_right_datastructure(self):
-        """
-        The right datastructure is a tuple in the form:
-        (<models.Attempt>, <checkin.PackageAnalyzer>, <dict>)
-        """
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
 
-        scieloapi = ScieloAPIClientStub()
-        scieloapi.journals.filter = lambda print_issn=None, eletronic_issn=None, limit=None: [{}]
+    def test_publisher_name_matched(self):
+        expected = [validator.STATUS_OK, '']
+        xml = '<root><publisher-name>publicador                  da revista brasileira de ....</publisher-name></root>'
 
-        vpipe = self._makeOne(data, _scieloapi=scieloapi)
-
-        result = vpipe.transform(AttemptStub())
-
-        self.assertIsInstance(result, tuple)
-        self.assertIsInstance(result[0], AttemptStub)
-        self.assertIsInstance(result[1], PackageAnalyzerStub)
-        # index 2 is the return data from scieloapi.journals.filter
-        # so, testing its type actualy means nothing.
-        self.assertEqual(len(result), 3)
-
-    def test_fetch_journal_data_with_valid_criteria(self):
-        """
-        Valid criteria means a valid querystring param.
-        See a list at http://ref.scielo.org/nssk38
-
-        The behaviour defined by the Restful API is to
-        ignore the query for invalid criteria, and so
-        do we.
-        """
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
-        scieloapi = ScieloAPIClientStub()
-        scieloapi.journals.filter = lambda **kwargs: [{'foo': 'bar'}]
-
-        vpipe = self._makeOne(data, _scieloapi=scieloapi)
-        self.assertEqual(vpipe._fetch_journal_data({'print_issn': '1234-1234'}),
-                         {'foo': 'bar'})
-
-    def test_fetch_journal_data_with_unknown_issn_raises_ValueError(self):
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
-        scieloapi = ScieloAPIClientStub()
-        scieloapi.journals.filter = lambda **kwargs: []
-
-        sapi_tools = get_ScieloAPIToolbeltStubModule()
-        def _get_one(dataset):
-            raise ValueError()
-        sapi_tools.get_one = _get_one
-
-        vpipe = self._makeOne(data, _scieloapi=scieloapi, _sapi_tools=sapi_tools)
-        self.assertRaises(ValueError,
-                          lambda: vpipe._fetch_journal_data({'print_issn': '1234-1234'}))
-
-    def test_transform_grants_valid_issn_before_fetching(self):
         stub_attempt = AttemptStub()
-        stub_attempt.articlepkg.journal_pissn = '0100-879X'
-        stub_attempt.articlepkg.journal_eissn = None
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
-        mock_issn_validator = self.mocker.mock()
-        mock_fetch_journal_data = self.mocker.mock()
+        journal_data = {'publisher_name': 'publicador da revista brasileira de ....'}
 
-        with self.mocker.order():
-            mock_issn_validator('0100-879X')
-            self.mocker.result(True)
+        data = (stub_attempt, stub_package_analyzer, journal_data)
 
-            mock_fetch_journal_data({'print_issn': '0100-879X'})
-            self.mocker.result({'foo': 'bar'})
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
 
-            self.mocker.replay()
+    def test_publisher_name_unmatched(self):
+        expected = [validator.STATUS_ERROR, 'publicador da revista brasileira de .... [journal]\npublicador abcdefgh [article]']
+        xml = '<root><publisher-name>publicador abcdefgh</publisher-name></root>'
 
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
-        vpipe = self._makeOne(data)
-        vpipe._issn_validator = mock_issn_validator
-        vpipe._fetch_journal_data = mock_fetch_journal_data
+        journal_data = {'publisher_name': 'publicador da revista brasileira de ....'}
 
-        result = vpipe.transform(stub_attempt)
+        data = (stub_attempt, stub_package_analyzer, journal_data)
 
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_publisher_name_is_missing_in_journal(self):
+        expected = [validator.STATUS_ERROR, 'Missing publisher_name in journal']
+        xml = '<root><publisher-name>publicador abcdefgh</publisher-name></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_publisher_name_is_missing_in_article(self):
+        expected = [validator.STATUS_ERROR, 'Missing publisher-name in article']
+        xml = '<root></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {'publisher_name': 'publicador da revista brasileira de ....'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
