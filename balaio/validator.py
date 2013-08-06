@@ -175,7 +175,6 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
             return [STATUS_ERROR, 'missing abbreviated title on source']
 
 
-
 class FundingGroupValidationPipe(vpipes.ValidationPipe):
     """
     Validate Funding Group according to the following rules:
@@ -272,6 +271,9 @@ if __name__ == '__main__':
 
     ppl = vpipes.Pipeline(SetupPipe,
                           PublisherNameValidationPipe,
+                          JournalAbbreviatedTitleValidationPipe,
+                          NLMJournalTitleValidationPipe,
+                          FundingGroupValidationPipe,
                           JournalReferenceTypeValidationPipe,
                           TearDownPipe)
 

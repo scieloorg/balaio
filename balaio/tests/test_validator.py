@@ -496,7 +496,7 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
 
 class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
     """
-    docstring for PublisherNameValidationPipeTests
+    Tests of NLMJournalTitleValidationPipe
     """
     def _makeOne(self, data, **kwargs):
         from balaio import utils
