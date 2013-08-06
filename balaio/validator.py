@@ -128,7 +128,7 @@ class JournalReferenceTypeValidationPipe(vpipes.ValidationPipe):
     Verify if exists content on tags: ``source``, ``article-title`` and ``year`` of reference list
     Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']``
     """
-    _stage_ = 'JournalReferenceTypeValidationPipe'
+    _stage_ = 'References'
     __requires__ = ['_notifier', '_pkg_analyzer']
 
     def validate(self, package_analyzer):
@@ -153,7 +153,7 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
     Checks exist abbreviated title on source and xml
     Verify if abbreviated title of the xml is equal to source
     """
-    _stage_ = 'JournalAbbreviatedTitleValidationPipe'
+    _stage_ = 'Journal Abbreviated Title Validation'
     __requires__ = ['_notifier', '_pkg_analyser', '_scieloapi']
 
     def validate(self, item):
