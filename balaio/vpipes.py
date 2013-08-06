@@ -86,4 +86,3 @@ class ValidationPipe(ConfigMixin, plumber.Pipe):
         representing the article package under validation.
         """
         raise NotImplementedError()
-

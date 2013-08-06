@@ -257,5 +257,12 @@ def is_valid_issn(issn):
         return False
 
 
-def normalize_data_for_comparison(data):
+def normalize_data(data):
+    """
+    Normalize the ``data`` param converting to uppercase and clean spaces
+
+    Convert this: ' This is     a test for something good      '
+    To this: 'THIS IS A TEST FOR SOMETHING GOOD'
+
+    """
     return ' '.join(data.upper().split())
