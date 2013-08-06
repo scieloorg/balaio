@@ -199,6 +199,41 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
         return [status, description]
 
 
+class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate NLM journal title
+    """
+    _stage_ = 'NLM Journal Title validation'
+    __requires__ = ['_notifier', '_pkg_analyzer', '_scieloapi', '_sapi_tools']
+
+    def validate(self, item):
+        """
+        Validate NLM journal title
+
+        :param item: a tuple of (Attempt, PackageAnalyzer, journal_data)
+        :returns: [STATUS_OK, nlm-journal-title], if nlm-journal-title in article and in journal match
+        :returns: [STATUS_OK, ''], if journal has no nlm-journal-title
+        :returns: [STATUS_ERROR, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
+        """
+        attempt, pkg_analyzer, journal_data = item
+
+        j_nlm_title = journal_data.get('medline_title', '')
+        if j_nlm_title == '':
+            status, description = [STATUS_OK, 'journal has no NLM journal title']
+        else:
+            xml_tree = pkg_analyzer.xml
+            xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
+
+            if xml_nlm_title:
+                if utils.normalize_data_for_comparison(xml_nlm_title) == utils.normalize_data_for_comparison(j_nlm_title):
+                    status, description = [STATUS_OK, xml_nlm_title]
+                else:
+                    status, description = [STATUS_ERROR, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
+            else:
+                status, description = [STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
+        return [status, description]
+
+
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()

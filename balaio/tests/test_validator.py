@@ -408,3 +408,88 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
 
         self.assertEqual(expected,
                          vpipe.validate(data))
+
+
+class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
+    """
+    docstring for PublisherNameValidationPipeTests
+    """
+    def _makeOne(self, data, **kwargs):
+        from balaio import utils
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        #_issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
+
+        vpipe = validator.NLMJournalTitleValidationPipe(data)
+        vpipe.configure(_scieloapi=_scieloapi,
+                        _notifier=_notifier,
+                        _sapi_tools=_sapi_tools,
+                        _pkg_analyzer=_pkg_analyzer)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_nlm_journal_title_matched(self):
+        expected = [validator.STATUS_OK, 'NLM Journal title']
+        xml = '<root><journal-meta><journal-id journal-id-type="nlm-ta">NLM Journal title</journal-id></journal-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {'medline_title': 'NLM Journal Title'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_nlm_journal_title_unmatched(self):
+        expected = [validator.STATUS_ERROR, 'NLM Journal Title .... [journal]\nANY Journal Title [article]']
+        xml = '<root><journal-meta><journal-id journal-id-type="nlm-ta">ANY Journal Title</journal-id></journal-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {'medline_title': 'NLM Journal Title ....'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_nlm_journal_title_is_missing_in_journal(self):
+        expected = [validator.STATUS_OK, 'journal has no NLM journal title']
+        xml = '<root><journal-meta><journal-id journal-id-type="nlm-ta">ANY Journal Title</journal-id></journal-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_nlm_journal_title_is_missing_in_article(self):
+        expected = [validator.STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
+        xml = '<root></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {'medline_title': 'NLM Journal Title ....'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
