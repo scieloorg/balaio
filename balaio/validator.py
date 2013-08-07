@@ -251,7 +251,7 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
             xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
 
             if xml_nlm_title:
-                if utils.normalize_data_for_comparison(xml_nlm_title) == utils.normalize_data_for_comparison(j_nlm_title):
+                if utils.normalize_data(xml_nlm_title) == utils.normalize_data(j_nlm_title):
                     status, description = [STATUS_OK, xml_nlm_title]
                 else:
                     status, description = [STATUS_ERROR, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
