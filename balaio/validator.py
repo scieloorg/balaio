@@ -32,12 +32,22 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
             limit=1, **criteria)
         return self._sapi_tools.get_one(found_journals)
 
+    def _fetch_journal_issue_data(self, criteria):
+        """
+        Encapsulates the two-phase process of retrieving
+        data from one journal matching the criteria.
+        """
+        found_journal_issues = self._scieloapi.issues.filter(
+            limit=1, **criteria)
+        return self._sapi_tools.get_one(found_journal_issues)
+
     def transform(self, attempt):
         """
         Adds some data that will be needed during validation
         workflow.
 
-        `attempt` is an models.Attempt instance.
+        :param attempt: is an models.Attempt instance.
+        :returns: a tuple (Attempt, PackageAnalyzer, journal_data, issue_data)
         """
         logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
 
@@ -63,11 +73,23 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
                 # unknown eissn
                 journal_data = None
 
-        if not journal_data:
+        if journal_data:
+            issue_data = self._fetch_journal_issue_data(
+                {'journal': journal_data.get('resource_uri'),
+                 'number': attempt.articlepkg.issue_number,
+                 'volume': attempt.articlepkg.issue_volume,
+                 #'suppl_number': attempt.articlepkg.issue_suppl_number,
+                 #'suppl_volume': attempt.articlepkg.issue_suppl_volume,
+                 })
+            if not issue_data:
+                logger.info('%s is not related to a known journal issue' % attempt)
+                attempt.is_valid = False
+        else:
+            issue_data = None
             logger.info('%s is not related to a known journal' % attempt)
             attempt.is_valid = False
 
-        return_value = (attempt, pkg_analyzer, journal_data)
+        return_value = (attempt, pkg_analyzer, journal_data, issue_data)
         logger.debug('%s returning %s' % (self.__class__.__name__, ','.join([repr(val) for val in return_value])))
         return return_value
 
@@ -259,6 +281,40 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
                 status, description = [STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
         return [status, description]
 
+
+class ArticleSectionValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate article section which must be one of the sections registered for the journal issue
+    """
+    _stage_ = 'ArticleSectionValidationPipe'
+    __requires__ = ['_notifier', '_pkg_analyzer', '_scieloapi', '_sapi_tools']
+
+    def validate(self, item):
+        """
+        Validate article section which must be one of the sections registered for the journal issue
+
+        :param item: a tuple of (Attempt, PackageAnalyzer, journal_data)
+        :returns: [STATUS_OK, nlm-journal-title], if nlm-journal-title in article and in journal match
+        :returns: [STATUS_OK, ''], if journal has no nlm-journal-title
+        :returns: [STATUS_ERROR, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
+        """
+        attempt, pkg_analyzer, journal_data = item
+
+        j_nlm_title = journal_data.get('medline_title', '')
+        if j_nlm_title == '':
+            status, description = [STATUS_OK, 'journal has no NLM journal title']
+        else:
+            xml_tree = pkg_analyzer.xml
+            xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
+
+            if xml_nlm_title:
+                if utils.normalize_data_for_comparison(xml_nlm_title) == utils.normalize_data_for_comparison(j_nlm_title):
+                    status, description = [STATUS_OK, xml_nlm_title]
+                else:
+                    status, description = [STATUS_ERROR, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
+            else:
+                status, description = [STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
+        return [status, description]
 
 if __name__ == '__main__':
     utils.setup_logging()
