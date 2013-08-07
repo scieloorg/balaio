@@ -51,6 +51,7 @@ class SetupPipeTests(mocker.MockerTestCase):
 
         scieloapi = ScieloAPIClientStub()
         scieloapi.journals.filter = lambda print_issn=None, eletronic_issn=None, limit=None: [{}]
+        scieloapi.issues.filter = lambda journal=None, volume=None, number=None, limit=None: [{}]
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi)
 
@@ -61,7 +62,8 @@ class SetupPipeTests(mocker.MockerTestCase):
         self.assertIsInstance(result[1], PackageAnalyzerStub)
         # index 2 is the return data from scieloapi.journals.filter
         # so, testing its type actualy means nothing.
-        self.assertEqual(len(result), 3)
+        # index 3 is the return data from scieloapi.issues.filter
+        self.assertEqual(len(result), 4)
 
     def test_fetch_journal_data_with_valid_criteria(self):
         """
@@ -94,19 +96,42 @@ class SetupPipeTests(mocker.MockerTestCase):
         self.assertRaises(ValueError,
                           lambda: vpipe._fetch_journal_data({'print_issn': '1234-1234'}))
 
+    def test_fetch_journal_issue_data_with_valid_criteria(self):
+        """
+        Valid criteria means a valid querystring param.
+        See a list at http://ref.scielo.org/nssk38
+
+        The behaviour defined by the Restful API is to
+        ignore the query for invalid criteria, and so
+        do we.
+        """
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.issues.filter = lambda **kwargs: [{'foo': 'bar'}]
+
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
+        self.assertEqual(vpipe._fetch_journal_issue_data({'journal': '/api/...', 'volume': '1', 'number': '1'}),
+                         {'foo': 'bar'})
+
     def test_transform_grants_valid_issn_before_fetching(self):
         stub_attempt = AttemptStub()
         stub_attempt.articlepkg.journal_pissn = '0100-879X'
         stub_attempt.articlepkg.journal_eissn = None
+        stub_attempt.articlepkg.issue_volume = '1'
+        stub_attempt.articlepkg.issue_number = '1'
 
         mock_issn_validator = self.mocker.mock()
         mock_fetch_journal_data = self.mocker.mock()
+        mock_fetch_journal_issue_data = self.mocker.mock()
 
         with self.mocker.order():
             mock_issn_validator('0100-879X')
             self.mocker.result(True)
 
             mock_fetch_journal_data({'print_issn': '0100-879X'})
+            self.mocker.result({'foo': 'bar', 'resource_uri': '/api/...'})
+
+            mock_fetch_journal_issue_data({'journal': '/api/...', 'volume': '1', 'number': '1'})
             self.mocker.result({'foo': 'bar'})
 
             self.mocker.replay()
@@ -116,6 +141,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         vpipe = self._makeOne(data)
         vpipe._issn_validator = mock_issn_validator
         vpipe._fetch_journal_data = mock_fetch_journal_data
+        vpipe._fetch_journal_issue_data = mock_fetch_journal_issue_data
         result = vpipe.transform(stub_attempt)
 
 
@@ -286,7 +312,7 @@ class JournalAbbreviatedTitleValidationTests(unittest.TestCase):
 
         journal_data = {'short_title': u'An. Acad. Bras. Ciênc.'}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -302,7 +328,7 @@ class JournalAbbreviatedTitleValidationTests(unittest.TestCase):
 
         journal_data = {'short_title': u'An. Acad. Bras. Ciênc.'}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -317,8 +343,9 @@ class JournalAbbreviatedTitleValidationTests(unittest.TestCase):
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
         journal_data = {}
+        issue_data = {}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -334,7 +361,7 @@ class JournalAbbreviatedTitleValidationTests(unittest.TestCase):
 
         journal_data = {'short_title': u'An. Acad. Bras. Ciênc.'}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -374,7 +401,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
         journal_data = {'publisher_name': 'publicador da revista brasileira de ....'}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -389,7 +416,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
         journal_data = {'publisher_name': 'publicador da revista brasileira de ....'}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -403,8 +430,9 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
         journal_data = {}
+        issue_data = {}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -419,7 +447,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
         journal_data = {'publisher_name': 'publicador da revista brasileira de ....'}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -447,7 +475,7 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
         xml = '<root></root>'
 
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
-        data = (None, stub_package_analyzer, {})
+        data = (AttemptStub(), stub_package_analyzer, {}, {})
 
         vpipe = self._makeOne(xml)
 
@@ -460,7 +488,7 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
-        data = (stub_attempt, stub_package_analyzer, {})
+        data = (stub_attempt, stub_package_analyzer, {}, {})
 
         vpipe = self._makeOne(xml)
 
@@ -473,7 +501,7 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
-        data = (stub_attempt, stub_package_analyzer, {})
+        data = (stub_attempt, stub_package_analyzer, {}, {})
 
         vpipe = self._makeOne(xml)
 
@@ -486,7 +514,7 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
-        data = (stub_attempt, stub_package_analyzer, {})
+        data = (stub_attempt, stub_package_analyzer, {}, {})
 
         vpipe = self._makeOne(xml)
 
@@ -527,7 +555,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
 
         journal_data = {'medline_title': 'NLM Journal Title'}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -542,7 +570,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
 
         journal_data = {'medline_title': 'NLM Journal Title ....'}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -557,7 +585,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
 
         journal_data = {}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
@@ -572,7 +600,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
 
         journal_data = {'medline_title': 'NLM Journal Title ....'}
 
-        data = (stub_attempt, stub_package_analyzer, journal_data)
+        data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,

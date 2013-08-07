@@ -37,6 +37,7 @@ class Patch(object):
 class ScieloAPIClientStub(object):
     def __init__(self, *args, **kwargs):
         self.journals = EndpointStub()
+        self.issues = EndpointStub()
 
 
 class EndpointStub(object):
@@ -97,6 +98,8 @@ class ArticlePkgStub(object):
     def __init__(self, *args, **kwargs):
         self.journal_pissn = '0100-879X'
         self.journal_eissn = '0100-879X'
+        self.issue_volume = '1'
+        self.issue_number = '1'
 
 
 class AttemptStub(object):

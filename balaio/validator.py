@@ -99,7 +99,7 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
 
     def transform(self, item):
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
-        attempt, pkg_analyzer, journal_data = item
+        attempt, pkg_analyzer, journal_data, issue_data = item
 
         pkg_analyzer.restore_perms()
 
@@ -125,7 +125,7 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         checkin.PackageAnalyzer and a dict of journal data.
         """
 
-        attempt, package_analyzer, journal_data = item
+        attempt, package_analyzer, journal_data, issue_data = item
         j_publisher_name = journal_data.get('publisher_name', None)
         if j_publisher_name:
             data = package_analyzer.xml
@@ -181,7 +181,7 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
 
     def validate(self, item):
 
-        attempt, pkg_analyzer, journal_data = item
+        attempt, pkg_analyzer, journal_data, issue_data = item
         abbrev_title = journal_data.get('short_title')
 
         if abbrev_title:
@@ -225,7 +225,7 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
             """
             return any((True for n in xrange(10) if str(n) in text))
 
-        attempt, pkg_analyzer, journal_data = item
+        attempt, pkg_analyzer, journal_data, issue_data = item
 
         xml_tree = pkg_analyzer.xml
 
@@ -263,7 +263,7 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
         :returns: [STATUS_OK, ''], if journal has no nlm-journal-title
         :returns: [STATUS_ERROR, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
         """
-        attempt, pkg_analyzer, journal_data = item
+        attempt, pkg_analyzer, journal_data, issue_data = item
 
         j_nlm_title = journal_data.get('medline_title', '')
         if j_nlm_title == '':
@@ -273,7 +273,7 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
             xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
 
             if xml_nlm_title:
-                if utils.normalize_data_for_comparison(xml_nlm_title) == utils.normalize_data_for_comparison(j_nlm_title):
+                if utils.normalize_data(xml_nlm_title) == utils.normalize_data(j_nlm_title):
                     status, description = [STATUS_OK, xml_nlm_title]
                 else:
                     status, description = [STATUS_ERROR, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
@@ -282,39 +282,6 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
         return [status, description]
 
 
-class ArticleSectionValidationPipe(vpipes.ValidationPipe):
-    """
-    Validate article section which must be one of the sections registered for the journal issue
-    """
-    _stage_ = 'ArticleSectionValidationPipe'
-    __requires__ = ['_notifier', '_pkg_analyzer', '_scieloapi', '_sapi_tools']
-
-    def validate(self, item):
-        """
-        Validate article section which must be one of the sections registered for the journal issue
-
-        :param item: a tuple of (Attempt, PackageAnalyzer, journal_data)
-        :returns: [STATUS_OK, nlm-journal-title], if nlm-journal-title in article and in journal match
-        :returns: [STATUS_OK, ''], if journal has no nlm-journal-title
-        :returns: [STATUS_ERROR, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
-        """
-        attempt, pkg_analyzer, journal_data = item
-
-        j_nlm_title = journal_data.get('medline_title', '')
-        if j_nlm_title == '':
-            status, description = [STATUS_OK, 'journal has no NLM journal title']
-        else:
-            xml_tree = pkg_analyzer.xml
-            xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
-
-            if xml_nlm_title:
-                if utils.normalize_data_for_comparison(xml_nlm_title) == utils.normalize_data_for_comparison(j_nlm_title):
-                    status, description = [STATUS_OK, xml_nlm_title]
-                else:
-                    status, description = [STATUS_ERROR, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
-            else:
-                status, description = [STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
-        return [status, description]
 
 if __name__ == '__main__':
     utils.setup_logging()
