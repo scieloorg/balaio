@@ -30,7 +30,7 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         """
         found_journals = self._scieloapi.journals.filter(
             limit=1, **criteria)
-        return self._sapi_tools.get_one(found_journals)
+        return self._scieloapi.fetch_relations(self._sapi_tools.get_one(found_journals))
 
     def _fetch_journal_issue_data(self, criteria):
         """
@@ -122,7 +122,7 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         Performs a validation to one `item` of data iterator.
 
         `item` is a tuple comprised of instances of models.Attempt, a
-        checkin.PackageAnalyzer and a dict of journal data.
+        checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
         """
 
         attempt, package_analyzer, journal_data, issue_data = item
@@ -280,7 +280,6 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
             else:
                 status, description = [STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
         return [status, description]
-
 
 
 if __name__ == '__main__':

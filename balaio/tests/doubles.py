@@ -39,6 +39,10 @@ class ScieloAPIClientStub(object):
         self.journals = EndpointStub()
         self.issues = EndpointStub()
 
+        def fetch_relations(dataset):
+            return dataset
+        self.fetch_relations = fetch_relations
+
 
 class EndpointStub(object):
 
