@@ -30,14 +30,24 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         """
         found_journals = self._scieloapi.journals.filter(
             limit=1, **criteria)
-        return self._sapi_tools.get_one(found_journals)
+        return self._scieloapi.fetch_relations(self._sapi_tools.get_one(found_journals))
+
+    def _fetch_journal_issue_data(self, criteria):
+        """
+        Encapsulates the two-phase process of retrieving
+        data from one journal matching the criteria.
+        """
+        found_journal_issues = self._scieloapi.issues.filter(
+            limit=1, **criteria)
+        return self._sapi_tools.get_one(found_journal_issues)
 
     def transform(self, attempt):
         """
         Adds some data that will be needed during validation
         workflow.
 
-        `attempt` is an models.Attempt instance.
+        :param attempt: is an models.Attempt instance.
+        :returns: a tuple (Attempt, PackageAnalyzer, journal_data, issue_data)
         """
         logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
 
@@ -63,11 +73,23 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
                 # unknown eissn
                 journal_data = None
 
-        if not journal_data:
+        if journal_data:
+            issue_data = self._fetch_journal_issue_data(
+                {'journal': journal_data.get('resource_uri'),
+                 'number': attempt.articlepkg.issue_number,
+                 'volume': attempt.articlepkg.issue_volume,
+                 #'suppl_number': attempt.articlepkg.issue_suppl_number,
+                 #'suppl_volume': attempt.articlepkg.issue_suppl_volume,
+                 })
+            if not issue_data:
+                logger.info('%s is not related to a known journal issue' % attempt)
+                attempt.is_valid = False
+        else:
+            issue_data = None
             logger.info('%s is not related to a known journal' % attempt)
             attempt.is_valid = False
 
-        return_value = (attempt, pkg_analyzer, journal_data)
+        return_value = (attempt, pkg_analyzer, journal_data, issue_data)
         logger.debug('%s returning %s' % (self.__class__.__name__, ','.join([repr(val) for val in return_value])))
         return return_value
 
@@ -77,7 +99,7 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
 
     def transform(self, item):
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
-        attempt, pkg_analyzer, journal_data = item
+        attempt, pkg_analyzer, journal_data, issue_data = item
 
         pkg_analyzer.restore_perms()
 
@@ -100,10 +122,10 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         Performs a validation to one `item` of data iterator.
 
         `item` is a tuple comprised of instances of models.Attempt, a
-        checkin.PackageAnalyzer and a dict of journal data.
+        checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
         """
 
-        attempt, package_analyzer, journal_data = item
+        attempt, package_analyzer, journal_data, issue_data = item
         j_publisher_name = journal_data.get('publisher_name', None)
         if j_publisher_name:
             data = package_analyzer.xml
@@ -159,7 +181,7 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
 
     def validate(self, item):
 
-        attempt, pkg_analyzer, journal_data = item
+        attempt, pkg_analyzer, journal_data, issue_data = item
         abbrev_title = journal_data.get('short_title')
 
         if abbrev_title:
@@ -203,7 +225,7 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
             """
             return any((True for n in xrange(10) if str(n) in text))
 
-        attempt, pkg_analyzer, journal_data = item
+        attempt, pkg_analyzer, journal_data, issue_data = item
 
         xml_tree = pkg_analyzer.xml
 
@@ -241,7 +263,7 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
         :returns: [STATUS_OK, ''], if journal has no nlm-journal-title
         :returns: [STATUS_ERROR, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
         """
-        attempt, pkg_analyzer, journal_data = item
+        attempt, pkg_analyzer, journal_data, issue_data = item
 
         j_nlm_title = journal_data.get('medline_title', '')
         if j_nlm_title == '':
@@ -259,6 +281,43 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
                 status, description = [STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
         return [status, description]
 
+
+class ArticleSectionValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate the article section ('.//article-categories/subj-group[@subj-group-type="heading"]')
+    """
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
+    _stage_ = 'ArticleSectionValidationPipe'
+
+    def validate(self, item):
+        """
+        Performs a validation to one `item` of data iterator.
+
+        `item` is a tuple comprised of instances of models.Attempt, a
+        checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
+        """
+        attempt, pkg_analyzer, journal_data, issue_data = item
+
+        xml_tree = pkg_analyzer.xml
+        xml_section = xml_tree.findtext('.//article-categories/subj-group[@subj-group-type="heading"]')
+
+        found = False
+        if xml_section:
+            # issue_data['sections'][0]['titles'][0][0=idioma, 1=titulo]
+            # no entanto, deveria ser
+            # issue_data['sections'][0]['titles'][0][idioma] = titulo
+            for section in issue_data['sections']:
+                for lang, sectitle in section['titles']:
+                    if utils.normalize_data(sectitle) == utils.normalize_data(xml_section):
+                        found = True
+                        break
+            if found:
+                r = [STATUS_OK, xml_section]
+            else:
+                r = [STATUS_ERROR, xml_section + ' is not registered as section in ' + issue_data.get('label')]
+        else:
+            r = [STATUS_WARNING, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]']
+        return r
 
 if __name__ == '__main__':
     utils.setup_logging()
