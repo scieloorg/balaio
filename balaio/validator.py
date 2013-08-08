@@ -282,6 +282,43 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
         return [status, description]
 
 
+class ArticleSectionValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate the article section ('.//article-categories/subj-group[@subj-group-type="heading"]')
+    """
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
+    _stage_ = 'ArticleSectionValidationPipe'
+
+    def validate(self, item):
+        """
+        Performs a validation to one `item` of data iterator.
+
+        `item` is a tuple comprised of instances of models.Attempt, a
+        checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
+        """
+        attempt, pkg_analyzer, journal_data, issue_data = item
+
+        xml_tree = pkg_analyzer.xml
+        xml_section = xml_tree.findtext('.//article-categories/subj-group[@subj-group-type="heading"]')
+
+        found = False
+        if xml_section:
+            # issue_data['sections'][0]['titles'][0][0=idioma, 1=titulo]
+            # no entanto, deveria ser
+            # issue_data['sections'][0]['titles'][0][idioma] = titulo
+            for section in issue_data['sections']:
+                for lang, sectitle in section['titles']:
+                    if utils.normalize_data(sectitle) == utils.normalize_data(xml_section):
+                        found = True
+                        break
+            if found:
+                r = [STATUS_OK, xml_section]
+            else:
+                r = [STATUS_ERROR, xml_section + ' is not registered as section in ' + issue_data.get('label')]
+        else:
+            r = [STATUS_WARNING, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]']
+        return r
+
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()

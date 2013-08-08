@@ -88,6 +88,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         scieloapi.journals.filter = lambda **kwargs: []
 
         sapi_tools = get_ScieloAPIToolbeltStubModule()
+
         def _get_one(dataset):
             raise ValueError()
         sapi_tools.get_one = _get_one
@@ -601,6 +602,83 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
         journal_data = {'medline_title': 'NLM Journal Title ....'}
 
         data = (stub_attempt, stub_package_analyzer, journal_data, {})
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+
+class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
+    """
+    Tests of ArticleSectionValidationPipe
+    """
+    def _makeOne(self, data, **kwargs):
+        from balaio import utils
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        #_issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
+
+        vpipe = validator.ArticleSectionValidationPipe(data)
+        vpipe.configure(_scieloapi=_scieloapi,
+                        _notifier=_notifier,
+                        _sapi_tools=_sapi_tools,
+                        _pkg_analyzer=_pkg_analyzer)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def _issue_data(self):
+        # isso deveria ser um dict no lugar de uma lista, mas a api retorna assim
+        dict_item1 = {u'titles': [
+            [u'es', u'Artículos Originales'],
+            [u'en', u'Original Articles'],
+        ]}
+        dict_item2 = {u'titles': [
+            [u'es', u'Editorial'],
+            [u'en', u'Editorial'],
+        ]}
+        return {u'sections': [dict_item1, dict_item2], u'label': '1(1)'}
+
+    def test_article_section_matched(self):
+        expected = [validator.STATUS_OK, 'Original Articles']
+        #article-categories/subj-group[@subj-group-type=”heading”]
+        xml = '<root><article-meta><article-categories><subj-group subj-group-type="heading">Original Articles</subj-group></article-categories></article-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, {}, self._issue_data())
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_article_section_is_not_registered(self):
+        expected = [validator.STATUS_ERROR, 'Articles is not registered as section in 1(1)']
+        xml = '<root><article-meta><article-categories><subj-group subj-group-type="heading">Articles</subj-group></article-categories></article-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, {}, self._issue_data())
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_article_section_is_missing_in_article(self):
+        expected = [validator.STATUS_WARNING, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]']
+        xml = '<root></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, {}, self._issue_data())
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
