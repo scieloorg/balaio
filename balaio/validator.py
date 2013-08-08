@@ -175,7 +175,6 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
             return [STATUS_ERROR, 'missing abbreviated title on source']
 
 
-
 class FundingGroupValidationPipe(vpipes.ValidationPipe):
     """
     Validate Funding Group according to the following rules:
@@ -224,6 +223,15 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
                 status = STATUS_OK
 
         return [status, description]
+
+
+class DOIVAlidationPipe(vpipes.ValidationPipe):
+    """
+    Verify if exists DOI in XML and if it`s validated before the CrossRef
+    """
+
+    def configure(self, item):
+        pass
 
 
 if __name__ == '__main__':
