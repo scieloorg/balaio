@@ -225,6 +225,41 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
         return [status, description]
 
 
+class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate NLM journal title
+    """
+    _stage_ = 'NLM Journal Title validation'
+    __requires__ = ['_notifier', '_pkg_analyzer', '_scieloapi', '_sapi_tools']
+
+    def validate(self, item):
+        """
+        Validate NLM journal title
+
+        :param item: a tuple of (Attempt, PackageAnalyzer, journal_data)
+        :returns: [STATUS_OK, nlm-journal-title], if nlm-journal-title in article and in journal match
+        :returns: [STATUS_OK, ''], if journal has no nlm-journal-title
+        :returns: [STATUS_ERROR, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
+        """
+        attempt, pkg_analyzer, journal_data = item
+
+        j_nlm_title = journal_data.get('medline_title', '')
+        if j_nlm_title == '':
+            status, description = [STATUS_OK, 'journal has no NLM journal title']
+        else:
+            xml_tree = pkg_analyzer.xml
+            xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
+
+            if xml_nlm_title:
+                if utils.normalize_data(xml_nlm_title) == utils.normalize_data(j_nlm_title):
+                    status, description = [STATUS_OK, xml_nlm_title]
+                else:
+                    status, description = [STATUS_ERROR, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
+            else:
+                status, description = [STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
+        return [status, description]
+
+
 class DOIVAlidationPipe(vpipes.ValidationPipe):
     """
     Verify if exists DOI in XML and if it`s validated before the CrossRef
@@ -264,6 +299,37 @@ if __name__ == '__main__':
 
     ppl = vpipes.Pipeline(SetupPipe,
                           PublisherNameValidationPipe,
+                          JournalReferenceTypeValidationPipe,
+                          TearDownPipe)
+
+    # add all dependencies to a registry-ish thing
+    ppl.configure(_scieloapi=scieloapi,
+                  _notifier=notifier_dep,
+                  _sapi_tools=scieloapitoolbelt,
+                  _pkg_analyzer=checkin.PackageAnalyzer,
+                  _issn_validator=utils.is_valid_issn,
+                  _doi_validator=utils.is_valid_doi)
+
+    try:
+        results = [msg for msg in ppl.run(messages)]
+    except KeyboardInterrupt:
+        sys.exit(0)
+
+if __name__ == '__main__':
+    utils.setup_logging()
+    config = utils.Configuration.from_env()
+
+    messages = utils.recv_messages(sys.stdin, utils.make_digest)
+    scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
+                                 config.get('manager', 'api_key'))
+    notifier_dep = notifier.Notifier()
+
+    ppl = vpipes.Pipeline(SetupPipe,
+                          DOIVAlidationPipe,
+                          PublisherNameValidationPipe,
+                          JournalAbbreviatedTitleValidationPipe,
+                          NLMJournalTitleValidationPipe,
+                          FundingGroupValidationPipe,
                           JournalReferenceTypeValidationPipe,
                           TearDownPipe)
 
