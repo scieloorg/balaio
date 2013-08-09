@@ -170,9 +170,9 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
                 else:
                     return [STATUS_ERROR, 'the abbreviated title in xml is defferent from the abbreviated title in the source']
             else:
-                return [STATUS_ERROR, 'missing abbreviated title on xml']
+                return [STATUS_ERROR, 'missing abbreviated title in xml']
         else:
-            return [STATUS_ERROR, 'missing abbreviated title on source']
+            return [STATUS_ERROR, 'missing abbreviated title in source']
 
 
 class FundingGroupValidationPipe(vpipes.ValidationPipe):
@@ -260,6 +260,34 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
         return [status, description]
 
 
+class DOIVAlidationPipe(vpipes.ValidationPipe):
+    """
+    Verify if exists DOI in XML and if it`s validated before the CrossRef
+    """
+
+    _stage_ = 'DOI Validation'
+    __requires__ = ['_notifier', '_pkg_analyzer', '_doi_validator']
+
+    def validate(self, item):
+
+        attempt, pkg_analyzer, journal_data = item
+
+        doi_xml = pkg_analyzer.xml.find('.//article-id/[@pub-id-type="doi"]')
+
+        if doi_xml is not None:
+            doi = journal_data.get('doi')
+
+            if doi == doi_xml.text:
+                if self._doi_validator(doi):
+                    return [STATUS_OK, '']
+                else:
+                    return [STATUS_WARNING, 'DOI is not valid']
+            else:
+                return [STATUS_ERROR, 'the DOI in xml is defferent from the DOI in the source']
+        else:
+            return [STATUS_WARNING, 'missing DOI in xml']
+
+
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()
@@ -270,6 +298,34 @@ if __name__ == '__main__':
     notifier_dep = notifier.Notifier()
 
     ppl = vpipes.Pipeline(SetupPipe,
+                          PublisherNameValidationPipe,
+                          JournalReferenceTypeValidationPipe,
+                          TearDownPipe)
+
+    # add all dependencies to a registry-ish thing
+    ppl.configure(_scieloapi=scieloapi,
+                  _notifier=notifier_dep,
+                  _sapi_tools=scieloapitoolbelt,
+                  _pkg_analyzer=checkin.PackageAnalyzer,
+                  _issn_validator=utils.is_valid_issn,
+                  _doi_validator=utils.is_valid_doi)
+
+    try:
+        results = [msg for msg in ppl.run(messages)]
+    except KeyboardInterrupt:
+        sys.exit(0)
+
+if __name__ == '__main__':
+    utils.setup_logging()
+    config = utils.Configuration.from_env()
+
+    messages = utils.recv_messages(sys.stdin, utils.make_digest)
+    scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
+                                 config.get('manager', 'api_key'))
+    notifier_dep = notifier.Notifier()
+
+    ppl = vpipes.Pipeline(SetupPipe,
+                          DOIVAlidationPipe,
                           PublisherNameValidationPipe,
                           JournalAbbreviatedTitleValidationPipe,
                           NLMJournalTitleValidationPipe,
@@ -282,7 +338,8 @@ if __name__ == '__main__':
                   _notifier=notifier_dep,
                   _sapi_tools=scieloapitoolbelt,
                   _pkg_analyzer=checkin.PackageAnalyzer,
-                  _issn_validator=utils.is_valid_issn)
+                  _issn_validator=utils.is_valid_issn,
+                  _doi_validator=utils.is_valid_doi)
 
     try:
         results = [msg for msg in ppl.run(messages)]
