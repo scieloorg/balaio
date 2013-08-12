@@ -30,7 +30,7 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         """
         found_journals = self._scieloapi.journals.filter(
             limit=1, **criteria)
-        return self._scieloapi.fetch_relations(self._sapi_tools.get_one(found_journals))
+        return self._sapi_tools.get_one(found_journals)
 
     def _fetch_journal_issue_data(self, criteria):
         """
@@ -39,7 +39,7 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         """
         found_journal_issues = self._scieloapi.issues.filter(
             limit=1, **criteria)
-        return self._sapi_tools.get_one(found_journal_issues)
+        return self._scieloapi.fetch_relations(self._sapi_tools.get_one(found_journal_issues))
 
     def transform(self, attempt):
         """
