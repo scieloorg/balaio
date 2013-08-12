@@ -247,15 +247,6 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
         return [status, description]
 
 
-class DOIVAlidationPipe(vpipes.ValidationPipe):
-    """
-    Verify if exists DOI in XML and if it`s validated before the CrossRef
-    """
-
-    def configure(self, item):
-        pass
-
-
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()
