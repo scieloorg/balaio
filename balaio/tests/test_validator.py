@@ -192,7 +192,7 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_invalid_content_on_reference_list(self):
-        expected = [validator.STATUS_ERROR, 'missing content on reference tags: source, article-title or year']
+        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing content in tag year ) ']
         data = '''
             <root>
               <ref-list>
@@ -225,7 +225,7 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_missing_any_tag(self):
-        expected = [validator.STATUS_ERROR, 'missing some tag in reference list']
+        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing tag article-title ) ']
         data = '''
             <root>
               <ref-list>

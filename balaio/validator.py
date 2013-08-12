@@ -134,19 +134,41 @@ class JournalReferenceTypeValidationPipe(vpipes.ValidationPipe):
 
     def validate(self, package_analyzer):
 
-        references = package_analyzer.xml.findall(".//ref-list/ref/element-citation[@publication-type='journal']")
+        lst_errors = []
+        refs = package_analyzer.xml.findall(".//ref-list/ref")
 
-        if references:
-            for ref in references:
-                try:
-                    if not (ref.find('source').text and ref.find('article-title').text and ref.find('year').text):
-                        return [STATUS_ERROR, 'missing content on reference tags: source, article-title or year']
-                except AttributeError:
-                    return [STATUS_ERROR, 'missing some tag in reference list']
+        if refs:
+            for ref in refs:
+                element_citation = ref.find(".//element-citation[@publication-type='journal']")
+
+                if element_citation.find('source') is not None:
+                    if element_citation.find('source').text is None:
+                        lst_errors.append((ref.attrib['id'], 'missing content in tag source'))
+                else:
+                    lst_errors.append((ref.attrib['id'], 'missing tag source'))
+
+                if element_citation.find('article-title') is not None:
+                    if element_citation.find('article-title').text is None:
+                        lst_errors.append((ref.attrib['id'], 'missing content in tag article-title'))
+                else:
+                    lst_errors.append((ref.attrib['id'], 'missing tag article-title'))
+
+                if element_citation.find('year') is not None:
+                    if element_citation.find('year').text is None:
+                        lst_errors.append((ref.attrib['id'], 'missing content in tag year'))
+                else:
+                    lst_errors.append((ref.attrib['id'], 'missing tag year'))
         else:
             return [STATUS_WARNING, 'this xml does not have reference list']
 
-        return [STATUS_OK, '']
+        if lst_errors:
+            msg_error = 'There is some erros in refs: '
+            for error in lst_errors:
+                msg_error += '(ref_id=%s, error_message=%s ) ' % error
+
+            return [STATUS_ERROR, msg_error]
+        else:
+            return [STATUS_OK, '']
 
 
 class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
