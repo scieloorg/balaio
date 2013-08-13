@@ -216,19 +216,6 @@ def normalize_data(data):
     return ' '.join(data.upper().split())
 
 
-def is_valid_doi(doi):
-    """
-    Verify if the DOI is valid for CrossRef
-    Validate URL: ``http://dx.doi.org/<DOI>``
-    """
-    try:
-        req = requests.get('http://dx.doi.org/%s' % doi, timeout=1)
-    except requests.exceptions.RequestException:
-        pass
-
-    return True if req.status_code == 200 else False
-
-
 def validate_issn(issn):
     """
     This function analyze the ISSN:
