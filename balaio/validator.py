@@ -23,24 +23,18 @@ STATUS_ERROR = 'error'
 class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
     __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer', '_issn_validator']
 
-    def _fetch_journal_data(self, criteria):
+    def _fetch_journal_and_issue_data(self, criteria):
         """
         Encapsulates the two-phase process of retrieving
-        data from one journal matching the criteria.
+        data from one issue matching the criteria.
         """
-        found_journals = self._scieloapi.journals.filter(
-            limit=1, **criteria)
-        return self._sapi_tools.get_one(found_journals)
-
-    def _fetch_journal_issue_data(self, criteria):
-        """
-        Encapsulates the two-phase process of retrieving
-        data from one journal matching the criteria.
-        """
+        #cli.fetch_relations(cli.get(i['resource_uri']))
         found_journal_issues = self._scieloapi.issues.filter(
             limit=1, **criteria)
         return self._scieloapi.fetch_relations(self._sapi_tools.get_one(found_journal_issues))
 
+    def _criteria(self, pkg_analyzer):
+        if 
     def transform(self, attempt):
         """
         Adds some data that will be needed during validation
@@ -54,11 +48,13 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         pkg_analyzer = self._pkg_analyzer(attempt.filepath)
         pkg_analyzer.lock_package()
 
+        criteria = self._criteria(attempt.articlepkg)
+
         journal_pissn = attempt.articlepkg.journal_pissn
 
         if journal_pissn and self._issn_validator(journal_pissn):
             try:
-                journal_data = self._fetch_journal_data(
+                journal_data = self._fetch_journal_and_issue_data(
                     {'print_issn': journal_pissn})
             except ValueError:
                 # unknown pissn
@@ -67,25 +63,13 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         journal_eissn = attempt.articlepkg.journal_eissn
         if journal_eissn and self._issn_validator(journal_eissn) and not journal_data:
             try:
-                journal_data = self._fetch_journal_data(
+                journal_data = self._fetch_journal_and_issue_data(
                     {'eletronic_issn': journal_eissn})
             except ValueError:
                 # unknown eissn
                 journal_data = None
 
-        if journal_data:
-            issue_data = self._fetch_journal_issue_data(
-                {'journal': journal_data.get('resource_uri'),
-                 'number': attempt.articlepkg.issue_number,
-                 'volume': attempt.articlepkg.issue_volume,
-                 #'suppl_number': attempt.articlepkg.issue_suppl_number,
-                 #'suppl_volume': attempt.articlepkg.issue_suppl_volume,
-                 })
-            if not issue_data:
-                logger.info('%s is not related to a known journal issue' % attempt)
-                attempt.is_valid = False
-        else:
-            issue_data = None
+        if not journal_data:
             logger.info('%s is not related to a known journal' % attempt)
             attempt.is_valid = False
 
