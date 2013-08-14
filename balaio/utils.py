@@ -221,10 +221,8 @@ def is_valid_doi(doi):
     Verify if the DOI is valid for CrossRef
     Validate URL: ``http://dx.doi.org/<DOI>``
     """
-    try:
-        req = requests.get('http://dx.doi.org/%s' % doi, timeout=1)
-    except requests.exceptions.RequestException:
-        pass
+
+    req = requests.get('http://dx.doi.org/%s' % doi, timeout=1)
 
     return True if req.status_code == 200 else False
 

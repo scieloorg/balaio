@@ -92,8 +92,8 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
     """
     Validate the publisher name in article. It must be same as registered in journal data
     """
-    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
-    _stage_ = 'PublisherNameValidationPipe'
+    _stage_ = 'Publisher Name Validation'
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer', '_normalize_data']
 
     def validate(self, item):
         """
@@ -110,7 +110,7 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
             xml_publisher_name = data.findtext('.//publisher-name')
 
             if xml_publisher_name:
-                if utils.normalize_data(xml_publisher_name) == utils.normalize_data(j_publisher_name):
+                if self._normalize_data(xml_publisher_name) == self._normalize_data(j_publisher_name):
                     r = [STATUS_OK, '']
                 else:
                     r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + xml_publisher_name + ' [article]']
@@ -177,7 +177,7 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
     Verify if abbreviated title of the xml is equal to source
     """
     _stage_ = 'Journal Abbreviated Title Validation'
-    __requires__ = ['_notifier', '_pkg_analyser', '_scieloapi']
+    __requires__ = ['_notifier', '_pkg_analyser', '_scieloapi', '_normalize_data']
 
     def validate(self, item):
 
@@ -187,14 +187,14 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
         if abbrev_title:
             abbrev_title_xml = pkg_analyzer.xml.find('.//journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
             if abbrev_title_xml is not None:
-                if utils.normalize_data(abbrev_title) == utils.normalize_data(abbrev_title_xml.text):
+                if self._normalize_data(abbrev_title) == self._normalize_data(abbrev_title_xml.text):
                     return [STATUS_OK, '']
                 else:
                     return [STATUS_ERROR, 'the abbreviated title in xml is defferent from the abbreviated title in the source']
             else:
-                return [STATUS_ERROR, 'missing abbreviated title on xml']
+                return [STATUS_ERROR, 'missing abbreviated title in xml']
         else:
-            return [STATUS_ERROR, 'missing abbreviated title on source']
+            return [STATUS_ERROR, 'missing abbreviated title in source']
 
 
 class FundingGroupValidationPipe(vpipes.ValidationPipe):
@@ -203,7 +203,7 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
     Funding group is mandatory only if there is contract number in the article,
     and this data is usually in acknowledge
     """
-    _stage_ = 'Funding group validation'
+    _stage_ = 'Funding Group Validation'
     __requires__ = ['_notifier', '_pkg_analyzer']
 
     def validate(self, item):
@@ -247,6 +247,69 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
         return [status, description]
 
 
+class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate NLM journal title
+    """
+    _stage_ = 'NLM Journal Title validation'
+    __requires__ = ['_notifier', '_pkg_analyzer', '_scieloapi', '_sapi_tools', '_normalize_data']
+
+    def validate(self, item):
+        """
+        Validate NLM journal title
+
+        :param item: a tuple of (Attempt, PackageAnalyzer, journal_data)
+        :returns: [STATUS_OK, nlm-journal-title], if nlm-journal-title in article and in journal match
+        :returns: [STATUS_OK, ''], if journal has no nlm-journal-title
+        :returns: [STATUS_ERROR, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
+        """
+        attempt, pkg_analyzer, journal_data = item
+
+        j_nlm_title = journal_data.get('medline_title', '')
+        if j_nlm_title == '':
+            status, description = [STATUS_OK, 'journal has no NLM journal title']
+        else:
+            xml_tree = pkg_analyzer.xml
+            xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
+
+            if xml_nlm_title:
+                if self._normalize_data(xml_nlm_title) == self._normalize_data(j_nlm_title):
+                    status, description = [STATUS_OK, xml_nlm_title]
+                else:
+                    status, description = [STATUS_ERROR, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
+            else:
+                status, description = [STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
+        return [status, description]
+
+
+class DOIVAlidationPipe(vpipes.ValidationPipe):
+    """
+    Verify if exists DOI in XML and if it`s validated before the CrossRef
+    """
+
+    _stage_ = 'DOI Validation'
+    __requires__ = ['_notifier', '_pkg_analyzer', '_doi_validator']
+
+    def validate(self, item):
+
+        attempt, pkg_analyzer, journal_data = item
+
+        doi_xml = pkg_analyzer.xml.find('.//article-id/[@pub-id-type="doi"]')
+
+        if doi_xml is not None:
+            doi = journal_data.get('doi')
+
+            if doi == doi_xml.text:
+                if self._doi_validator(doi):
+                    return [STATUS_OK, '']
+                else:
+                    return [STATUS_WARNING, 'DOI is not valid']
+            else:
+                return [STATUS_ERROR, 'the DOI in xml is defferent from the DOI in the source']
+        else:
+            return [STATUS_WARNING, 'missing DOI in xml']
+
+
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()
@@ -258,6 +321,10 @@ if __name__ == '__main__':
 
     ppl = vpipes.Pipeline(SetupPipe,
                           PublisherNameValidationPipe,
+                          JournalAbbreviatedTitleValidationPipe,
+                          NLMJournalTitleValidationPipe,
+                          FundingGroupValidationPipe,
+                          DOIVAlidationPipe,
                           JournalReferenceTypeValidationPipe,
                           TearDownPipe)
 
@@ -266,7 +333,9 @@ if __name__ == '__main__':
                   _notifier=notifier_dep,
                   _sapi_tools=scieloapitoolbelt,
                   _pkg_analyzer=checkin.PackageAnalyzer,
-                  _issn_validator=utils.is_valid_issn)
+                  _issn_validator=utils.is_valid_issn,
+                  _doi_validator=utils.is_valid_doi,
+                  _normalize_data=utils.normalize_data)
 
     try:
         results = [msg for msg in ppl.run(messages)]
