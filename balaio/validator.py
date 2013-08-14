@@ -23,6 +23,16 @@ STATUS_ERROR = 'error'
 class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
     __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer', '_issn_validator']
 
+    def _fetch_journal_data(self, criteria):
+        """
+        Encapsulates the two-phase process of retrieving
+        data from one journal matching the criteria.
+        """
+        #cli.fetch_relations(cli.get(i['resource_uri']))
+        found_journal = self._scieloapi.journals.filter(
+            limit=1, **criteria)
+        return self._sapi_tools.get_one(found_journal)
+
     def _fetch_journal_and_issue_data(self, criteria):
         """
         Encapsulates the two-phase process of retrieving
@@ -33,8 +43,6 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
             limit=1, **criteria)
         return self._scieloapi.fetch_relations(self._sapi_tools.get_one(found_journal_issues))
 
-    def _criteria(self, pkg_analyzer):
-        if 
     def transform(self, attempt):
         """
         Adds some data that will be needed during validation
@@ -48,23 +56,36 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         pkg_analyzer = self._pkg_analyzer(attempt.filepath)
         pkg_analyzer.lock_package()
 
-        criteria = self._criteria(attempt.articlepkg)
+        criteria = {}
+
+        if attempt.articlepkg.issue_volume:
+            criteria['volume'] = attempt.articlepkg.issue_volume
+        if attempt.articlepkg.issue_number:
+            criteria['number'] = attempt.articlepkg.issue_number
+        #if attempt.articlepkg.issue_suppl_volume:
+        #    criteria['suppl_volume'] = attempt.articlepkg.issue_suppl_volume
+        #if attempt.articlepkg.issue_suppl_number:
+        #    criteria['suppl_number'] = attempt.articlepkg.issue_suppl_number
 
         journal_pissn = attempt.articlepkg.journal_pissn
 
         if journal_pissn and self._issn_validator(journal_pissn):
+            criteria['journal__print_issn'] = journal_pissn
             try:
                 journal_data = self._fetch_journal_and_issue_data(
-                    {'print_issn': journal_pissn})
+                    criteria)
             except ValueError:
                 # unknown pissn
                 journal_data = None
+                del criteria['journal__print_issn']
 
         journal_eissn = attempt.articlepkg.journal_eissn
         if journal_eissn and self._issn_validator(journal_eissn) and not journal_data:
+
+            criteria['journal__eletronic_issn'] = journal_eissn
             try:
                 journal_data = self._fetch_journal_and_issue_data(
-                    {'eletronic_issn': journal_eissn})
+                    criteria)
             except ValueError:
                 # unknown eissn
                 journal_data = None
@@ -73,7 +94,7 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
             logger.info('%s is not related to a known journal' % attempt)
             attempt.is_valid = False
 
-        return_value = (attempt, pkg_analyzer, journal_data, issue_data)
+        return_value = (attempt, pkg_analyzer, journal_data)
         logger.debug('%s returning %s' % (self.__class__.__name__, ','.join([repr(val) for val in return_value])))
         return return_value
 
