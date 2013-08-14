@@ -143,22 +143,66 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
               <ref-list>
                 <ref id="B23">
                   <element-citation publication-type="journal">
-                    <person-group person-group-type="author">
-                      <name>
-                        <surname><![CDATA[Winkler]]></surname>
-                        <given-names><![CDATA[JD]]></given-names>
-                      </name>
-                      <name>
-                        <surname><![CDATA[Sánchez-Villagra]]></surname>
-                        <given-names><![CDATA[MR]]></given-names>
-                      </name>
-                    </person-group>
                     <article-title xml:lang="en"><![CDATA[A nesting site and egg morphology of a Miocene turtle from Urumaco, Venezuela: evidence of marine adaptations in Pelomedusoides]]></article-title>
                     <source><![CDATA[Palaeontology]]></source>
                     <year>2013</year>
                     <volume>49</volume>
                     <page-range>641-46</page-range>
                   </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_valid_reference_list_with_two_refs(self):
+        expected = [validator.STATUS_OK, '']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[A nesting site and egg morphology of a Miocene turtle from Urumaco, Venezuela: evidence of marine adaptations in Pelomedusoides]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <year>2013</year>
+                  </element-citation>
+                </ref>
+                <ref id="B24">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <year>2013</year>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_valid_reference_list_but_one_without_element_citation(self):
+        expected = [validator.STATUS_OK, '']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[A nesting site and egg morphology of a Miocene turtle from Urumaco, Venezuela: evidence of marine adaptations in Pelomedusoides]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <year>2013</year>
+                  </element-citation>
+                </ref>
+                <ref id="B24">
+                  <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                  <source><![CDATA[Palaeontology]]></source>
+                  <year>2013</year>
                 </ref>
               </ref-list>
             </root>'''
@@ -198,16 +242,6 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
               <ref-list>
                 <ref id="B23">
                   <element-citation publication-type="journal">
-                    <person-group person-group-type="author">
-                      <name>
-                        <surname><![CDATA[Winkler]]></surname>
-                        <given-names><![CDATA[JD]]></given-names>
-                      </name>
-                      <name>
-                        <surname><![CDATA[Sánchez-Villagra]]></surname>
-                        <given-names><![CDATA[MR]]></given-names>
-                      </name>
-                    </person-group>
                     <article-title xml:lang="en"><![CDATA[A nesting site and egg morphology of a Miocene turtle from Urumaco, Venezuela: evidence of marine adaptations in Pelomedusoides]]></article-title>
                     <source><![CDATA[Palaeontology]]></source>
                     <year></year>
@@ -224,26 +258,106 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
         self.assertEquals(
             vpipe.validate(pkg_analyzer_stub), expected)
 
-    def test_reference_list_missing_any_tag(self):
+    def test_reference_list_missing_tag_article_title(self):
         expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing tag article-title ) ']
         data = '''
             <root>
               <ref-list>
                 <ref id="B23">
                   <element-citation publication-type="journal">
-                    <person-group person-group-type="author">
-                      <name>
-                        <surname><![CDATA[Winkler]]></surname>
-                        <given-names><![CDATA[JD]]></given-names>
-                      </name>
-                      <name>
-                        <surname><![CDATA[Sánchez-Villagra]]></surname>
-                        <given-names><![CDATA[MR]]></given-names>
-                      </name>
-                    </person-group>
                     <source><![CDATA[Palaeontology]]></source>
                     <year>2013</year>
                     <volume>49</volume>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_missing_tag_source(self):
+        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing tag source ) ']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <year>2013</year>
+                    <volume>49</volume>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_missing_year(self):
+        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing tag year ) ']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <volume>49</volume>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_missing_content_in_year(self):
+        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing content in tag year ) ']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <volume>49</volume>
+                    <year></year>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_missing_content_in_source(self):
+        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing content in tag source ) ']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <source></source>
+                    <volume>49</volume>
+                    <year>2014</year>
                     <page-range>641-46</page-range>
                   </element-citation>
                 </ref>
@@ -639,7 +753,6 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
                          vpipe.validate(data))
-
 
 
 class DOIVAlidationPipeTests(mocker.MockerTestCase):

@@ -135,29 +135,25 @@ class JournalReferenceTypeValidationPipe(vpipes.ValidationPipe):
     def validate(self, package_analyzer):
 
         lst_errors = []
+        analyz_tags = {'source': ('missing content in tag source', 'missing tag source'),
+                       'article-title': ('missing content in tag article-title', 'missing tag article-title'),
+                       'year': ('missing content in tag year', 'missing tag year')}
+
         refs = package_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
             for ref in refs:
                 element_citation = ref.find(".//element-citation[@publication-type='journal']")
 
-                if element_citation.find('source') is not None:
-                    if element_citation.find('source').text is None:
-                        lst_errors.append((ref.attrib['id'], 'missing content in tag source'))
-                else:
-                    lst_errors.append((ref.attrib['id'], 'missing tag source'))
+                if element_citation is not None:
 
-                if element_citation.find('article-title') is not None:
-                    if element_citation.find('article-title').text is None:
-                        lst_errors.append((ref.attrib['id'], 'missing content in tag article-title'))
-                else:
-                    lst_errors.append((ref.attrib['id'], 'missing tag article-title'))
+                    for tag_key, tag_val in analyz_tags.items():
 
-                if element_citation.find('year') is not None:
-                    if element_citation.find('year').text is None:
-                        lst_errors.append((ref.attrib['id'], 'missing content in tag year'))
-                else:
-                    lst_errors.append((ref.attrib['id'], 'missing tag year'))
+                        if element_citation.find(tag_key) is not None:
+                            if element_citation.find(tag_key).text is None:
+                                lst_errors.append((ref.attrib['id'], tag_val[0]))
+                        else:
+                            lst_errors.append((ref.attrib['id'], tag_val[1]))
         else:
             return [STATUS_WARNING, 'this xml does not have reference list']
 
