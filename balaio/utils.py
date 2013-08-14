@@ -1,22 +1,24 @@
-import types
 import os
-from ConfigParser import SafeConfigParser
-import weakref
 import hmac
+import types
+import weakref
 import hashlib
+import requests
+import threading
+import logging, logging.handlers
+from ConfigParser import SafeConfigParser
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
-import threading
-import logging, logging.handlers
-
 
 logger = logging.getLogger('balaio.utils')
 stdout_lock = threading.Lock()
 # flag to indicate if the process have
 # already defined a logger handler.
 has_logger = False
+
 
 class SingletonMixin(object):
     """
@@ -203,6 +205,28 @@ def setup_logging():
         has_logger = True
 
 
+def normalize_data(data):
+    """
+    Normalize the ``data`` param converting to uppercase and clean spaces
+
+    Convert this: ' This is     a test for something good      '
+    To this: 'THIS IS A TEST FOR SOMETHING GOOD'
+
+    """
+    return ' '.join(data.upper().split())
+
+
+def is_valid_doi(doi):
+    """
+    Verify if the DOI is valid for CrossRef
+    Validate URL: ``http://dx.doi.org/<DOI>``
+    """
+
+    req = requests.get('http://dx.doi.org/%s' % doi, timeout=1)
+
+    return True if req.status_code == 200 else False
+
+
 def validate_issn(issn):
     """
     This function analyze the ISSN:
@@ -255,14 +279,3 @@ def is_valid_issn(issn):
         return bool(validate_issn(issn))
     except (ValueError, TypeError):
         return False
-
-
-def normalize_data(data):
-    """
-    Normalize the ``data`` param converting to uppercase and clean spaces
-
-    Convert this: ' This is     a test for something good      '
-    To this: 'THIS IS A TEST FOR SOMETHING GOOD'
-
-    """
-    return ' '.join(data.upper().split())

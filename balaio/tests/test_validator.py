@@ -283,7 +283,7 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
 
-class JournalAbbreviatedTitleValidationTests(unittest.TestCase):
+class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
 
     def _makeOne(self, data, **kwargs):
         vpipe = validator.JournalAbbreviatedTitleValidationPipe(data)
@@ -310,11 +310,21 @@ class JournalAbbreviatedTitleValidationTests(unittest.TestCase):
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
+        mock_normalize_data = self.mocker.mock()
+        mock_normalize_data(u'An. Acad. Bras. Ciênc.')
+        self.mocker.result(u'AN. ACAD. BRAS. CIÊNC.')
+
+        self.mocker.count(2)
+
+        self.mocker.replay()
+
         journal_data = {'short_title': u'An. Acad. Bras. Ciênc.'}
 
         data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe._normalize_data = mock_normalize_data
+
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -326,16 +336,27 @@ class JournalAbbreviatedTitleValidationTests(unittest.TestCase):
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
+        mock_normalize_data = self.mocker.mock()
+        mock_normalize_data(u'An. Academia Bras. Ciênc.')
+        self.mocker.result(u'AN. ACADEMIA. BRAS. CIÊNC.')
+
+        mock_normalize_data(u'An. Acad. Bras. Ciênc.')
+        self.mocker.result(u'AN. ACAD. BRAS. CIÊNC.')
+
+        self.mocker.replay()
+
         journal_data = {'short_title': u'An. Acad. Bras. Ciênc.'}
 
         data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe._normalize_data = mock_normalize_data
+
         self.assertEqual(expected,
                          vpipe.validate(data))
 
     def test_if_exists_abbreviated_title_tag_on_source(self):
-        expected = [validator.STATUS_ERROR, 'missing abbreviated title on source']
+        expected = [validator.STATUS_ERROR, 'missing abbreviated title in source']
         xml = '''
             <front><journal-meta><abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Academia Bras. Ciênc.]]></abbrev-journal-title></journal-meta></front>'''
 
@@ -352,7 +373,7 @@ class JournalAbbreviatedTitleValidationTests(unittest.TestCase):
                          vpipe.validate(data))
 
     def test_if_exists_abbreviated_title_tag_on_xml(self):
-        expected = [validator.STATUS_ERROR, 'missing abbreviated title on xml']
+        expected = [validator.STATUS_ERROR, 'missing abbreviated title in xml']
         xml = '''
             <front><journal-meta></journal-meta></front>'''
 
@@ -399,11 +420,21 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
+        mock_normalize_data = self.mocker.mock()
+        mock_normalize_data(u'publicador                  da revista brasileira de ....')
+        self.mocker.result(u'PUBLICADOR DA REVISTA BRASILEIRA DE ....')
+
+        mock_normalize_data(u'publicador da revista brasileira de ....')
+        self.mocker.result(u'PUBLICADOR DA REVISTA BRASILEIRA DE ....')
+
+        self.mocker.replay()
+
         journal_data = {'publisher_name': 'publicador da revista brasileira de ....'}
 
         data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe._normalize_data = mock_normalize_data
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -414,11 +445,21 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
+        mock_normalize_data = self.mocker.mock()
+        mock_normalize_data(u'publicador abcdefgh')
+        self.mocker.result(u'PUBLICADOR ABCDEFGH')
+
+        mock_normalize_data(u'publicador da revista brasileira de ....')
+        self.mocker.result(u'PUBLICADOR DA REVISTA BRASILEIRA DE ....')
+
+        self.mocker.replay()
+
         journal_data = {'publisher_name': 'publicador da revista brasileira de ....'}
 
         data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe._normalize_data = mock_normalize_data
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -553,11 +594,21 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
-        journal_data = {'medline_title': 'NLM Journal Title'}
+        mock_normalize_data = self.mocker.mock()
+        mock_normalize_data(u'NLM Journal title')
+        self.mocker.result(u'NLM JOURNAL TITLE')
+
+        self.mocker.count(2)
+
+        self.mocker.replay()
+
+        journal_data = {'medline_title': 'NLM Journal title'}
 
         data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe._normalize_data = mock_normalize_data
+
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -568,11 +619,22 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
+        mock_normalize_data = self.mocker.mock()
+        mock_normalize_data(u'ANY Journal Title')
+        self.mocker.result(u'ANY JOURNAL TITLE')
+
+        mock_normalize_data(u'NLM Journal Title ....')
+        self.mocker.result(u'NLM JOURNAL TITLE ....')
+
+        self.mocker.replay()
+
         journal_data = {'medline_title': 'NLM Journal Title ....'}
 
         data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe._normalize_data = mock_normalize_data
+
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -603,5 +665,101 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
         data = (stub_attempt, stub_package_analyzer, journal_data, {})
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+
+
+class DOIVAlidationPipeTests(mocker.MockerTestCase):
+
+    def _makeOne(self, data, **kwargs):
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+
+        vpipe = validator.DOIVAlidationPipe(data)
+        vpipe.configure(_notifier=_notifier,
+                        _pkg_analyzer=_pkg_analyzer)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_valid_and_matched_DOI(self):
+        expected = [validator.STATUS_OK, '']
+        xml = '<root><article-id pub-id-type="doi">10.1590/S0001-37652013000100008</article-id></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        mock_doi_validator = self.mocker.mock()
+        mock_doi_validator('10.1590/S0001-37652013000100008')
+        self.mocker.result(True)
+
+        self.mocker.replay()
+
+        journal_data = {'doi': u'10.1590/S0001-37652013000100008'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe._doi_validator = mock_doi_validator
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_valid_and_unmatched_DOI(self):
+        expected = [validator.STATUS_ERROR, 'the DOI in xml is defferent from the DOI in the source']
+        xml = '<root><article-id pub-id-type="doi">10.1590/S0001-37652013000100007</article-id></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {'doi': u'10.1590/S0001-37652013000100008'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_invalid_but_matched_DOI(self):
+        expected = [validator.STATUS_WARNING, 'DOI is not valid']
+        xml = '<root><article-id pub-id-type="doi">10.1590/S0001-37652013000100002</article-id></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        mock_doi_validator = self.mocker.mock()
+        mock_doi_validator('10.1590/S0001-37652013000100002')
+        self.mocker.result(False)
+
+        self.mocker.replay()
+
+        journal_data = {'doi': u'10.1590/S0001-37652013000100002'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe._doi_validator = mock_doi_validator
+
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_missing_DOI(self):
+        expected = [validator.STATUS_WARNING, 'missing DOI in xml']
+        xml = '<root></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        journal_data = {'doi': u'10.1590/S0001-37652013000100002'}
+
+        data = (stub_attempt, stub_package_analyzer, journal_data)
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+
         self.assertEqual(expected,
                          vpipe.validate(data))
