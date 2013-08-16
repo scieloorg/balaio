@@ -70,19 +70,19 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         journal_pissn = attempt.articlepkg.journal_pissn
 
         if journal_pissn and self._issn_validator(journal_pissn):
-            criteria['journal__print_issn'] = journal_pissn
+            criteria['print_issn'] = journal_pissn
             try:
                 journal_and_issue_data = self._fetch_journal_and_issue_data(
                     criteria)
             except ValueError:
                 # unknown pissn
                 journal_and_issue_data = None
-                del criteria['journal__print_issn']
+                del criteria['print_issn']
 
         journal_eissn = attempt.articlepkg.journal_eissn
         if journal_eissn and self._issn_validator(journal_eissn) and not journal_and_issue_data:
 
-            criteria['journal__eletronic_issn'] = journal_eissn
+            criteria['eletronic_issn'] = journal_eissn
             try:
                 journal_and_issue_data = self._fetch_journal_and_issue_data(
                     criteria)

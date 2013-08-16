@@ -50,7 +50,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
 
         scieloapi = ScieloAPIClientStub()
-        scieloapi.issues.filter = lambda journal__print_issn=None, journal__eletronic_issn=None, journal=None, volume=None, number=None, suppl_volume=None, suppl_number=None, limit=None: [{}]
+        scieloapi.issues.filter = lambda print_issn=None, eletronic_issn=None, journal=None, volume=None, number=None, suppl_volume=None, suppl_number=None, limit=None: [{}]
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi)
 
@@ -141,7 +141,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         scieloapi.issues.filter = lambda **kwargs: [{'foo': 'bar'}]
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi)
-        self.assertEqual(vpipe._fetch_journal_and_issue_data({'journal__print_issn': '0100-879X', 'volume': '30', 'number': '4'}),
+        self.assertEqual(vpipe._fetch_journal_and_issue_data({'print_issn': '0100-879X', 'volume': '30', 'number': '4'}),
                          {'foo': 'bar'})
 
     def test_transform_grants_valid_issn_before_fetching(self):
@@ -162,7 +162,7 @@ class SetupPipeTests(mocker.MockerTestCase):
             #mock_fetch_journal_data({'print_issn': '0100-879X'})
             #self.mocker.result({'foo': 'bar', 'resource_uri': '/api/...'})
 
-            mock_fetch_journal_and_issue_data({'journal__print_issn': '0100-879X', 'volume': '30', 'number': '4'})
+            mock_fetch_journal_and_issue_data({'print_issn': '0100-879X', 'volume': '30', 'number': '4'})
             self.mocker.result({'foo': 'bar'})
 
             self.mocker.replay()
