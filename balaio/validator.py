@@ -1,4 +1,5 @@
 # coding: utf-8
+import re
 import sys
 import logging
 import xml.etree.ElementTree as etree
@@ -121,50 +122,121 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         return r
 
 
-class JournalReferenceTypeValidationPipe(vpipes.ValidationPipe):
+class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
     """
-    Validate the references type journal.
-    Verify if exists reference list
-    Verify if exists some missing tags in reference list
-    Verify if exists content on tags: ``source``, ``article-title`` and ``year`` of reference list
-    Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']``
+    Validate the tag source references
+    Verify if exists tag source references
+    Verify if exists content in tag source
+    Analized tag: ``.//ref-list/ref/element-citation/source``
     """
-    _stage_ = 'References'
+    _stage_ = 'Reference Source Validation'
     __requires__ = ['_notifier', '_pkg_analyzer']
 
     def validate(self, package_analyzer):
 
         lst_errors = []
-        analyz_tags = {'source': ('missing content in tag source', 'missing tag source'),
-                       'article-title': ('missing content in tag article-title', 'missing tag article-title'),
-                       'year': ('missing content in tag year', 'missing tag year')}
 
         refs = package_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
             for ref in refs:
-                element_citation = ref.find(".//element-citation[@publication-type='journal']")
+                source = ref.find(".//source")
 
-                if element_citation is not None:
+                if source is not None:
+                    if source.text is None:
+                        lst_errors.append((ref.attrib['id'], 'missing content in tag source'))
+                else:
+                    lst_errors.append((ref.attrib['id'], 'missing tag source'))
 
-                    for tag_key, tag_val in analyz_tags.items():
-
-                        if element_citation.find(tag_key) is not None:
-                            if element_citation.find(tag_key).text is None:
-                                lst_errors.append((ref.attrib['id'], tag_val[0]))
-                        else:
-                            lst_errors.append((ref.attrib['id'], tag_val[1]))
         else:
             return [STATUS_WARNING, 'this xml does not have reference list']
 
         if lst_errors:
-            msg_error = 'There is some erros in refs: '
-            for error in lst_errors:
-                msg_error += '(ref_id=%s, error_message=%s ) ' % error
+            msg_error = 'There is some errors in refs:'
 
-            return [STATUS_ERROR, msg_error]
+            for ref_id, msg in lst_errors:
+                msg_error += ' %s: %s' % (ref_id, msg)
+
+        return [STATUS_ERROR, msg_error] if lst_errors else [STATUS_OK, '']
+
+
+class ReferenceArticleTitleValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate the tag article-title references
+    Verify if exists tag article-title references
+    Verify if exists content in tag article-title
+    Analized tag: ``.//ref-list/ref/element-citation/article-title``
+    """
+    _stage_ = 'Reference Article Title Validation'
+    __requires__ = ['_notifier', '_pkg_analyzer']
+
+    def validate(self, package_analyzer):
+
+        lst_errors = []
+
+        refs = package_analyzer.xml.findall(".//ref-list/ref")
+
+        if refs:
+            for ref in refs:
+                article_title = ref.find(".//article-title")
+
+                if article_title is not None:
+                    if article_title.text is None:
+                        lst_errors.append((ref.attrib['id'], 'missing content in tag article-title'))
+                else:
+                    lst_errors.append((ref.attrib['id'], 'missing tag article-title'))
+
         else:
-            return [STATUS_OK, '']
+            return [STATUS_WARNING, 'this xml does not have reference list']
+
+        if lst_errors:
+            msg_error = 'There is some errors in refs:'
+
+            for ref_id, msg in lst_errors:
+                msg_error += ' %s: %s' % (ref_id, msg)
+
+        return [STATUS_ERROR, msg_error] if lst_errors else [STATUS_OK, '']
+
+
+class ReferenceYearValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate the tag year references
+    Verify if exists tag year references
+    Verify if exists content in tag year
+    Analized tag: ``.//ref-list/ref/element-citation/year``
+    """
+    _stage_ = 'Reference Year Validation'
+    __requires__ = ['_notifier', '_pkg_analyzer']
+
+    def validate(self, package_analyzer):
+
+        lst_errors = []
+
+        refs = package_analyzer.xml.findall(".//ref-list/ref")
+
+        if refs:
+            for ref in refs:
+                year = ref.find(".//year")
+
+                if year is not None:
+                    if year.text is None:
+                        lst_errors.append((ref.attrib['id'], 'missing content in tag year'))
+                    else:
+                        if not re.search(r'\d{4}', year.text):
+                            lst_errors.append((ref.attrib['id'], 'date not well format'))
+                else:
+                    lst_errors.append((ref.attrib['id'], 'missing tag year'))
+
+        else:
+            return [STATUS_WARNING, 'this xml does not have reference list']
+
+        if lst_errors:
+            msg_error = 'There is some errors in refs:'
+
+            for ref_id, msg in lst_errors:
+                msg_error += ' %s: %s' % (ref_id, msg)
+
+        return [STATUS_ERROR, msg_error] if lst_errors else [STATUS_OK, '']
 
 
 class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):

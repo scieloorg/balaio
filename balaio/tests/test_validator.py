@@ -119,10 +119,10 @@ class SetupPipeTests(mocker.MockerTestCase):
         result = vpipe.transform(stub_attempt)
 
 
-class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
+class ReferenceSourceValidationTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-        vpipe = validator.JournalReferenceTypeValidationPipe(data)
+        vpipe = validator.ReferenceSourceValidationPipe(data)
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', NotifierStub())
@@ -136,137 +136,15 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
         pkg_analyzer_stub._xml_string = data
         return pkg_analyzer_stub
 
-    def test_valid_reference_list(self):
+    def test_reference_list_with_valid_tag_source(self):
         expected = [validator.STATUS_OK, '']
         data = '''
             <root>
               <ref-list>
                 <ref id="B23">
-                  <element-citation publication-type="journal">
-                    <article-title xml:lang="en"><![CDATA[A nesting site and egg morphology of a Miocene turtle from Urumaco, Venezuela: evidence of marine adaptations in Pelomedusoides]]></article-title>
-                    <source><![CDATA[Palaeontology]]></source>
-                    <year>2013</year>
-                    <volume>49</volume>
-                    <page-range>641-46</page-range>
-                  </element-citation>
-                </ref>
-              </ref-list>
-            </root>'''
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_valid_reference_list_with_two_refs(self):
-        expected = [validator.STATUS_OK, '']
-        data = '''
-            <root>
-              <ref-list>
-                <ref id="B23">
-                  <element-citation publication-type="journal">
-                    <article-title xml:lang="en"><![CDATA[A nesting site and egg morphology of a Miocene turtle from Urumaco, Venezuela: evidence of marine adaptations in Pelomedusoides]]></article-title>
-                    <source><![CDATA[Palaeontology]]></source>
-                    <year>2013</year>
-                  </element-citation>
-                </ref>
-                <ref id="B24">
                   <element-citation publication-type="journal">
                     <article-title xml:lang="en"><![CDATA[Title]]></article-title>
                     <source><![CDATA[Palaeontology]]></source>
-                    <year>2013</year>
-                  </element-citation>
-                </ref>
-              </ref-list>
-            </root>'''
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_valid_reference_list_but_one_without_element_citation(self):
-        expected = [validator.STATUS_OK, '']
-        data = '''
-            <root>
-              <ref-list>
-                <ref id="B23">
-                  <element-citation publication-type="journal">
-                    <article-title xml:lang="en"><![CDATA[A nesting site and egg morphology of a Miocene turtle from Urumaco, Venezuela: evidence of marine adaptations in Pelomedusoides]]></article-title>
-                    <source><![CDATA[Palaeontology]]></source>
-                    <year>2013</year>
-                  </element-citation>
-                </ref>
-                <ref id="B24">
-                  <article-title xml:lang="en"><![CDATA[Title]]></article-title>
-                  <source><![CDATA[Palaeontology]]></source>
-                  <year>2013</year>
-                </ref>
-              </ref-list>
-            </root>'''
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_valid_without_reference_list(self):
-        expected = [validator.STATUS_WARNING, 'this xml does not have reference list']
-        data = '''
-            <root>
-              <journal-meta>
-                <journal-id>0001-3765</journal-id>
-                <journal-title><![CDATA[Anais da Academia Brasileira de Ciências]]></journal-title>
-                <abbrev-journal-title><![CDATA[An. Acad. Bras. Ciênc.]]></abbrev-journal-title>
-                <issn>0001-3765</issn>
-                <publisher>
-                  <publisher-name><![CDATA[Academia Brasileira de Ciências]]></publisher-name>
-                </publisher>
-              </journal-meta>
-              <ref-list></ref-list>
-            </root>'''
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_invalid_content_on_reference_list(self):
-        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing content in tag year ) ']
-        data = '''
-            <root>
-              <ref-list>
-                <ref id="B23">
-                  <element-citation publication-type="journal">
-                    <article-title xml:lang="en"><![CDATA[A nesting site and egg morphology of a Miocene turtle from Urumaco, Venezuela: evidence of marine adaptations in Pelomedusoides]]></article-title>
-                    <source><![CDATA[Palaeontology]]></source>
-                    <year></year>
-                    <volume>49</volume>
-                    <page-range>641-46</page-range>
-                  </element-citation>
-                </ref>
-              </ref-list>
-            </root>'''
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_reference_list_missing_tag_article_title(self):
-        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing tag article-title ) ']
-        data = '''
-            <root>
-              <ref-list>
-                <ref id="B23">
-                  <element-citation publication-type="journal">
-                    <source><![CDATA[Palaeontology]]></source>
-                    <year>2013</year>
                     <volume>49</volume>
                     <page-range>641-46</page-range>
                   </element-citation>
@@ -281,7 +159,7 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_missing_tag_source(self):
-        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing tag source ) ']
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag source']
         data = '''
             <root>
               <ref-list>
@@ -302,15 +180,23 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
         self.assertEquals(
             vpipe.validate(pkg_analyzer_stub), expected)
 
-    def test_reference_list_missing_year(self):
-        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing tag year ) ']
+    def test_reference_list_with_two_missing_tag_source(self):
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag source B24: missing tag source']
         data = '''
             <root>
               <ref-list>
                 <ref id="B23">
                   <element-citation publication-type="journal">
                     <article-title xml:lang="en"><![CDATA[Title]]></article-title>
-                    <source><![CDATA[Palaeontology]]></source>
+                    <year>2013</year>
+                    <volume>49</volume>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+                <ref id="B24">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <year>2013</year>
                     <volume>49</volume>
                     <page-range>641-46</page-range>
                   </element-citation>
@@ -324,20 +210,11 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
         self.assertEquals(
             vpipe.validate(pkg_analyzer_stub), expected)
 
-    def test_reference_list_missing_content_in_year(self):
-        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing content in tag year ) ']
+    def test_reference_list_without_ref_list(self):
+        expected = [validator.STATUS_WARNING, 'this xml does not have reference list']
         data = '''
             <root>
               <ref-list>
-                <ref id="B23">
-                  <element-citation publication-type="journal">
-                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
-                    <source><![CDATA[Palaeontology]]></source>
-                    <volume>49</volume>
-                    <year></year>
-                    <page-range>641-46</page-range>
-                  </element-citation>
-                </ref>
               </ref-list>
             </root>'''
 
@@ -347,8 +224,8 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
         self.assertEquals(
             vpipe.validate(pkg_analyzer_stub), expected)
 
-    def test_reference_list_missing_content_in_source(self):
-        expected = [validator.STATUS_ERROR, 'There is some erros in refs: (ref_id=B23, error_message=missing content in tag source ) ']
+    def test_reference_list_with_tag_source_missing_content(self):
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing content in tag source']
         data = '''
             <root>
               <ref-list>
@@ -357,8 +234,308 @@ class JournalReferenceTypeValidationPipeTests(unittest.TestCase):
                     <article-title xml:lang="en"><![CDATA[Title]]></article-title>
                     <source></source>
                     <volume>49</volume>
-                    <year>2014</year>
                     <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+
+class ReferenceArticleTitleValidationTests(unittest.TestCase):
+
+    def _makeOne(self, data, **kwargs):
+        vpipe = validator.ReferenceArticleTitleValidationPipe(data)
+
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _notifier = kwargs.get('_notifier', NotifierStub())
+
+        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
+                        _notifier=_notifier)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_reference_list_with_valid_tag_article_title(self):
+        expected = [validator.STATUS_OK, '']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <volume>49</volume>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_missing_tag_article_title(self):
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag article-title']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <year>2013</year>
+                    <volume>49</volume>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_with_two_missing_tag_article_title(self):
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag article-title B24: missing tag article-title']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <year>2013</year>
+                    <volume>49</volume>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+                <ref id="B24">
+                  <element-citation publication-type="journal">
+                    <year>2013</year>
+                    <volume>49</volume>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_without_ref_list(self):
+        expected = [validator.STATUS_WARNING, 'this xml does not have reference list']
+        data = '''
+            <root>
+              <ref-list>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_with_tag_source_missing_content(self):
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing content in tag article-title']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <volume>49</volume>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+
+class ReferenceDateValidationTests(unittest.TestCase):
+
+    def _makeOne(self, data, **kwargs):
+        vpipe = validator.ReferenceYearValidationPipe(data)
+
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _notifier = kwargs.get('_notifier', NotifierStub())
+
+        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
+                        _notifier=_notifier)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_reference_list_with_valid_tag_year(self):
+        expected = [validator.STATUS_OK, '']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <volume>49</volume>
+                    <year>2013</year>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_with_valid_and_well_format_tag_year(self):
+        expected = [validator.STATUS_OK, '']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <volume>49</volume>
+                    <year>2013</year>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_with_valid_and_not_well_format_tag_year(self):
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: date not well format']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <volume>49</volume>
+                    <year>13</year>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_missing_tag_year(self):
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag year']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <volume>49</volume>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_with_two_missing_tag_year(self):
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag year B24: missing tag year']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <volume>49</volume>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+                <ref id="B24">
+                  <element-citation publication-type="journal">
+                    <volume>49</volume>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_without_ref_list(self):
+        expected = [validator.STATUS_WARNING, 'this xml does not have reference list']
+        data = '''
+            <root>
+              <ref-list>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_list_with_tag_year_missing_content(self):
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing content in tag year']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <volume>49</volume>
+                    <page-range>641-46</page-range>
+                    <year></year>
                   </element-citation>
                 </ref>
               </ref-list>
