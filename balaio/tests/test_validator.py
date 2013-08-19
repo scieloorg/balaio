@@ -789,13 +789,14 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
         _notifier = kwargs.get('_notifier', NotifierStub())
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        #_issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
+        _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
         vpipe = validator.ArticleSectionValidationPipe(data)
         vpipe.configure(_scieloapi=_scieloapi,
                         _notifier=_notifier,
                         _sapi_tools=_sapi_tools,
-                        _pkg_analyzer=_pkg_analyzer)
+                        _pkg_analyzer=_pkg_analyzer,
+                        _normalize_data=_normalize_data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -818,38 +819,53 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
     def test_article_section_matched(self):
         expected = [validator.STATUS_OK, 'Original Articles']
         #article-categories/subj-group[@subj-group-type=”heading”]
-        xml = '<root><article-meta><article-categories><subj-group subj-group-type="heading">Original Articles</subj-group></article-categories></article-meta></root>'
+        xml = '<root><article-meta><article-categories><subj-group subj-group-type="heading"><subject>Original Articles</subject></subj-group></article-categories></article-meta></root>'
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
-        data = (stub_attempt, stub_package_analyzer, {}, self._issue_data())
+        mock_is_a_registered_section_title = self.mocker.mock()
+        mock_is_a_registered_section_title(self._issue_data()['sections'], 'Original Articles')
+        self.mocker.result(True)
+
+        self.mocker.replay()
+
+        data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe._is_a_registered_section_title = mock_is_a_registered_section_title
         self.assertEqual(expected,
                          vpipe.validate(data))
 
     def test_article_section_is_not_registered(self):
         expected = [validator.STATUS_ERROR, 'Articles is not registered as section in 1(1)']
-        xml = '<root><article-meta><article-categories><subj-group subj-group-type="heading">Articles</subj-group></article-categories></article-meta></root>'
+        xml = '<root><article-meta><article-categories><subj-group subj-group-type="heading"><subject>Articles</subject></subj-group></article-categories></article-meta></root>'
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
-        data = (stub_attempt, stub_package_analyzer, {}, self._issue_data())
+        mock_is_a_registered_section_title = self.mocker.mock()
+        mock_is_a_registered_section_title(self._issue_data()['sections'], 'Articles')
+        self.mocker.result(False)
+
+        self.mocker.replay()
+
+        data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        #vpipe._normalize_data = mock_normalize_data
+        vpipe._is_a_registered_section_title = mock_is_a_registered_section_title
         self.assertEqual(expected,
                          vpipe.validate(data))
 
     def test_article_section_is_missing_in_article(self):
-        expected = [validator.STATUS_WARNING, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]']
+        expected = [validator.STATUS_WARNING, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]/subject']
         xml = '<root></root>'
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
-        data = (stub_attempt, stub_package_analyzer, {}, self._issue_data())
+        data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
