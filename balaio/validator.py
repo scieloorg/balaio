@@ -148,9 +148,6 @@ class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
                 else:
                     lst_errors.append((ref.attrib['id'], 'missing tag source'))
 
-        else:
-            return [STATUS_WARNING, 'this xml does not have reference list']
-
         if lst_errors:
             msg_error = 'There is some errors in refs:'
 
@@ -185,9 +182,6 @@ class ReferenceArticleTitleValidationPipe(vpipes.ValidationPipe):
                         lst_errors.append((ref.attrib['id'], 'missing content in tag article-title'))
                 else:
                     lst_errors.append((ref.attrib['id'], 'missing tag article-title'))
-
-        else:
-            return [STATUS_WARNING, 'this xml does not have reference list']
 
         if lst_errors:
             msg_error = 'There is some errors in refs:'
@@ -226,9 +220,6 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
                             lst_errors.append((ref.attrib['id'], 'date not well format'))
                 else:
                     lst_errors.append((ref.attrib['id'], 'missing tag year'))
-
-        else:
-            return [STATUS_WARNING, 'this xml does not have reference list']
 
         if lst_errors:
             msg_error = 'There is some errors in refs:'

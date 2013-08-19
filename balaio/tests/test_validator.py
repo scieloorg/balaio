@@ -210,20 +210,6 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         self.assertEquals(
             vpipe.validate(pkg_analyzer_stub), expected)
 
-    def test_reference_list_without_ref_list(self):
-        expected = [validator.STATUS_WARNING, 'this xml does not have reference list']
-        data = '''
-            <root>
-              <ref-list>
-              </ref-list>
-            </root>'''
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
     def test_reference_list_with_tag_source_missing_content(self):
         expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing content in tag source']
         data = '''
@@ -329,20 +315,6 @@ class ReferenceArticleTitleValidationTests(unittest.TestCase):
                     <page-range>641-46</page-range>
                   </element-citation>
                 </ref>
-              </ref-list>
-            </root>'''
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_reference_list_without_ref_list(self):
-        expected = [validator.STATUS_WARNING, 'this xml does not have reference list']
-        data = '''
-            <root>
-              <ref-list>
               </ref-list>
             </root>'''
 
@@ -501,20 +473,6 @@ class ReferenceDateValidationTests(unittest.TestCase):
                     <page-range>641-46</page-range>
                   </element-citation>
                 </ref>
-              </ref-list>
-            </root>'''
-
-        vpipe = self._makeOne(data)
-        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
-
-        self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
-
-    def test_reference_list_without_ref_list(self):
-        expected = [validator.STATUS_WARNING, 'this xml does not have reference list']
-        data = '''
-            <root>
-              <ref-list>
               </ref-list>
             </root>'''
 
