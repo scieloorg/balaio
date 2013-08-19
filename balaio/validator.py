@@ -28,18 +28,20 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         Encapsulates the two-phase process of retrieving
         data from one journal matching the criteria.
         """
-        found_journals = self._scieloapi.journals.filter(
+        #cli.fetch_relations(cli.get(i['resource_uri']))
+        found_journal = self._scieloapi.journals.filter(
             limit=1, **criteria)
-        return self._scieloapi.fetch_relations(self._sapi_tools.get_one(found_journals))
+        return self._sapi_tools.get_one(found_journal)
 
-    def _fetch_journal_issue_data(self, criteria):
+    def _fetch_journal_and_issue_data(self, criteria):
         """
         Encapsulates the two-phase process of retrieving
-        data from one journal matching the criteria.
+        data from one issue matching the criteria.
         """
+        #cli.fetch_relations(cli.get(i['resource_uri']))
         found_journal_issues = self._scieloapi.issues.filter(
             limit=1, **criteria)
-        return self._sapi_tools.get_one(found_journal_issues)
+        return self._scieloapi.fetch_relations(self._sapi_tools.get_one(found_journal_issues))
 
     def transform(self, attempt):
         """
@@ -47,49 +49,52 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         workflow.
 
         :param attempt: is an models.Attempt instance.
-        :returns: a tuple (Attempt, PackageAnalyzer, journal_data, issue_data)
+        :returns: a tuple (Attempt, PackageAnalyzer, journal_and_issue_data)
         """
         logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
 
         pkg_analyzer = self._pkg_analyzer(attempt.filepath)
         pkg_analyzer.lock_package()
 
+        criteria = {}
+
+        if attempt.articlepkg.issue_volume:
+            criteria['volume'] = attempt.articlepkg.issue_volume
+        if attempt.articlepkg.issue_number:
+            criteria['number'] = attempt.articlepkg.issue_number
+        #if attempt.articlepkg.issue_suppl_volume:
+        #    criteria['suppl_volume'] = attempt.articlepkg.issue_suppl_volume
+        #if attempt.articlepkg.issue_suppl_number:
+        #    criteria['suppl_number'] = attempt.articlepkg.issue_suppl_number
+
         journal_pissn = attempt.articlepkg.journal_pissn
 
         if journal_pissn and self._issn_validator(journal_pissn):
+            criteria['print_issn'] = journal_pissn
             try:
-                journal_data = self._fetch_journal_data(
-                    {'print_issn': journal_pissn})
+                journal_and_issue_data = self._fetch_journal_and_issue_data(
+                    criteria)
             except ValueError:
                 # unknown pissn
-                journal_data = None
+                journal_and_issue_data = None
+                del criteria['print_issn']
 
         journal_eissn = attempt.articlepkg.journal_eissn
-        if journal_eissn and self._issn_validator(journal_eissn) and not journal_data:
+        if journal_eissn and self._issn_validator(journal_eissn) and not journal_and_issue_data:
+
+            criteria['eletronic_issn'] = journal_eissn
             try:
-                journal_data = self._fetch_journal_data(
-                    {'eletronic_issn': journal_eissn})
+                journal_and_issue_data = self._fetch_journal_and_issue_data(
+                    criteria)
             except ValueError:
                 # unknown eissn
-                journal_data = None
+                journal_and_issue_data = None
 
-        if journal_data:
-            issue_data = self._fetch_journal_issue_data(
-                {'journal': journal_data.get('resource_uri'),
-                 'number': attempt.articlepkg.issue_number,
-                 'volume': attempt.articlepkg.issue_volume,
-                 #'suppl_number': attempt.articlepkg.issue_suppl_number,
-                 #'suppl_volume': attempt.articlepkg.issue_suppl_volume,
-                 })
-            if not issue_data:
-                logger.info('%s is not related to a known journal issue' % attempt)
-                attempt.is_valid = False
-        else:
-            issue_data = None
+        if not journal_and_issue_data:
             logger.info('%s is not related to a known journal' % attempt)
             attempt.is_valid = False
 
-        return_value = (attempt, pkg_analyzer, journal_data, issue_data)
+        return_value = (attempt, pkg_analyzer, journal_and_issue_data)
         logger.debug('%s returning %s' % (self.__class__.__name__, ','.join([repr(val) for val in return_value])))
         return return_value
 
@@ -99,7 +104,7 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
 
     def transform(self, item):
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
-        attempt, pkg_analyzer, journal_data, issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item
 
         pkg_analyzer.restore_perms()
 
@@ -114,8 +119,8 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
     """
     Validate the publisher name in article. It must be same as registered in journal data
     """
-    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
-    _stage_ = 'PublisherNameValidationPipe'
+    _stage_ = 'Publisher Name Validation'
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer', '_normalize_data']
 
     def validate(self, item):
         """
@@ -125,14 +130,14 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
         """
 
-        attempt, package_analyzer, journal_data, issue_data = item
-        j_publisher_name = journal_data.get('publisher_name', None)
+        attempt, pkg_analyzer, journal_and_issue_data = item
+        j_publisher_name = journal_and_issue_data.get('journal').get('publisher_name', None)
         if j_publisher_name:
-            data = package_analyzer.xml
+            data = pkg_analyzer.xml
             xml_publisher_name = data.findtext('.//publisher-name')
 
             if xml_publisher_name:
-                if utils.normalize_data(xml_publisher_name) == utils.normalize_data(j_publisher_name):
+                if self._normalize_data(xml_publisher_name) == self._normalize_data(j_publisher_name):
                     r = [STATUS_OK, '']
                 else:
                     r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + xml_publisher_name + ' [article]']
@@ -177,24 +182,24 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
     Verify if abbreviated title of the xml is equal to source
     """
     _stage_ = 'Journal Abbreviated Title Validation'
-    __requires__ = ['_notifier', '_pkg_analyser', '_scieloapi']
+    __requires__ = ['_notifier', '_pkg_analyser', '_scieloapi', '_normalize_data']
 
     def validate(self, item):
 
-        attempt, pkg_analyzer, journal_data, issue_data = item
-        abbrev_title = journal_data.get('short_title')
+        attempt, pkg_analyzer, journal_and_issue_data = item
+        abbrev_title = journal_and_issue_data.get('journal').get('short_title')
 
         if abbrev_title:
             abbrev_title_xml = pkg_analyzer.xml.find('.//journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
             if abbrev_title_xml is not None:
-                if utils.normalize_data(abbrev_title) == utils.normalize_data(abbrev_title_xml.text):
+                if self._normalize_data(abbrev_title) == self._normalize_data(abbrev_title_xml.text):
                     return [STATUS_OK, '']
                 else:
                     return [STATUS_ERROR, 'the abbreviated title in xml is defferent from the abbreviated title in the source']
             else:
-                return [STATUS_ERROR, 'missing abbreviated title on xml']
+                return [STATUS_ERROR, 'missing abbreviated title in xml']
         else:
-            return [STATUS_ERROR, 'missing abbreviated title on source']
+            return [STATUS_ERROR, 'missing abbreviated title in source']
 
 
 class FundingGroupValidationPipe(vpipes.ValidationPipe):
@@ -203,7 +208,7 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
     Funding group is mandatory only if there is contract number in the article,
     and this data is usually in acknowledge
     """
-    _stage_ = 'Funding group validation'
+    _stage_ = 'Funding Group Validation'
     __requires__ = ['_notifier', '_pkg_analyzer']
 
     def validate(self, item):
@@ -225,7 +230,7 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
             """
             return any((True for n in xrange(10) if str(n) in text))
 
-        attempt, pkg_analyzer, journal_data, issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item
 
         xml_tree = pkg_analyzer.xml
 
@@ -252,7 +257,7 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
     Validate NLM journal title
     """
     _stage_ = 'NLM Journal Title validation'
-    __requires__ = ['_notifier', '_pkg_analyzer', '_scieloapi', '_sapi_tools']
+    __requires__ = ['_notifier', '_pkg_analyzer', '_scieloapi', '_sapi_tools', '_normalize_data']
 
     def validate(self, item):
         """
@@ -263,9 +268,9 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
         :returns: [STATUS_OK, ''], if journal has no nlm-journal-title
         :returns: [STATUS_ERROR, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
         """
-        attempt, pkg_analyzer, journal_data, issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item
 
-        j_nlm_title = journal_data.get('medline_title', '')
+        j_nlm_title = journal_and_issue_data.get('journal').get('medline_title', '')
         if j_nlm_title == '':
             status, description = [STATUS_OK, 'journal has no NLM journal title']
         else:
@@ -273,13 +278,36 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
             xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
 
             if xml_nlm_title:
-                if utils.normalize_data(xml_nlm_title) == utils.normalize_data(j_nlm_title):
+                if self._normalize_data(xml_nlm_title) == self._normalize_data(j_nlm_title):
                     status, description = [STATUS_OK, xml_nlm_title]
                 else:
                     status, description = [STATUS_ERROR, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
             else:
                 status, description = [STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
         return [status, description]
+
+
+class DOIVAlidationPipe(vpipes.ValidationPipe):
+    """
+    Verify if exists DOI in XML and if it`s validated before the CrossRef
+    """
+
+    _stage_ = 'DOI Validation'
+    __requires__ = ['_notifier', '_pkg_analyzer', '_doi_validator']
+
+    def validate(self, item):
+
+        attempt, pkg_analyzer, journal_data = item
+
+        doi_xml = pkg_analyzer.xml.find('.//article-id/[@pub-id-type="doi"]')
+
+        if doi_xml is not None:
+            if self._doi_validator(doi_xml.text):
+                return [STATUS_OK, '']
+            else:
+                return [STATUS_WARNING, 'DOI is not valid']
+        else:
+            return [STATUS_WARNING, 'missing DOI in xml']
 
 
 class ArticleSectionValidationPipe(vpipes.ValidationPipe):
@@ -333,6 +361,7 @@ if __name__ == '__main__':
                           JournalAbbreviatedTitleValidationPipe,
                           NLMJournalTitleValidationPipe,
                           FundingGroupValidationPipe,
+                          DOIVAlidationPipe,
                           JournalReferenceTypeValidationPipe,
                           TearDownPipe)
 
@@ -341,7 +370,9 @@ if __name__ == '__main__':
                   _notifier=notifier_dep,
                   _sapi_tools=scieloapitoolbelt,
                   _pkg_analyzer=checkin.PackageAnalyzer,
-                  _issn_validator=utils.is_valid_issn)
+                  _issn_validator=utils.is_valid_issn,
+                  _doi_validator=utils.is_valid_doi,
+                  _normalize_data=utils.normalize_data)
 
     try:
         results = [msg for msg in ppl.run(messages)]
