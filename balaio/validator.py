@@ -384,7 +384,9 @@ if __name__ == '__main__':
                           NLMJournalTitleValidationPipe,
                           FundingGroupValidationPipe,
                           DOIVAlidationPipe,
-                          JournalReferenceTypeValidationPipe,
+                          ReferenceSourceValidationPipe,
+                          ReferenceArticleTitleValidationPipe,
+                          ReferenceYearValidationPipe,
                           TearDownPipe)
 
     # add all dependencies to a registry-ish thing
