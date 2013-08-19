@@ -284,7 +284,7 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
 
 class ArticleSectionValidationPipe(vpipes.ValidationPipe):
     """
-    Validate the article section ('.//article-categories/subj-group[@subj-group-type="heading"]')
+    Validate the article section ('.//article-categories/subj-group[@subj-group-type="heading"]/subject')
     """
     __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer']
     _stage_ = 'ArticleSectionValidationPipe'
@@ -299,7 +299,7 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
         attempt, pkg_analyzer, journal_data, issue_data = item
 
         xml_tree = pkg_analyzer.xml
-        xml_section = xml_tree.findtext('.//article-categories/subj-group[@subj-group-type="heading"]')
+        xml_section = xml_tree.findtext('.//article-categories/subj-group[@subj-group-type="heading"]/subject')
 
         found = False
         if xml_section:
