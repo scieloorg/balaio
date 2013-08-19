@@ -448,6 +448,7 @@ if __name__ == '__main__':
                           PublisherNameValidationPipe,
                           JournalAbbreviatedTitleValidationPipe,
                           NLMJournalTitleValidationPipe,
+                          ArticleSectionValidationPipe,
                           FundingGroupValidationPipe,
                           DOIVAlidationPipe,
                           ReferenceSourceValidationPipe,
