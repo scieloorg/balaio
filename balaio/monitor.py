@@ -12,7 +12,10 @@ import utils
 
 
 logger = logging.getLogger('balaio.monitor')
-mask = pyinotify.IN_CLOSE_WRITE | pyinotify.IN_MOVE_SELF | pyinotify.IN_MOVED_TO
+
+#IN_CREATE event must be set to watch new directories
+#https://github.com/seb-m/pyinotify/wiki/Frequently-Asked-Questions
+mask = pyinotify.IN_CLOSE_WRITE | pyinotify.IN_MOVE_SELF | pyinotify.IN_MOVED_TO | pyinotify.IN_CREATE
 
 
 class Monitor(object):
