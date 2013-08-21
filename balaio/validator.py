@@ -149,6 +149,24 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         return r
 
 
+class ReferenceValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate if exist the tag ref-list.
+    Analized tag: ``.//ref-list/ref``
+    """
+    _stage_ = 'Reference Validation'
+    __requires__ = ['_notifier', '_pkg_analyzer']
+
+    def validate(self, package_analyzer):
+
+        refs = package_analyzer.xml.findall(".//ref-list/ref")
+
+        if refs:
+            return [STATUS_OK, '']
+        else:
+            return [STATUS_WARNING, 'tag reference missing']
+
+
 class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
     """
     Validate the tag source references
@@ -212,6 +230,39 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
                             lst_errors.append((ref.attrib['id'], 'date not well format'))
                 else:
                     lst_errors.append((ref.attrib['id'], 'missing tag year'))
+
+        if lst_errors:
+            msg_error = 'There is some errors in refs:'
+
+            for ref_id, msg in lst_errors:
+                msg_error += ' %s: %s' % (ref_id, msg)
+
+        return [STATUS_ERROR, msg_error] if lst_errors else [STATUS_OK, '']
+
+
+class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate the tag article-title references when type is Journal.
+    Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']/article-title``
+    """
+    _stage_ = 'Reference Journal Type Article Title Validation'
+    __requires__ = ['_notifier', '_pkg_analyzer']
+
+    def validate(self, package_analyzer):
+
+        lst_errors = []
+
+        refs = package_analyzer.xml.findall(".//ref-list/ref")
+
+        if refs:
+            for ref in refs:
+                article_title = ref.find(".//element-citation[@publication-type='journal']/article-title")
+
+                if article_title is not None:
+                    if article_title.text is None:
+                        lst_errors.append((ref.attrib['id'], 'missing content in tag article-title'))
+                else:
+                    lst_errors.append((ref.attrib['id'], 'missing tag article-title'))
 
         if lst_errors:
             msg_error = 'There is some errors in refs:'
@@ -401,38 +452,6 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
         return r
 
 
-class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
-    """
-    Validate the tag article-title references when type is Journal.
-    Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']/article-title``
-    """
-    _stage_ = 'Reference Journal Type Article Title Validation'
-    __requires__ = ['_notifier', '_pkg_analyzer']
-
-    def validate(self, package_analyzer):
-
-        lst_errors = []
-
-        refs = package_analyzer.xml.findall(".//ref-list/ref")
-
-        if refs:
-            for ref in refs:
-                article_title = ref.find(".//element-citation[@publication-type='journal']/article-title")
-
-                if article_title is not None:
-                    if article_title.text is None:
-                        lst_errors.append((ref.attrib['id'], 'missing content in tag article-title'))
-                else:
-                    lst_errors.append((ref.attrib['id'], 'missing tag article-title'))
-
-        if lst_errors:
-            msg_error = 'There is some errors in refs:'
-
-            for ref_id, msg in lst_errors:
-                msg_error += ' %s: %s' % (ref_id, msg)
-
-        return [STATUS_ERROR, msg_error] if lst_errors else [STATUS_OK, '']
-
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()
@@ -449,8 +468,9 @@ if __name__ == '__main__':
                           ArticleSectionValidationPipe,
                           FundingGroupValidationPipe,
                           DOIVAlidationPipe,
+                          ReferenceValidationPipe,
                           ReferenceSourceValidationPipe,
-                          ReferenceArticleTitleValidationPipe,
+                          ReferenceJournalTypeArticleTitleValidationPipe,
                           ReferenceYearValidationPipe,
                           TearDownPipe)
 

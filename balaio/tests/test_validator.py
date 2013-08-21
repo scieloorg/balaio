@@ -290,6 +290,60 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
 
+class ReferenceValidationPipeTests(unittest.TestCase):
+
+    def _makeOne(self, data, **kwargs):
+        vpipe = validator.ReferenceValidationPipe(data)
+
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _notifier = kwargs.get('_notifier', NotifierStub())
+
+        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
+                        _notifier=_notifier)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_reference_with_valid_tag_ref(self):
+        expected = [validator.STATUS_OK, '']
+        data = '''
+            <root>
+              <ref-list>
+                <ref id="B23">
+                  <element-citation publication-type="journal">
+                    <article-title xml:lang="en"><![CDATA[Title]]></article-title>
+                    <source><![CDATA[Palaeontology]]></source>
+                    <volume>49</volume>
+                    <page-range>641-46</page-range>
+                  </element-citation>
+                </ref>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+    def test_reference_with_missing_tag_ref(self):
+        expected = [validator.STATUS_WARNING, 'tag reference missing']
+        data = '''
+            <root>
+              <ref-list>
+              </ref-list>
+            </root>'''
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        self.assertEquals(
+            vpipe.validate(pkg_analyzer_stub), expected)
+
+
 class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
