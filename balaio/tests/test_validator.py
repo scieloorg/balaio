@@ -290,10 +290,10 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
 
-class ReferenceArticleTitleValidationTests(unittest.TestCase):
+class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-        vpipe = validator.ReferenceArticleTitleValidationPipe(data)
+        vpipe = validator.ReferenceJournalTypeArticleTitleValidationPipe(data)
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', NotifierStub())
@@ -644,7 +644,7 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
         journal_and_issue_data = {'journal': {}}
-        
+
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
@@ -751,7 +751,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
         journal_and_issue_data = {'journal': {}}
-        
+
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
