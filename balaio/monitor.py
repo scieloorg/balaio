@@ -1,4 +1,5 @@
 #coding: utf-8
+import os
 import threading
 import Queue
 import logging
@@ -71,12 +72,16 @@ class EventHandler(pyinotify.ProcessEvent):
         self._do_the_job(event)
 
     def _do_the_job(self, event):
+        """
+        Performs work for all except to ``_failed_`` file.
+        """
         filepath = event.pathname
-        if not zipfile.is_zipfile(filepath):
-            logger.info('Invalid zipfile: %s' % filepath)
-            return None
+        if not os.path.basename(filepath).startswith('_failed_'):
+            if not zipfile.is_zipfile(filepath):
+                logger.info('Invalid zipfile: %s' % filepath)
+                return None
 
-        self.monitor.trigger_event(filepath)
+            self.monitor.trigger_event(filepath)
 
 
 if __name__ == '__main__':
