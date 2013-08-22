@@ -1173,3 +1173,140 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
         vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
         self.assertEqual(expected,
                          vpipe.validate(data))
+
+
+class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
+    """
+    Tests of ArticleSectionValidationPipe
+    """
+    def _makeOne(self, data, **kwargs):
+        from balaio import utils
+        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
+        _notifier = kwargs.get('_notifier', NotifierStub())
+        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
+        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+
+        vpipe = validator.ArticleMetaPubDateValidationPipe(data)
+        vpipe.configure(_scieloapi=_scieloapi,
+                        _notifier=_notifier,
+                        _sapi_tools=_sapi_tools,
+                        _pkg_analyzer=_pkg_analyzer)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def _issue_data(self, year=1999, start=9, end=0):
+        return {'publication_end_month': end,
+                'publication_start_month': start,
+                'publication_year': year}
+
+    def test_article_pubdate_matched(self):
+        expected = [validator.STATUS_OK, 'year: 1999\nstart: 9\nend: 0']
+        #article-categories/subj-group[@subj-group-type=”heading”]
+        xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>09</month><year>1999</year></pub-date></article-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, self._issue_data())
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_article_pubdate_matched_month_is_name(self):
+        expected = [validator.STATUS_OK, 'year: 1999\nstart: 9\nend: 0']
+        #article-categories/subj-group[@subj-group-type=”heading”]
+        xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>Sep</month><year>1999</year></pub-date></article-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, self._issue_data())
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_article_pubdate_matched_month_range(self):
+        expected = [validator.STATUS_OK, 'year: 1999\nstart: 1\nend: 3']
+        #article-categories/subj-group[@subj-group-type=”heading”]
+        xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><season>Jan-Mar</season><year>1999</year></pub-date></article-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, self._issue_data(1999, 1, 3))
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_article_multiple_pubdate_matched(self):
+        expected = [validator.STATUS_OK, 'year: 1999\nstart: 9\nend: 0']
+        #article-categories/subj-group[@subj-group-type=”heading”]
+        xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><month>11</month><year>1999</year></pub-date>        <pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>09</month><year>1999</year></pub-date></article-meta></root>'
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, self._issue_data())
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_article_multiple_pubdate_matched_month_is_name(self):
+        expected = [validator.STATUS_OK, 'year: 1999\nstart: 9\nend: 0']
+        #article-categories/subj-group[@subj-group-type=”heading”]
+        xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><month>11</month><year>1999</year></pub-date><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>Sep</month><year>1999</year></pub-date></article-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, self._issue_data())
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_article_multiple_pubdate_matched_month_range(self):
+        expected = [validator.STATUS_OK, 'year: 1999\nstart: 9\nend: 0']
+        xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>Sep</month><year>1999</year></pub-date><pub-date pub-type="pub" iso-8601-date="1999-03-27"><month>Oct</month><year>1999</year></pub-date></article-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, self._issue_data())
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_article_pubdate_unmatched(self):
+        expected = [validator.STATUS_ERROR, 'Unmatched publication date.\nIn article:\nyear: 1999\nstart: 8\nend: 0\nIn   issue: \n' + 'year: 1999\nstart: 9\nend: 0\n']
+        xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>08</month><year>1999</year></pub-date></article-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, self._issue_data())
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))
+
+    def test_article_multiple_pubdate_unmatched_month_range(self):
+        expected = [validator.STATUS_ERROR, 'Unmatched publication date.\nIn article:\nyear: 2000\nstart: 9\nend: 0\nyear: 1999\nstart: 11\nend: 0\nIn   issue: \n' + 'year: 1999\nstart: 9\nend: 0\n']
+        xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>Sep</month><year>2000</year></pub-date><pub-date pub-type="pub" iso-8601-date="1999-03-27"><month>Nov</month><year>1999</year></pub-date></article-meta></root>'
+
+        stub_attempt = AttemptStub()
+        stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
+
+        data = (stub_attempt, stub_package_analyzer, self._issue_data())
+
+        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        self.assertEqual(expected,
+                         vpipe.validate(data))

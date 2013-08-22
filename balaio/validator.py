@@ -3,6 +3,7 @@ import re
 import sys
 import logging
 import xml.etree.ElementTree as etree
+import calendar
 
 import scieloapi
 
@@ -450,6 +451,101 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
             if r:
                 break
         return r
+
+
+class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate the article section ('.//article-meta/pub-date')
+    """
+
+    _stage_ = 'ArticleMetaPubDateValidationPipe'
+    __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer', '_normalize_data']
+
+    def validate(self, item):
+        """
+        Performs a validation to one `item` of data iterator.
+
+        `item` is a tuple comprised of instances of models.Attempt, a
+        checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
+        """
+        _months_ = {v: k for k, v in enumerate(calendar.month_abbr)}
+
+        attempt, pkg_analyzer, issue_data = item
+
+        xml_tree = pkg_analyzer.xml
+        xml_data = xml_tree.findall('.//article-meta//pub-date')
+
+        issue_publication_year = str(issue_data.get('publication_year'))
+        issue_publication_start_month = str(issue_data.get('publication_start_month'))
+        issue_publication_end_month = str(issue_data.get('publication_end_month'))
+
+        unmatcheds = []
+        matched = []
+        start = '0'
+        end = '0'
+
+        for item in xml_data:
+            year = item.findtext('year')
+            month = item.findtext('month')
+            season = item.findtext('season')
+            if season:
+                if '-' in season:
+                    start, end = season.split('-')
+                    start = str(_months_.get(start))
+                    end = str(_months_.get(end))
+            else:
+                end = '0'
+                start = str(int(month)) if month.isdigit() else str(int(_months_.get(month)))
+            if year == issue_publication_year and start == issue_publication_start_month and end == issue_publication_end_month:
+                matched = (year, start, end)
+                break
+            else:
+                unmatcheds.append((year, start, end))
+
+        if matched:
+            year, start, end = matched
+            r = [STATUS_OK, 'year: {0}\nstart: {1}\nend: {2}'.format(year, start, end)]
+        else:
+            description = ''
+            for year, start, end in unmatcheds:
+                description += 'year: {0}\nstart: {1}\nend: {2}'.format(year, start, end) + '\n'
+
+            r = [STATUS_ERROR, 'Unmatched publication date.\nIn article:\n' + description + 'In   issue: \n' + 'year: {0}\nstart: {1}\nend: {2}'.format(issue_publication_year, issue_publication_start_month, issue_publication_end_month) + '\n']
+        return r
+
+
+class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
+    """
+    Validate the tag article-title references when type is Journal.
+    Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']/article-title``
+    """
+    _stage_ = 'Reference Journal Type Article Title Validation'
+    __requires__ = ['_notifier', '_pkg_analyzer']
+
+    def validate(self, package_analyzer):
+
+        lst_errors = []
+
+        refs = package_analyzer.xml.findall(".//ref-list/ref")
+
+        if refs:
+            for ref in refs:
+                article_title = ref.find(".//element-citation[@publication-type='journal']/article-title")
+
+                if article_title is not None:
+                    if article_title.text is None:
+                        lst_errors.append((ref.attrib['id'], 'missing content in tag article-title'))
+                else:
+                    lst_errors.append((ref.attrib['id'], 'missing tag article-title'))
+
+        if lst_errors:
+            msg_error = 'There is some errors in refs:'
+
+            for ref_id, msg in lst_errors:
+                msg_error += ' %s: %s' % (ref_id, msg)
+
+        return [STATUS_ERROR, msg_error] if lst_errors else [STATUS_OK, '']
+
 
 
 if __name__ == '__main__':
