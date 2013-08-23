@@ -172,7 +172,7 @@ class ReferenceValidationPipe(vpipes.ValidationPipe):
 
 class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
     """
-    Validate the tag source referencess
+    Validate the tag source references
     Verify if exists tag source references
     Verify if exists content in tag source
     Analized tag: ``.//ref-list/ref/element-citation/source``
