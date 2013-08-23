@@ -522,7 +522,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_with_valid_and_not_well_format_tag_year(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: date not well format']
+        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: date format is not good']
         data = '''
             <root>
               <ref-list>

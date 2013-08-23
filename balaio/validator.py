@@ -159,7 +159,9 @@ class ReferenceValidationPipe(vpipes.ValidationPipe):
     __requires__ = ['_notifier', '_pkg_analyzer']
 
     def validate(self, package_analyzer):
-
+        """
+        The article may be a editorial why return a warning if no references
+        """
         refs = package_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
@@ -170,7 +172,7 @@ class ReferenceValidationPipe(vpipes.ValidationPipe):
 
 class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
     """
-    Validate the tag source references
+    Validate the tag source referencess
     Verify if exists tag source references
     Verify if exists content in tag source
     Analized tag: ``.//ref-list/ref/element-citation/source``
@@ -208,6 +210,7 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
     Validate the tag year references
     Verify if exists tag year references
     Verify if exists content in tag year
+    Verify the format of the year, example: ``1999``
     Analized tag: ``.//ref-list/ref/element-citation/year``
     """
     _stage_ = 'Reference Year Validation'
@@ -228,7 +231,7 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
                         lst_errors.append((ref.attrib['id'], 'missing content in tag year'))
                     else:
                         if not re.search(r'\d{4}', year.text):
-                            lst_errors.append((ref.attrib['id'], 'date not well format'))
+                            lst_errors.append((ref.attrib['id'], 'date format is not good'))
                 else:
                     lst_errors.append((ref.attrib['id'], 'missing tag year'))
 
@@ -410,7 +413,8 @@ class DOIVAlidationPipe(vpipes.ValidationPipe):
 
 class ArticleSectionValidationPipe(vpipes.ValidationPipe):
     """
-    Validate the article section ('.//article-categories/subj-group[@subj-group-type="heading"]/subject')
+    Validate the article section
+    Analyzed tag: ``.//article-categories/subj-group[@subj-group-type="heading"]/subject``
     """
 
     _stage_ = 'ArticleSectionValidationPipe'
@@ -455,7 +459,8 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
 
 class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
     """
-    Validate the article section ('.//article-meta/pub-date')
+    Validate the article section
+    Analyzed tag: ``.//article-meta/pub-date``
     """
 
     _stage_ = 'ArticleMetaPubDateValidationPipe'
@@ -514,40 +519,6 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
         return r
 
 
-class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
-    """
-    Validate the tag article-title references when type is Journal.
-    Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']/article-title``
-    """
-    _stage_ = 'Reference Journal Type Article Title Validation'
-    __requires__ = ['_notifier', '_pkg_analyzer']
-
-    def validate(self, package_analyzer):
-
-        lst_errors = []
-
-        refs = package_analyzer.xml.findall(".//ref-list/ref")
-
-        if refs:
-            for ref in refs:
-                article_title = ref.find(".//element-citation[@publication-type='journal']/article-title")
-
-                if article_title is not None:
-                    if article_title.text is None:
-                        lst_errors.append((ref.attrib['id'], 'missing content in tag article-title'))
-                else:
-                    lst_errors.append((ref.attrib['id'], 'missing tag article-title'))
-
-        if lst_errors:
-            msg_error = 'There is some errors in refs:'
-
-            for ref_id, msg in lst_errors:
-                msg_error += ' %s: %s' % (ref_id, msg)
-
-        return [STATUS_ERROR, msg_error] if lst_errors else [STATUS_OK, '']
-
-
-
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()
@@ -564,6 +535,7 @@ if __name__ == '__main__':
                           ArticleSectionValidationPipe,
                           FundingGroupValidationPipe,
                           DOIVAlidationPipe,
+                          ArticleMetaPubDateValidationPipe,
                           ReferenceValidationPipe,
                           ReferenceSourceValidationPipe,
                           ReferenceJournalTypeArticleTitleValidationPipe,
