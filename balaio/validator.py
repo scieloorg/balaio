@@ -197,7 +197,7 @@ class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
                     lst_errors.append((ref.attrib['id'], 'missing tag source'))
 
         if lst_errors:
-            msg_error = 'There is some errors in refs:'
+            msg_error = ''
 
             for ref_id, msg in lst_errors:
                 msg_error += ' %s: %s' % (ref_id, msg)
@@ -236,7 +236,7 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
                     lst_errors.append((ref.attrib['id'], 'missing tag year'))
 
         if lst_errors:
-            msg_error = 'There is some errors in refs:'
+            msg_error = ''
 
             for ref_id, msg in lst_errors:
                 msg_error += ' %s: %s' % (ref_id, msg)
@@ -269,7 +269,7 @@ class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
                     lst_errors.append((ref.attrib['id'], 'missing tag article-title'))
 
         if lst_errors:
-            msg_error = 'There is some errors in refs:'
+            msg_error = ''
 
             for ref_id, msg in lst_errors:
                 msg_error += ' %s: %s' % (ref_id, msg)

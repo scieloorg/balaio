@@ -216,7 +216,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_missing_tag_source(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag source']
+        expected = [validator.STATUS_ERROR, ' B23: missing tag source']
         data = '''
             <root>
               <ref-list>
@@ -238,7 +238,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_with_two_missing_tag_source(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag source B24: missing tag source']
+        expected = [validator.STATUS_ERROR, ' B23: missing tag source B24: missing tag source']
         data = '''
             <root>
               <ref-list>
@@ -268,7 +268,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing content in tag source']
+        expected = [validator.STATUS_ERROR, ' B23: missing content in tag source']
         data = '''
             <root>
               <ref-list>
@@ -384,7 +384,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_missing_tag_article_title(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag article-title']
+        expected = [validator.STATUS_ERROR, ' B23: missing tag article-title']
         data = '''
             <root>
               <ref-list>
@@ -406,7 +406,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_with_two_missing_tag_article_title(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag article-title B24: missing tag article-title']
+        expected = [validator.STATUS_ERROR, ' B23: missing tag article-title B24: missing tag article-title']
         data = '''
             <root>
               <ref-list>
@@ -436,7 +436,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing content in tag article-title']
+        expected = [validator.STATUS_ERROR, ' B23: missing content in tag article-title']
         data = '''
             <root>
               <ref-list>
@@ -522,7 +522,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_with_valid_and_not_well_format_tag_year(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: date format is not good']
+        expected = [validator.STATUS_ERROR, ' B23: date format is not good']
         data = '''
             <root>
               <ref-list>
@@ -545,7 +545,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_missing_tag_year(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag year']
+        expected = [validator.STATUS_ERROR, ' B23: missing tag year']
         data = '''
             <root>
               <ref-list>
@@ -566,7 +566,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_with_two_missing_tag_year(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing tag year B24: missing tag year']
+        expected = [validator.STATUS_ERROR, ' B23: missing tag year B24: missing tag year']
         data = '''
             <root>
               <ref-list>
@@ -594,7 +594,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate(pkg_analyzer_stub), expected)
 
     def test_reference_list_with_tag_year_missing_content(self):
-        expected = [validator.STATUS_ERROR, 'There is some errors in refs: B23: missing content in tag year']
+        expected = [validator.STATUS_ERROR, ' B23: missing content in tag year']
         data = '''
             <root>
               <ref-list>
