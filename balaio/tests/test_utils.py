@@ -381,3 +381,51 @@ class ISSNFunctionsTest(unittest.TestCase):
         issn = u'2179-9753'
 
         self.assertFalse(utils.is_valid_issn(issn))
+
+
+class DOIFunctionsTests(mocker.MockerTestCase):
+
+    def test_valid_doi(self):
+        mock_is_valid = self.mocker.mock()
+
+        mock_is_valid.status_code
+        self.mocker.result(200)
+
+        requests = self.mocker.replace("requests.get")
+        requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=1)
+        #requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=1).status_code
+        self.mocker.result(mock_is_valid)
+
+        self.mocker.replay()
+
+        self.assertTrue(utils.is_valid_doi('10.1590/S2179-975X2012005000031'))
+
+    def test_invalid_doi(self):
+        mock_is_valid = self.mocker.mock()
+
+        mock_is_valid.status_code
+        self.mocker.result(404)
+
+        requests = self.mocker.replace("requests.get")
+        requests('http://dx.doi.org/10.1590/S2179-975X2012005XXXX', timeout=1)
+        #requests('http://dx.doi.org/10.1590/S2179-975X2012005XXXX', timeout=1).status_code
+        self.mocker.result(mock_is_valid)
+
+        self.mocker.replay()
+
+        self.assertFalse(utils.is_valid_doi('10.1590/S2179-975X2012005XXXX'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
