@@ -414,18 +414,3 @@ class DOIFunctionsTests(mocker.MockerTestCase):
         self.mocker.replay()
 
         self.assertFalse(utils.is_valid_doi('10.1590/S2179-975X2012005XXXX'))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
