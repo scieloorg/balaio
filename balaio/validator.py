@@ -35,7 +35,7 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
             limit=1, **criteria)
         return self._sapi_tools.get_one(found_journal)
 
-    def _fetch_journal_and_issue_data(self, criteria):
+    def _fetch_journal_and_issue_data(self, **criteria):
         """
         Encapsulates the two-phase process of retrieving
         data from one issue matching the criteria.
@@ -72,22 +72,18 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         journal_pissn = attempt.articlepkg.journal_pissn
 
         if journal_pissn and self._issn_validator(journal_pissn):
-            criteria['print_issn'] = journal_pissn
             try:
                 journal_and_issue_data = self._fetch_journal_and_issue_data(
-                    criteria)
+                    print_issn=journal_pissn, **criteria)
             except ValueError:
                 # unknown pissn
                 journal_and_issue_data = None
-                del criteria['print_issn']
 
         journal_eissn = attempt.articlepkg.journal_eissn
         if journal_eissn and self._issn_validator(journal_eissn) and not journal_and_issue_data:
-
-            criteria['eletronic_issn'] = journal_eissn
             try:
                 journal_and_issue_data = self._fetch_journal_and_issue_data(
-                    criteria)
+                    eletronic_issn=journal_eissn, **criteria)
             except ValueError:
                 # unknown eissn
                 journal_and_issue_data = None
