@@ -69,4 +69,3 @@ class ArticlePkg(Base):
 
     def __repr__(self):
         return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
-
