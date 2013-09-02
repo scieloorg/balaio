@@ -381,3 +381,70 @@ class ISSNFunctionsTest(unittest.TestCase):
         issn = u'2179-9753'
 
         self.assertFalse(utils.is_valid_issn(issn))
+
+
+class DOIFunctionsTests(mocker.MockerTestCase):
+
+    def test_valid_doi_status_200(self):
+        mock_is_valid = self.mocker.mock()
+
+        mock_is_valid.status_code
+        self.mocker.result(200)
+
+        requests = self.mocker.replace("requests.get")
+        requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=2.5)
+        self.mocker.result(mock_is_valid)
+
+        self.mocker.replay()
+
+        self.assertTrue(utils.is_valid_doi('10.1590/S2179-975X2012005000031'))
+
+    def test_valid_doi_status_404(self):
+        mock_is_valid = self.mocker.mock()
+
+        mock_is_valid.status_code
+        self.mocker.result(404)
+
+        requests = self.mocker.replace("requests.get")
+        requests('http://dx.doi.org/10.1590/S2179-975X2012005XXXX', timeout=2.5)
+        self.mocker.result(mock_is_valid)
+
+        self.mocker.replay()
+
+        self.assertFalse(utils.is_valid_doi('10.1590/S2179-975X2012005XXXX'))
+
+    def test_valid_doi_status_500(self):
+        mock_is_valid = self.mocker.mock()
+
+        mock_is_valid.status_code
+        self.mocker.result(500)
+
+        requests = self.mocker.replace("requests.get")
+        requests('http://dx.doi.org/10.1590/S2179-975X2012005XXXX', timeout=2.5)
+        self.mocker.result(mock_is_valid)
+
+        self.mocker.replay()
+
+        self.assertFalse(utils.is_valid_doi('10.1590/S2179-975X2012005XXXX'))
+
+    def test_valid_doi_with_any_network_problem(self):
+        import requests
+
+        _requests = self.mocker.replace("requests.get")
+        _requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=2.5)
+        self.mocker.throw(requests.exceptions.RequestException)
+
+        self.mocker.replay()
+
+        self.assertRaises(requests.exceptions.RequestException, lambda: utils.is_valid_doi('10.1590/S2179-975X2012005000031'))
+
+    def test_valid_doi_with_request_timeout(self):
+        import requests
+
+        _requests = self.mocker.replace("requests.get")
+        _requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=2.5)
+        self.mocker.throw(requests.exceptions.Timeout)
+
+        self.mocker.replay()
+
+        self.assertRaises(requests.exceptions.Timeout, lambda: utils.is_valid_doi('10.1590/S2179-975X2012005000031'))
