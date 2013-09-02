@@ -225,12 +225,12 @@ def is_valid_doi(doi):
     from requests.exceptions import Timeout, RequestException
 
     try:
-        req = requests.get('http://dx.doi.org/%s' % doi, timeout=1)
+        req = requests.get('http://dx.doi.org/%s' % doi, timeout=2.5)
     except (Timeout, RequestException) as e:
         logger.error('Can not validate doi: ' + str(e))
         raise
     else:
-        return True if req.status_code == 200 else False
+        return req.status_code == 200
 
 
 def validate_issn(issn):

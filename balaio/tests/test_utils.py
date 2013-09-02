@@ -392,7 +392,7 @@ class DOIFunctionsTests(mocker.MockerTestCase):
         self.mocker.result(200)
 
         requests = self.mocker.replace("requests.get")
-        requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=1)
+        requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=2.5)
         self.mocker.result(mock_is_valid)
 
         self.mocker.replay()
@@ -406,7 +406,7 @@ class DOIFunctionsTests(mocker.MockerTestCase):
         self.mocker.result(404)
 
         requests = self.mocker.replace("requests.get")
-        requests('http://dx.doi.org/10.1590/S2179-975X2012005XXXX', timeout=1)
+        requests('http://dx.doi.org/10.1590/S2179-975X2012005XXXX', timeout=2.5)
         self.mocker.result(mock_is_valid)
 
         self.mocker.replay()
@@ -420,7 +420,7 @@ class DOIFunctionsTests(mocker.MockerTestCase):
         self.mocker.result(500)
 
         requests = self.mocker.replace("requests.get")
-        requests('http://dx.doi.org/10.1590/S2179-975X2012005XXXX', timeout=1)
+        requests('http://dx.doi.org/10.1590/S2179-975X2012005XXXX', timeout=2.5)
         self.mocker.result(mock_is_valid)
 
         self.mocker.replay()
@@ -431,7 +431,7 @@ class DOIFunctionsTests(mocker.MockerTestCase):
         import requests
 
         _requests = self.mocker.replace("requests.get")
-        _requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=1)
+        _requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=2.5)
         self.mocker.throw(requests.exceptions.RequestException)
 
         self.mocker.replay()
@@ -442,7 +442,7 @@ class DOIFunctionsTests(mocker.MockerTestCase):
         import requests
 
         _requests = self.mocker.replace("requests.get")
-        _requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=1)
+        _requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=2.5)
         self.mocker.throw(requests.exceptions.Timeout)
 
         self.mocker.replay()
