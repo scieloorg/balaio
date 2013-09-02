@@ -430,9 +430,21 @@ class DOIFunctionsTests(mocker.MockerTestCase):
     def test_valid_doi_with_any_network_problem(self):
         import requests
 
-        self.mocker.replace("requests.get")
-        self.mocker.throw(requests.exceptions.ConnectionError)
+        _requests = self.mocker.replace("requests.get")
+        _requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=1)
+        self.mocker.throw(requests.exceptions.RequestException)
 
         self.mocker.replay()
 
-        self.assertFalse(utils.is_valid_doi('http://dx.doi.org/10.1590/S2179-975X2012005000031'))
+        self.assertRaises(requests.exceptions.RequestException, lambda: utils.is_valid_doi('10.1590/S2179-975X2012005000031'))
+
+    def test_valid_doi_with_request_timeout(self):
+        import requests
+
+        _requests = self.mocker.replace("requests.get")
+        _requests('http://dx.doi.org/10.1590/S2179-975X2012005000031', timeout=1)
+        self.mocker.throw(requests.exceptions.Timeout)
+
+        self.mocker.replay()
+
+        self.assertRaises(requests.exceptions.Timeout, lambda: utils.is_valid_doi('10.1590/S2179-975X2012005000031'))
