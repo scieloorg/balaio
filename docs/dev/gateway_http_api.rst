@@ -17,9 +17,9 @@ Available endpoints
 
   packages-api
   attempts-api
-  pipes-api
+  validations-api
   tickets-api
-  
+
 
 .. note::
 

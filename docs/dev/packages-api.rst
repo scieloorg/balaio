@@ -23,6 +23,31 @@ Optional Parameters:
     *String* of the desired output format. The options are **xml, json,
     yml**.
 
+  **journal_pissn**
+
+    *String* of the **journal_pissn** to be used as a filter param.
+
+  **journal_eissn**
+
+    *String* of the **journal_eissn** to be used as a filter param.
+
+  **issue_volume**
+
+    *String* of the **issue volume** to be used as a filter param.
+
+  **issue_number**
+
+    *String* of the **issue number** to be used as a filter param.
+
+  **issue_supplvol**
+
+    *String* of the **issue volume supplement** to be used as a filter param.
+
+  **issue_supplnum**
+
+    *String* of the **issue number supplement** to be used as a filter param.
+
+
 
 Response::
 
