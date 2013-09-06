@@ -33,7 +33,6 @@ def create_engine_from_config(config):
                          echo=config.getboolean('app', 'debug'))
 
 
-
 class Attempt(Base):
     __tablename__ = 'attempt'
 

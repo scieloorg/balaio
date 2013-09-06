@@ -220,11 +220,17 @@ def is_valid_doi(doi):
     """
     Verify if the DOI is valid for CrossRef
     Validate URL: ``http://dx.doi.org/<DOI>``
+    Raise any connection and timeout error
     """
+    from requests.exceptions import Timeout, RequestException
 
-    req = requests.get('http://dx.doi.org/%s' % doi, timeout=1)
-
-    return True if req.status_code == 200 else False
+    try:
+        req = requests.get('http://dx.doi.org/%s' % doi, timeout=2.5)
+    except (Timeout, RequestException) as e:
+        logger.error('Can not validate doi: ' + str(e))
+        raise
+    else:
+        return req.status_code == 200
 
 
 def validate_issn(issn):
