@@ -24,11 +24,6 @@ Optional Parameters:
 
     *String* of the callback identifier to be returned when using JSONP.
 
-  **format**
-
-    *String* of the desired output format. The options are **xml, json,
-    yml**.
-
   **is_open**
 
     *Boolean* of the **status** to be used as a filter param.
@@ -86,11 +81,6 @@ Optional Parameters:
 
     *String* of the callback identifier to be returned when using JSONP.
 
-  **format**
-
-    *String* of the desired output format. The options are **xml, json,
-    yml**.
-
 Payload:
   {
       "articlepkg_id": 1,
@@ -138,11 +128,6 @@ Optional Parameters:
 
     *String* of the callback identifier to be returned when using JSONP.
 
-  **format**
-
-    *String* of the desired output format. The options are **xml, json,
-    yml**.
-
 Payload:
   {
       "is_open": False,
@@ -155,5 +140,5 @@ Response::
   HTTP STATUS CODE
 
   202 Accepted 
-  
+
 
