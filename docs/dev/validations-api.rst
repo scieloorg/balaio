@@ -41,11 +41,11 @@ Optional Parameters:
 
   **stage**
 
-    *Boolean* of the **stage** to be used as a filter param.
+    *String* of the **stage** to be used as a filter param.
 
   **message**
 
-    *Boolean* of the **message** to be used as a filter param.
+    *String* of the **message** to be used as a filter param.
 
 
 Response::
@@ -64,7 +64,6 @@ Response::
       "attempt_id": 1,
       "id": "1",
       "finished_at": "2012-07-24T21:59:23.909404",
-      "is_valid": True,
       "message": "...."
       "stage": "STAGE",
       "status": 1,
@@ -103,7 +102,6 @@ Response::
       "attempt_id": 1,
       "id": "1",
       "finished_at": "2012-07-24T21:59:23.909404",
-      "is_valid": True,
       "message": "...."
       "stage": "STAGE",
       "status": 1,
