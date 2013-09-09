@@ -285,3 +285,57 @@ def is_valid_issn(issn):
         return bool(validate_issn(issn))
     except (ValueError, TypeError):
         return False
+
+
+def parse_issue_tag(issue):
+    """
+    Parse issue tag content and returns issue number, label and supplement
+
+    :returns: (number, label, suppl)
+    """
+    # <issue> contents:
+    # <issue>2</issue>
+    # <issue>Suppl</issue>
+    # <issue>3 Suppl 1</issue>
+    # <issue>Suppl 1</issue>
+    lower_issue = issue.lower()
+    number, suppl_label, suppl = [issue, None, None]
+    if 'sup' in lower_issue:
+        # number
+        number = lower_issue[0:lower_issue.find('sup')]
+        if number == '':
+            number = None
+
+        # supplement label
+        suppl_label = issue[lower_issue.find('sup'):]
+        if ' ' in suppl_label:
+            suppl_label = suppl_label[0:suppl_label.find(' ')]
+
+        # supplement
+        suppl = issue[issue.find(suppl_label) + len(suppl_label):].strip()
+        if suppl == '':
+            suppl = None
+
+    return (number, suppl_label, suppl)
+
+
+def issue_identification(issue_volume, issue, supplement):
+    """
+    Identifies the elements which forms a issue: volume, number, supplement
+
+    :param issue_volume: volume of the issue
+    :param issue: issue (2, Suppl, 3 Suppl 1, Suppl 1)
+    :param supplement: 1, Suppl, None
+    :returns: (issue_suppl_volume, issue_number, issue_suppl_number)
+    """
+    # issue can have contents like: 2, Suppl, 3 Suppl 1, Suppl 1
+    issue_suppl_volume = None
+    issue_suppl_number = None
+
+    issue_number, suppl_label, issue_suppl = parse_issue_tag(issue)
+
+    s = supplement if supplement else issue_suppl
+    issue_suppl_number = s if issue_number else None
+    issue_suppl_volume = s if not issue_number else None
+
+    return (issue_volume, issue_suppl_volume, issue_number, issue_suppl_number)
