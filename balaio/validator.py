@@ -29,6 +29,9 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         """
         Encapsulates the two-phase process of retrieving
         data from one journal matching the criteria.
+
+        :param criteria: valid criteria to retrieve journal data
+        :returns: data of one journal
         """
         #cli.fetch_relations(cli.get(i['resource_uri']))
         found_journal = self._scieloapi.journals.filter(
@@ -39,6 +42,9 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
         """
         Encapsulates the two-phase process of retrieving
         data from one issue matching the criteria.
+
+        :param criteria: valid criteria to retrieve issue data
+        :returns: data of one issue
         """
         #cli.fetch_relations(cli.get(i['resource_uri']))
         found_journal_issues = self._scieloapi.issues.filter(
@@ -115,24 +121,24 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
 
 class PublisherNameValidationPipe(vpipes.ValidationPipe):
     """
-    Validate the publisher name in article. It must be same as registered in journal data
+    Validate the publisher name in article `.//journal-meta/publisher/publisher-name`,
+    comparing it to the registered publisher name in journal data.
     """
-    _stage_ = 'Publisher Name Validation'
+    _stage_ = 'Journal meta'
     __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer', '_normalize_data']
 
     def validate(self, item):
         """
         Performs a validation to one `item` of data iterator.
 
-        `item` is a tuple comprised of instances of models.Attempt, a
-        checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
+        :param item: a tuple (models.Attempt, checkin.PackageAnalyzer, a dict of journal issue data).
+        :returns: result of the validation in this format [status, description]
         """
-
         attempt, pkg_analyzer, journal_and_issue_data = item
         j_publisher_name = journal_and_issue_data.get('journal').get('publisher_name', None)
         if j_publisher_name:
             data = pkg_analyzer.xml
-            xml_publisher_name = data.findtext('.//publisher-name')
+            xml_publisher_name = data.findtext('.//journal-meta/publisher/publisher-name')
 
             if xml_publisher_name:
                 if self._normalize_data(xml_publisher_name) == self._normalize_data(j_publisher_name):

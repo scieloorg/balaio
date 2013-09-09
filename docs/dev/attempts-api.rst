@@ -24,11 +24,6 @@ Optional Parameters:
 
     *String* of the callback identifier to be returned when using JSONP.
 
-  **format**
-
-    *String* of the desired output format. The options are **xml, json,
-    yml**.
-
   **started_at**
 
     *DateTime* of the **started_at** to be used as a filter param.
@@ -88,11 +83,6 @@ Optional Parameters:
   **callback**
 
     *String* of the callback identifier to be returned when using JSONP.
-
-  **format**
-
-    *String* of the desired output format. The options are **xml, json,
-    yml**.
 
 
 Response::
