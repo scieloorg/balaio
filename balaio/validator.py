@@ -121,9 +121,10 @@ class TearDownPipe(vpipes.ConfigMixin, vpipes.Pipe):
 
 class PublisherNameValidationPipe(vpipes.ValidationPipe):
     """
-    Validate the publisher name in article, comparing it to the registered publisher name in journal data
+    Validate the publisher name in article `.//journal-meta/publisher/publisher-name`,
+    comparing it to the registered publisher name in journal data.
     """
-    _stage_ = 'Journal data validations'
+    _stage_ = 'Journal meta'
     __requires__ = ['_notifier', '_scieloapi', '_sapi_tools', '_pkg_analyzer', '_normalize_data']
 
     def validate(self, item):
@@ -131,13 +132,13 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         Performs a validation to one `item` of data iterator.
 
         :param item: a tuple (models.Attempt, checkin.PackageAnalyzer, a dict of journal issue data).
-        :returns: [status, description]
+        :returns: result of the validation in this format [status, description]
         """
         attempt, pkg_analyzer, journal_and_issue_data = item
         j_publisher_name = journal_and_issue_data.get('journal').get('publisher_name', None)
         if j_publisher_name:
             data = pkg_analyzer.xml
-            xml_publisher_name = data.findtext('.//publisher-name')
+            xml_publisher_name = data.findtext('.//journal-meta/publisher/publisher-name')
 
             if xml_publisher_name:
                 if self._normalize_data(xml_publisher_name) == self._normalize_data(j_publisher_name):
