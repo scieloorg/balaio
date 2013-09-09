@@ -22,11 +22,6 @@ Optional Parameters:
 
     *String* of the callback identifier to be returned when using JSONP.
 
-  **format**
-
-    *String* of the desired output format. The options are **xml, json,
-    yml**.
-
   **attempt_id**
 
     *Integer* of the **attempt ID** to be used as a filter param.
@@ -41,11 +36,11 @@ Optional Parameters:
 
   **stage**
 
-    *Boolean* of the **stage** to be used as a filter param.
+    *String* of the **stage** to be used as a filter param.
 
   **message**
 
-    *Boolean* of the **message** to be used as a filter param.
+    *String* of the **message** to be used as a filter param.
 
 
 Response::
@@ -64,7 +59,6 @@ Response::
       "attempt_id": 1,
       "id": "1",
       "finished_at": "2012-07-24T21:59:23.909404",
-      "is_valid": True,
       "message": "...."
       "stage": "STAGE",
       "status": 1,
@@ -90,11 +84,6 @@ Optional Parameters:
 
     *String* of the callback identifier to be returned when using JSONP.
 
-  **format**
-
-    *String* of the desired output format. The options are **xml, json,
-    yml**.
-
 
 Response::
 
@@ -103,7 +92,6 @@ Response::
       "attempt_id": 1,
       "id": "1",
       "finished_at": "2012-07-24T21:59:23.909404",
-      "is_valid": True,
       "message": "...."
       "stage": "STAGE",
       "status": 1,
