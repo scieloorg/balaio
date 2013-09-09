@@ -72,6 +72,10 @@ Response::
       "journal_pissn": "0034-8910",
       "journal_title": u"Revista de Saúde Pública",
       "resource_uri": "/api/v1/packages/1/",
+      "tickets": [
+        "/api/v1/tickets/100",
+        "/api/v1/tickets/140",
+        ]
     }
   ]
 
