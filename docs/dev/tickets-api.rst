@@ -152,5 +152,8 @@ Payload:
 
 Response::
   
-  ?? HTTP STATUS CODE
+  HTTP STATUS CODE
+
+  202 Accepted 
+  
 
