@@ -34,11 +34,11 @@ Optional Parameters:
 
     *String* of the **issue number** to be used as a filter param.
 
-  **issue_supplvol**
+  **issue_suppl_volume**
 
     *String* of the **issue volume supplement** to be used as a filter param.
 
-  **issue_supplnum**
+  **issue_suppl_number**
 
     *String* of the **issue number supplement** to be used as a filter param.
 
@@ -72,6 +72,10 @@ Response::
       "journal_pissn": "0034-8910",
       "journal_title": u"Revista de Saúde Pública",
       "resource_uri": "/api/v1/packages/1/",
+      "tickets": [
+        "/api/v1/tickets/100",
+        "/api/v1/tickets/140",
+      ],
     }
   ]
 
@@ -112,5 +116,9 @@ Response::
     "journal_pissn": "0034-8910",
     "journal_title": u"Revista de Saúde Pública",
     "resource_uri": "/api/v1/packages/1/",
+    "tickets": [
+        "/api/v1/tickets/100",
+        "/api/v1/tickets/140",
+      ],
   }
   
