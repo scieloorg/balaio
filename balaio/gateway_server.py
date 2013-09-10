@@ -9,9 +9,9 @@ from sqlalchemy.orm.exc import NoResultFound
 import utils
 import models
 
-__version__ = "v1"
-
 __limit__ = 20
+
+__version__ = "v1"
 
 config = utils.Configuration.from_env()
 
@@ -49,7 +49,7 @@ def package(request):
 def list_package(request):
     """
     Return a dict content the total param and the objects list
-    Example: {'total': 12, 'objects': [object, object,...]}
+    Example: {'total': 12, 'limit': 20, offset:0, 'objects': [object, object,...]}
     """
     session = Session()
 
@@ -58,7 +58,9 @@ def list_package(request):
 
     articles = session.query(models.ArticlePkg).limit(limit).offset(offset)
 
-    return {'total': session.query(models.ArticlePkg).count(),
+    return {'limit': limit,
+            'offset': offset,
+            'total': session.query(models.ArticlePkg).count(),
             'objects': [article.to_dict() for article in articles]}
 
 

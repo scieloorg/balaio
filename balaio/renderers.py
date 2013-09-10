@@ -23,8 +23,8 @@ class GtwMetaFactory(JSONP):
             dct_meta = {}
 
             dct_meta['meta'] = {
-                'limit': system.get('request').params.get('limit', 20),
-                'offset': system.get('request').params.get('offset', 0),
+                'limit': value['limit'],
+                'offset': value['offset'],
                 'total_count': value['total']
             }
 
