@@ -448,3 +448,18 @@ class DOIFunctionsTests(mocker.MockerTestCase):
         self.mocker.replay()
 
         self.assertRaises(requests.exceptions.Timeout, lambda: utils.is_valid_doi('10.1590/S2179-975X2012005000031'))
+
+
+class ParseIssueTagTest(unittest.TestCase):
+
+    def test_issue_tag_content_is_empty(self):
+        self.assertEqual(utils.parse_issue_tag(''), '')
+
+    def test_issue_tag_content_is_a_issue_number_only(self):
+        self.assertEqual(utils.parse_issue_tag('3A'), '3A')
+
+    def test_issue_tag_content_is_suppl_only(self):
+        self.assertEqual(utils.parse_issue_tag('Suppl'), '')
+
+    def test_issue_tag_content_is_a_issue_number_only(self):
+        self.assertEqual(utils.parse_issue_tag('3A'), '3A')
