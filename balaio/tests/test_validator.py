@@ -750,7 +750,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
     def test_publisher_name_matched(self):
         expected = [validator.STATUS_OK, '']
-        xml = '<root><publisher-name>publicador                  da revista brasileira de ....</publisher-name></root>'
+        xml = '<root><journal-meta><publisher><publisher-name>publicador                  da revista brasileira de ....</publisher-name></publisher></journal-meta></root>'
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
@@ -775,7 +775,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
     def test_publisher_name_unmatched(self):
         expected = [validator.STATUS_ERROR, 'publicador da revista brasileira de .... [journal]\npublicador abcdefgh [article]']
-        xml = '<root><publisher-name>publicador abcdefgh</publisher-name></root>'
+        xml = '<root><journal-meta><publisher><publisher-name>publicador abcdefgh</publisher-name></publisher></journal-meta></root>'
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
@@ -800,7 +800,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
     def test_publisher_name_is_missing_in_journal(self):
         expected = [validator.STATUS_ERROR, 'Missing publisher_name in journal']
-        xml = '<root><publisher-name>publicador abcdefgh</publisher-name></root>'
+        xml = '<root><journal-meta><publisher><publisher-name>publicador abcdefgh</publisher-name></publisher></journal-meta></root>'
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
