@@ -3,7 +3,7 @@ from datetime import datetime
 
 import enum
 
-from balaio.models import Point, Checkpoint
+from balaio.models import Point, Checkpoint, Status, Notice
 
 
 class CheckpointTests(unittest.TestCase):
@@ -95,4 +95,30 @@ class CheckpointTests(unittest.TestCase):
         chk_point.start()
         chk_point.end()
         self.assertRaises(RuntimeError, lambda: chk_point.tell('Foo', label='zip'))
+
+
+class NoticeTests(unittest.TestCase):
+
+    def test_status_set_enum_values(self):
+        ntc = Notice()
+        ntc.status = Status.ok
+        self.assertEqual(ntc.status, Status.ok)
+
+
+class PointTests(unittest.TestCase):
+
+    def test_required_enums(self):
+        names = [pt.name for pt in Point]
+        self.assertIn('checkin', names)
+        self.assertIn('validation', names)
+        self.assertIn('checkout', names)
+
+
+class StatusTests(unittest.TestCase):
+
+    def test_required_enums(self):
+        names = [st.name for st in Status]
+        self.assertIn('ok', names)
+        self.assertIn('warning', names)
+        self.assertIn('error', names)
 

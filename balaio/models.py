@@ -83,12 +83,19 @@ class Point(enum.Enum):
     checkout = 3
 
 
+class Status(enum.Enum):
+    ok = 1
+    warning = 2
+    error = 3
+
+
 class Notice(Base):
     __tablename__ = 'notice'
     id = Column(Integer, primary_key=True)
     when = Column(DateTime(timezone=True))
     label = Column(String)
     message = Column(String, nullable=False)
+    status = Column(String, nullable=False)
     checkpoint_id = Column(Integer, ForeignKey('checkpoint.id'))
 
     def __init__(self, *args, **kwargs):
