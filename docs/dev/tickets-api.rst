@@ -45,7 +45,7 @@ Response::
       "articlepkg_id": 1,
       "id": "1",
       "finished_at": "2012-07-24T21:59:23.909404",
-      "is_open": True,
+      "is_open": true,
       "resource_uri": "/api/v1/tickets/1/",
       "started_at": "2012-07-24T21:53:23.909404",
       "comments": [
@@ -84,7 +84,7 @@ Optional Parameters:
 Payload:
   {
       "articlepkg_id": 1,
-      "is_open": True,
+      "is_open": true,
       "comments": "comments",
       "started_at": "2012-07-24T21:53:23.909404",
   }
@@ -94,7 +94,7 @@ Response::
       "articlepkg_id": 1,
       "id": "1",
       "finished_at": null,
-      "is_open": True,
+      "is_open": true,
       "resource_uri": "/api/v1/tickets/1/",
       "started_at": "2012-07-24T21:53:23.909404",
       "comments": [
@@ -130,7 +130,7 @@ Optional Parameters:
 
 Payload:
   {
-      "is_open": False,
+      "is_open": false,
       "comments": "comments",
       "finished_at": "2012-07-24T21:53:23.909404",
   }
