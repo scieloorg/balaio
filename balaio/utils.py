@@ -298,23 +298,26 @@ def parse_issue_tag(issue_tag_content):
     # <issue>Suppl</issue>
     # <issue>3 Suppl 1</issue>
     # <issue>Suppl 1</issue>
-    lower_issue = issue_tag_content.lower()
-    number, suppl_label, suppl = [issue_tag_content, None, None]
-    if 'sup' in lower_issue:
-        # number
-        number = lower_issue[0:lower_issue.find('sup')]
-        if number == '':
-            number = None
+    number, suppl_label, suppl = [None, None, None]
+    if issue_tag_content:
+        lower_issue = issue_tag_content.lower()
+        if 'sup' in lower_issue:
+            # number
+            number = lower_issue[0:lower_issue.find('sup')].strip()
+            if number == '':
+                number = None
 
-        # supplement label
-        suppl_label = issue_tag_content[lower_issue.find('sup'):]
-        if ' ' in suppl_label:
-            suppl_label = suppl_label[0:suppl_label.find(' ')]
+            # supplement label
+            suppl_label = issue_tag_content[lower_issue.find('sup'):]
+            if ' ' in suppl_label:
+                suppl_label = suppl_label[0:suppl_label.find(' ')]
 
-        # supplement
-        suppl = issue_tag_content[issue_tag_content.find(suppl_label) + len(suppl_label):].strip()
-        if suppl == '':
-            suppl = None
+            # supplement
+            suppl = issue_tag_content[issue_tag_content.find(suppl_label) + len(suppl_label):].strip()
+            if suppl == '':
+                suppl = None
+        else:
+            number = issue_tag_content
 
     return (number, suppl_label, suppl)
 

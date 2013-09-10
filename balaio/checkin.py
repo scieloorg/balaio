@@ -45,14 +45,15 @@ class SPSMixin(object):
                      "issue_year": ".//article-meta/pub-date/year",
                      "issue_volume": ".//article-meta/volume",
                      "issue_number": ".//article-meta/issue",
-                     "issue_suppl_number": ".//article-meta/supplement",
+                     "supplement": ".//article-meta/supplement",
                      }
 
         for node_k, node_v in xml_nodes.items():
             node = self.xml.find(node_v)
             dct_mta[node_k] = getattr(node, 'text', None)
 
-        ign, dct_mta['issue_suppl_volume'], dct_mta['issue_number'], dct_mta['issue_suppl_number'] = utils.issue_identification(dct_mta['issue_volume'], dct_mta['issue_number'], dct_mta['issue_suppl_number'])
+        ign, dct_mta['issue_suppl_volume'], dct_mta['issue_number'], dct_mta['issue_suppl_number'] = utils.issue_identification(dct_mta['issue_volume'], dct_mta['issue_number'], dct_mta['supplement'])
+        del dct_mta['supplement']
         return dct_mta
 
 
