@@ -11,6 +11,8 @@ import models
 
 __version__ = "v1"
 
+__limit__ = 20
+
 config = utils.Configuration.from_env()
 
 Session = models.Session
@@ -25,13 +27,14 @@ def notfound(request):
 
 @view_config(route_name='index')
 def index(request):
-
     return Response('Gateway version %s' % __version__)
 
 
 @view_config(route_name='package', request_method='GET', renderer="gtw")
 def package(request):
-
+    """
+    Get a single object and return a serialized dict
+    """
     session = Session()
 
     try:
@@ -44,14 +47,19 @@ def package(request):
 
 @view_config(route_name='list_package', request_method='GET', renderer="gtw")
 def list_package(request):
+    """
+    Return a dict content the total param and the objects list
+    Example: {'total': 12, 'objects': [object, object,...]}
+    """
     session = Session()
 
-    limit = request.params.get('limit', 20)
+    limit = request.params.get('limit', __limit__)
     offset = request.params.get('offset', 0)
 
     articles = session.query(models.ArticlePkg).limit(limit).offset(offset)
 
-    return [article.to_dict() for article in articles]
+    return {'total': session.query(models.ArticlePkg).count(),
+            'objects': [article.to_dict() for article in articles]}
 
 
 if __name__ == '__main__':
