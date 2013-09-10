@@ -64,9 +64,19 @@ class ArticlePkg(Base):
     journal_eissn = Column(String, nullable=True)
     journal_title = Column(String, nullable=False)
     issue_year = Column(Integer, nullable=False)
-    issue_volume = Column(Integer, nullable=False)
-    issue_number = Column(Integer, nullable=False)
+    issue_volume = Column(String, nullable=False)
+    issue_number = Column(String, nullable=False)
 
     def __repr__(self):
         return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
 
+    def to_dict(self):
+        return dict(id=self.id,
+                    article_title=self.article_title,
+                    journal_pissn=self.journal_pissn,
+                    journal_eissn=self.journal_eissn,
+                    journal_title=self.journal_title,
+                    issue_year=self.issue_year,
+                    issue_volume=self.issue_volume,
+                    issue_number=self.issue_number
+                    )
