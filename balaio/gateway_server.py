@@ -78,7 +78,7 @@ def attempt(request):
 
 
 @view_config(route_name='attempts', request_method='GET', renderer="gtw")
-def list_attempt(request):
+def attempts(request):
     """
     Return a dict content the total param and the objects list
     Example: {'total': 12, 'limit': 20, offset:0, 'objects': [object, object,...]}
