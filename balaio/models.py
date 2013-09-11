@@ -151,7 +151,7 @@ class Checkpoint(Base):
         if status not in Status:
             raise ValueError('status must be %s' % ','.join(str(st) for st in Status))
 
-        notice = Notice(message=message, label=label)
+        notice = Notice(message=message, status=status, label=label)
         self.messages.append(notice)
 
     @hybrid_property

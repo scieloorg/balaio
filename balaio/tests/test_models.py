@@ -82,6 +82,7 @@ class CheckpointTests(unittest.TestCase):
         chk_point.tell('Foo', Status.ok)
         self.assertEqual(chk_point.messages[0].label, None)
         self.assertEqual(chk_point.messages[0].message, 'Foo')
+        self.assertEqual(chk_point.messages[0].status, Status.ok)
 
     def test_tell_store_messages_based_on_labels(self):
         chk_point = Checkpoint(Point.checkin)
@@ -89,6 +90,7 @@ class CheckpointTests(unittest.TestCase):
         chk_point.tell('Foo', Status.ok, label='zip')
         self.assertEqual(chk_point.messages[0].label, 'zip')
         self.assertEqual(chk_point.messages[0].message, 'Foo')
+        self.assertEqual(chk_point.messages[0].status, Status.ok)
 
     def test_tell_raises_RuntimeError_on_inactive_objects(self):
         chk_point = Checkpoint(Point.checkin)
