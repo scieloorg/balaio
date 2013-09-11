@@ -50,7 +50,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
 
         scieloapi = ScieloAPIClientStub()
-        scieloapi.issues.filter = lambda print_issn=None, eletronic_issn=None, journal=None, volume=None, number=None, suppl_volume=None, suppl_number=None, limit=None: [{}]
+        scieloapi.issues.filter = lambda print_issn=None, eletronic_issn=None, volume=None, number=None, suppl_volume=None, suppl_number=None, limit=None: [{}]
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi)
 
@@ -62,38 +62,6 @@ class SetupPipeTests(mocker.MockerTestCase):
         # index 2 is the return data from scieloapi.journals.filter
         # so, testing its type actualy means nothing.
         self.assertEqual(len(result), 3)
-
-    def test_fetch_journal_data_with_valid_criteria(self):
-        """
-        Valid criteria means a valid querystring param.
-        See a list at http://ref.scielo.org/nssk38
-
-        The behaviour defined by the Restful API is to
-        ignore the query for invalid criteria, and so
-        do we.
-        """
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
-        scieloapi = ScieloAPIClientStub()
-        scieloapi.journals.filter = lambda **kwargs: [{'foo': 'bar'}]
-
-        vpipe = self._makeOne(data, _scieloapi=scieloapi)
-        self.assertEqual(vpipe._fetch_journal_data({'print_issn': '1234-1234'}),
-                         {'foo': 'bar'})
-
-    def test_fetch_journal_data_with_unknown_issn_raises_ValueError(self):
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
-        scieloapi = ScieloAPIClientStub()
-        scieloapi.journals.filter = lambda **kwargs: []
-
-        sapi_tools = get_ScieloAPIToolbeltStubModule()
-
-        def _get_one(dataset):
-            raise ValueError()
-        sapi_tools.get_one = _get_one
-
-        vpipe = self._makeOne(data, _scieloapi=scieloapi, _sapi_tools=sapi_tools)
-        self.assertRaises(ValueError,
-                          lambda: vpipe._fetch_journal_data({'print_issn': '1234-1234'}))
 
     def test_fetch_journal_data_with_valid_criteria(self):
         """
@@ -141,10 +109,43 @@ class SetupPipeTests(mocker.MockerTestCase):
         scieloapi.issues.filter = lambda **kwargs: [{'foo': 'bar'}]
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi)
-        self.assertEqual(vpipe._fetch_journal_and_issue_data({'print_issn': '0100-879X', 'volume': '30', 'number': '4'}),
+        self.assertEqual(vpipe._fetch_journal_and_issue_data(print_issn='0100-879X', **{'volume': '30', 'number': '4'}),
                          {'foo': 'bar'})
 
+    def test_fetch_journal_issue_data_with_unknown_issn_raises_ValueError(self):
+        #FIXME
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda **kwargs: []
+
+        sapi_tools = get_ScieloAPIToolbeltStubModule()
+
+        def _get_one(dataset):
+            raise ValueError()
+        sapi_tools.get_one = _get_one
+
+        vpipe = self._makeOne(data, _scieloapi=scieloapi, _sapi_tools=sapi_tools)
+        self.assertRaises(ValueError,
+                          lambda: vpipe._fetch_journal_and_issue_data(print_issn='0100-879X', **{'volume': '30', 'number': '4'}))
+
+    def test_fetch_journal_issue_data_with_unknown_criteria_raises_ValueError(self):
+        #FIXME
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+        scieloapi = ScieloAPIClientStub()
+        scieloapi.journals.filter = lambda **kwargs: []
+
+        sapi_tools = get_ScieloAPIToolbeltStubModule()
+
+        def _get_one(dataset):
+            raise ValueError()
+        sapi_tools.get_one = _get_one
+
+        vpipe = self._makeOne(data, _scieloapi=scieloapi, _sapi_tools=sapi_tools)
+        self.assertRaises(ValueError,
+                          lambda: vpipe._fetch_journal_and_issue_data(**{'print_issn': '1234-1234', 'volume': '30', 'number': '4'}))
+
     def test_transform_grants_valid_issn_before_fetching(self):
+        #FIXME verificar
         stub_attempt = AttemptStub()
         stub_attempt.articlepkg.journal_pissn = '0100-879X'
         stub_attempt.articlepkg.journal_eissn = None
@@ -162,7 +163,7 @@ class SetupPipeTests(mocker.MockerTestCase):
             #mock_fetch_journal_data({'print_issn': '0100-879X'})
             #self.mocker.result({'foo': 'bar', 'resource_uri': '/api/...'})
 
-            mock_fetch_journal_and_issue_data({'print_issn': '0100-879X', 'volume': '30', 'number': '4'})
+            mock_fetch_journal_and_issue_data(print_issn='0100-879X', **{'volume': '30', 'number': '4'})
             self.mocker.result({'foo': 'bar'})
 
             self.mocker.replay()
@@ -749,7 +750,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
     def test_publisher_name_matched(self):
         expected = [validator.STATUS_OK, '']
-        xml = '<root><publisher-name>publicador                  da revista brasileira de ....</publisher-name></root>'
+        xml = '<root><journal-meta><publisher><publisher-name>publicador                  da revista brasileira de ....</publisher-name></publisher></journal-meta></root>'
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
@@ -774,7 +775,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
     def test_publisher_name_unmatched(self):
         expected = [validator.STATUS_ERROR, 'publicador da revista brasileira de .... [journal]\npublicador abcdefgh [article]']
-        xml = '<root><publisher-name>publicador abcdefgh</publisher-name></root>'
+        xml = '<root><journal-meta><publisher><publisher-name>publicador abcdefgh</publisher-name></publisher></journal-meta></root>'
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
@@ -799,7 +800,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
     def test_publisher_name_is_missing_in_journal(self):
         expected = [validator.STATUS_ERROR, 'Missing publisher_name in journal']
-        xml = '<root><publisher-name>publicador abcdefgh</publisher-name></root>'
+        xml = '<root><journal-meta><publisher><publisher-name>publicador abcdefgh</publisher-name></publisher></journal-meta></root>'
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)

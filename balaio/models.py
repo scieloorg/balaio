@@ -67,9 +67,6 @@ class ArticlePkg(Base):
     issue_volume = Column(String, nullable=False)
     issue_number = Column(String, nullable=False)
 
-    def __repr__(self):
-        return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
-
     def to_dict(self):
         return dict(id=self.id,
                     article_title=self.article_title,
@@ -80,3 +77,6 @@ class ArticlePkg(Base):
                     issue_volume=self.issue_volume,
                     issue_number=self.issue_number
                     )
+
+    def __repr__(self):
+        return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)

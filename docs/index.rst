@@ -12,6 +12,17 @@ Contents:
    :maxdepth: 2
 
 
+Development guides
+==================
+
+Technical guides and artifacts explaining software components
+and design decisions.
+
+.. toctree::
+   :maxdepth: 2
+   
+   dev/gateway_http_api
+
 
 Indices and tables
 ==================
