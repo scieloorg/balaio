@@ -9,15 +9,15 @@ from sqlalchemy.orm.exc import NoResultFound
 import utils
 import models
 
+from models import(
+    Session,
+    Base,)
+
 __limit__ = 20
 
 __version__ = "v1"
 
-config = utils.Configuration.from_env()
-
-Session = models.Session
-
-Session.configure(bind=models.create_engine_from_config(config))
+session = Session()
 
 
 @notfound_view_config(append_slash=True)
@@ -35,7 +35,6 @@ def package(request):
     """
     Get a single object and return a serialized dict
     """
-    session = Session()
 
     try:
         article = session.query(models.ArticlePkg).filter_by(id=request.matchdict['id']).one()
@@ -49,9 +48,8 @@ def package(request):
 def list_package(request):
     """
     Return a dict content the total param and the objects list
-    Example: {'total': 12, 'limit': 20, offset:0, 'objects': [object, object,...]}
+    Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
     """
-    session = Session()
 
     limit = request.params.get('limit', __limit__)
     offset = request.params.get('offset', 0)
@@ -65,6 +63,12 @@ def list_package(request):
 
 
 if __name__ == '__main__':
+    #Database configurator
+    config = utils.Configuration.from_env()
+    engine = models.create_engine_from_config(config)
+    Session.configure(bind=engine)
+    Base.metadata.bind = engine
+
     config = Configurator()
     config.add_route('index', '/')
 
