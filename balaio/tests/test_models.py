@@ -79,14 +79,14 @@ class CheckpointTests(unittest.TestCase):
     def test_tell_store_messages(self):
         chk_point = Checkpoint(Point.checkin)
         chk_point.start()
-        chk_point.tell('Foo')
+        chk_point.tell('Foo', Status.ok)
         self.assertEqual(chk_point.messages[0].label, None)
         self.assertEqual(chk_point.messages[0].message, 'Foo')
 
     def test_tell_store_messages_based_on_labels(self):
         chk_point = Checkpoint(Point.checkin)
         chk_point.start()
-        chk_point.tell('Foo', label='zip')
+        chk_point.tell('Foo', Status.ok, label='zip')
         self.assertEqual(chk_point.messages[0].label, 'zip')
         self.assertEqual(chk_point.messages[0].message, 'Foo')
 
@@ -94,7 +94,7 @@ class CheckpointTests(unittest.TestCase):
         chk_point = Checkpoint(Point.checkin)
         chk_point.start()
         chk_point.end()
-        self.assertRaises(RuntimeError, lambda: chk_point.tell('Foo', label='zip'))
+        self.assertRaises(RuntimeError, lambda: chk_point.tell('Foo', Status.ok, label='zip'))
 
 
 class NoticeTests(unittest.TestCase):

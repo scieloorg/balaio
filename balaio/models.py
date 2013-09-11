@@ -144,9 +144,12 @@ class Checkpoint(Base):
     def is_active(self):
         return bool(self.started_at and self.ended_at is None)
 
-    def tell(self, message, label=None):
+    def tell(self, message, status, label=None):
         if not self.is_active:
             raise RuntimeError('cannot tell thing after end was called')
+
+        if status not in Status:
+            raise ValueError('status must be %s' % ','.join(str(st) for st in Status))
 
         notice = Notice(message=message, label=label)
         self.messages.append(notice)
