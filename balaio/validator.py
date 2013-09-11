@@ -70,10 +70,10 @@ class SetupPipe(vpipes.ConfigMixin, vpipes.Pipe):
             criteria['volume'] = attempt.articlepkg.issue_volume
         if attempt.articlepkg.issue_number:
             criteria['number'] = attempt.articlepkg.issue_number
-        #if attempt.articlepkg.issue_suppl_volume:
-        #    criteria['suppl_volume'] = attempt.articlepkg.issue_suppl_volume
-        #if attempt.articlepkg.issue_suppl_number:
-        #    criteria['suppl_number'] = attempt.articlepkg.issue_suppl_number
+        if attempt.articlepkg.issue_suppl_volume:
+            criteria['suppl_volume'] = attempt.articlepkg.issue_suppl_volume
+        if attempt.articlepkg.issue_suppl_number:
+            criteria['suppl_number'] = attempt.articlepkg.issue_suppl_number
 
         journal_pissn = attempt.articlepkg.journal_pissn
 

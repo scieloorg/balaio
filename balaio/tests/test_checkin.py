@@ -50,7 +50,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_journal_title_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><journal-title-group><journal-title>foo</journal-title></journal-title-group></root>'),
+            ('bar.xml', b'<root><journal-meta><journal-title-group><journal-title>foo</journal-title></journal-title-group></journal-meta></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -68,7 +68,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_journal_eissn_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><issn pub-type="epub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root><journal-meta><issn pub-type="epub">1234-1234</issn></journal-meta></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -86,7 +86,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_journal_pissn_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><issn pub-type="ppub">1234-1234</issn></root>'),
+            ('bar.xml', b'<root><journal-meta><issn pub-type="ppub">1234-1234</issn></journal-meta></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -104,7 +104,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_article_title_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><title-group><article-title>bar</article-title></title-group></root>'),
+            ('bar.xml', b'<root><article-meta><title-group><article-title>bar</article-title></title-group></article-meta></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -122,7 +122,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_issue_year_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><pub-date><year>2013</year></pub-date></root>'),
+            ('bar.xml', b'<root><article-meta><pub-date><year>2013</year></pub-date></article-meta></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -140,7 +140,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_issue_volume_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><volume>2</volume></root>'),
+            ('bar.xml', b'<root><article-meta><volume>2</volume></article-meta></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
@@ -158,7 +158,7 @@ class SPSMixinTests(mocker.MockerTestCase):
 
     def test_meta_issue_number_data_is_fetched(self):
         data = [
-            ('bar.xml', b'<root><issue>2</issue></root>'),
+            ('bar.xml', b'<root><article-meta><issue>2</issue></article-meta></root>'),
         ]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)

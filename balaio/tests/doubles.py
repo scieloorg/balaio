@@ -102,8 +102,10 @@ class ArticlePkgStub(object):
     def __init__(self, *args, **kwargs):
         self.journal_pissn = '0100-879X'
         self.journal_eissn = '0100-879X'
-        self.issue_volume = '1'
+        self.issue_volume = '31'
         self.issue_number = '1'
+        self.issue_suppl_volume = None
+        self.issue_suppl_number = None
 
 
 class AttemptStub(object):

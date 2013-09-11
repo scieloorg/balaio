@@ -285,3 +285,75 @@ def is_valid_issn(issn):
         return bool(validate_issn(issn))
     except (ValueError, TypeError):
         return False
+
+
+def parse_issue_tag(issue_tag_content):
+    """
+    Parse issue tag content and returns issue number, label and supplement
+
+    :returns: (number, label, suppl)
+    """
+    # <issue> contents:
+    # <issue>2</issue>
+    # <issue>Suppl</issue>
+    # <issue>3 Suppl 1</issue>
+    # <issue>Suppl 1</issue>
+    number, suppl_label, suppl = [None, None, None]
+    if issue_tag_content:
+        lower_issue = issue_tag_content.lower()
+        if 'sup' in lower_issue:
+            # number
+            number = lower_issue[0:lower_issue.find('sup')].strip()
+            if number == '':
+                number = None
+
+            # supplement label
+            suppl_label = issue_tag_content[lower_issue.find('sup'):]
+            if ' ' in suppl_label:
+                suppl_label = suppl_label[0:suppl_label.find(' ')]
+
+            # supplement
+            suppl = issue_tag_content[issue_tag_content.find(suppl_label) + len(suppl_label):].strip()
+            if suppl == '':
+                suppl = None
+        else:
+            number = issue_tag_content
+
+    return (number, suppl_label, suppl)
+
+
+def supplement_type(volume, number, suppl):
+    """
+    Identifies the type of the supplement: volume or number
+
+    :param volume: issue volume
+    :param number: issue number
+    :param suppl: 1, Suppl, None
+    :returns: (issue_suppl_volume, issue_suppl_number)
+    """
+    issue_suppl_volume = None
+    issue_suppl_number = None
+
+    if number:
+        issue_suppl_number = suppl
+    else:
+        issue_suppl_volume = suppl
+    return (issue_suppl_volume, issue_suppl_number)
+
+
+def issue_identification(volume, number, supplement):
+    """
+    Identifies the elements which forms a issue: volume, number, supplement volume, supplement number
+
+    :param volume: issue volume
+    :param number: issue number
+    :param supplement: 1, Suppl, None
+    :returns: (volume, volume_suppl, number, number_suppl)
+    """
+    # issue can have contents like: 2, Suppl, 3 Suppl 1, Suppl 1
+    number, label, suppl = parse_issue_tag(number)
+    if not suppl:
+        suppl = supplement
+    volume_suppl, number_suppl = supplement_type(volume, number, suppl)
+
+    return (volume, volume_suppl, number, number_suppl)
