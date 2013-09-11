@@ -7,8 +7,8 @@ class GtwMetaFactory(JSONP):
         """
         Add the resource URI to each object
         """
-        if 'objects' in value:
-            for obj in value['objects']:
+        if isinstance(value, (list, tuple)):
+            for obj in value:
                 obj['resource_uri'] = path + str(obj['id'])
             return value
         else:
@@ -28,7 +28,7 @@ class GtwMetaFactory(JSONP):
                 'total_count': value['total']
             }
 
-            dct_meta['objects'] = self.add_resource(value, system.get('request').path)
+            dct_meta['objects'] = self.add_resource(value['objects'], system.get('request').path)
 
             return dct_meta
         else:
@@ -36,6 +36,7 @@ class GtwMetaFactory(JSONP):
 
     def tamper(self, render):
         def wrapper(value, system):
+
             return render(self.add_meta(value, system), system)
         return wrapper
 
