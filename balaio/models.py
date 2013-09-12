@@ -1,6 +1,7 @@
 # coding: utf-8
 import datetime
 
+import enum
 from sqlalchemy import (
     Column,
     Integer,
@@ -8,12 +9,14 @@ from sqlalchemy import (
     DateTime,
     String,
     Boolean,
+    Table,
 )
 from sqlalchemy.orm import (
     relationship,
     backref,
 )
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -64,8 +67,10 @@ class ArticlePkg(Base):
     journal_eissn = Column(String, nullable=True)
     journal_title = Column(String, nullable=False)
     issue_year = Column(Integer, nullable=False)
-    issue_volume = Column(String, nullable=False)
-    issue_number = Column(String, nullable=False)
+    issue_volume = Column(String, nullable=True)
+    issue_number = Column(String, nullable=True)
+    issue_suppl_volume = Column(String, nullable=True)
+    issue_suppl_number = Column(String, nullable=True)
 
     def to_dict(self):
         return dict(id=self.id,
@@ -80,3 +85,93 @@ class ArticlePkg(Base):
 
     def __repr__(self):
         return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
+
+
+##
+# Represents system-wide checkpoints
+##
+class Point(enum.Enum):
+    checkin = 1
+    validation = 2
+    checkout = 3
+
+
+class Status(enum.Enum):
+    ok = 1
+    warning = 2
+    error = 3
+
+
+class Notice(Base):
+    __tablename__ = 'notice'
+    id = Column(Integer, primary_key=True)
+    when = Column(DateTime(timezone=True))
+    label = Column(String)
+    message = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    checkpoint_id = Column(Integer, ForeignKey('checkpoint.id'))
+
+    def __init__(self, *args, **kwargs):
+        super(Notice, self).__init__(*args, **kwargs)
+        self.when = datetime.datetime.now()
+
+
+class Checkpoint(Base):
+    __tablename__ = 'checkpoint'
+    id = Column(Integer, primary_key=True)
+    started_at = Column(DateTime(timezone=True))
+    ended_at = Column(DateTime(timezone=True))
+    _point = Column('point', Integer, nullable=False)
+    messages = relationship('Notice',
+                            order_by='Notice.when',
+                            backref=backref('checkpoint'))
+
+    def __init__(self, point):
+        """
+        Represents a time delta of a checkpoint execution.
+
+        i.e. the exact moment a module owns the package handling, until it ends.
+        During this delta, arbitrary number of messages with meaningful data may
+        be recorded.
+
+        :param point: a known checkpoint, represented as :class:`Point`.
+        """
+        if point not in Point:
+            raise ValueError('point must be %s' % ','.join(str(pt) for pt in Point))
+
+        self.point = point
+        self.started_at = self.ended_at = None
+
+    def start(self):
+        if self.started_at is None:
+            self.started_at = datetime.datetime.now()
+
+    def end(self):
+        if self.ended_at is None:
+            if not self.is_active:
+                raise RuntimeError('end cannot be called before start')
+
+            self.ended_at = datetime.datetime.now()
+
+    @property
+    def is_active(self):
+        return bool(self.started_at and self.ended_at is None)
+
+    def tell(self, message, status, label=None):
+        if not self.is_active:
+            raise RuntimeError('cannot tell thing after end was called')
+
+        if status not in Status:
+            raise ValueError('status must be %s' % ','.join(str(st) for st in Status))
+
+        notice = Notice(message=message, status=status, label=label)
+        self.messages.append(notice)
+
+    @hybrid_property
+    def point(self):
+        return Point(self._point)
+
+    @point.setter
+    def point(self, pt):
+        self._point = pt.value
+
