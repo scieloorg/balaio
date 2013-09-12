@@ -102,6 +102,13 @@ def create_checkpoint_notifier(config, point):
 def checkin_notifier_factory(config):
     """
     Creates a :class:`Notifier` bound to a :attribute:`models.Checkpoint.checkin`
+
+    Usage::
+
+        >>> first_attempt = models.Attempt()
+        >>> CheckinNotifier = checkin_notifier_factory(config)
+        >>> first_attempt_notifier = CheckinNotifier(first_attempt)
+        >>> first_attempt_notifier.start()
     """
     return create_checkpoint_notifier(config, models.Point.checkin)
 
@@ -109,6 +116,13 @@ def checkin_notifier_factory(config):
 def validation_notifier_factory(config):
     """
     Creates a :class:`Notifier` bound to a :attribute:`models.Checkpoint.validation`
+
+    Usage::
+
+        >>> first_attempt = models.Attempt()
+        >>> ValidationNotifier = validation_notifier_factory(config)
+        >>> first_attempt_notifier = ValidationNotifier(first_attempt)
+        >>> first_attempt_notifier.start()
     """
     return create_checkpoint_notifier(config, models.Point.validation)
 
@@ -116,6 +130,13 @@ def validation_notifier_factory(config):
 def checkout_notifier_factory(config):
     """
     Creates a :class:`Notifier` bound to a :attribute:`models.Checkpoint.checkout`
+
+    Usage::
+
+        >>> first_attempt = models.Attempt()
+        >>> CheckoutNotifier = checkout_notifier_factory(config)
+        >>> first_attempt_notifier = CheckoutNotifier(first_attempt)
+        >>> first_attempt_notifier.start()
     """
     return create_checkpoint_notifier(config, models.Point.checkout)
 

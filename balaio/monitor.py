@@ -31,19 +31,9 @@ class Monitor(object):
             self.running_workers.append(thread)
             thread.start()
 
-    def get_db_session(self):
-        if not hasattr(self, '_db_session'):
-            config = utils.Configuration.from_env()
-            Session = models.Session
-            Session.configure(bind=models.create_engine_from_config(config))
-            self._db_session = Session
-
-        return self._db_session
-
     def handle_events(self, job_queue):
         while True:
             filepath = job_queue.get()
-            session = self.get_db_session()()
             logger.debug('Started handling event for %s' % filepath)
 
             try:
