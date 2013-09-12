@@ -448,3 +448,57 @@ class DOIFunctionsTests(mocker.MockerTestCase):
         self.mocker.replay()
 
         self.assertRaises(requests.exceptions.Timeout, lambda: utils.is_valid_doi('10.1590/S2179-975X2012005000031'))
+
+
+class ParseIssueTagTest(unittest.TestCase):
+
+    def test_issue_tag_content_is_empty(self):
+        self.assertEqual(utils.parse_issue_tag(''), (None, None, None))
+
+    def test_issue_tag_content_is_a_issue_number_only(self):
+        self.assertEqual(utils.parse_issue_tag('3A'), ('3A', None, None))
+
+    def test_issue_tag_content_is_suppl_only(self):
+        self.assertEqual(utils.parse_issue_tag('Supplement'), (None, 'Supplement', None))
+
+    def test_issue_tag_content_is_a_issue_number_with_supplement(self):
+        self.assertEqual(utils.parse_issue_tag('3 Supl'), ('3', 'Supl', None))
+
+    def test_issue_tag_content_is_a_issue_number_with_supplement_number(self):
+        self.assertEqual(utils.parse_issue_tag('3 Supl 1'), ('3', 'Supl', '1'))
+
+    def test_issue_tag_content_is_supplement_number(self):
+        self.assertEqual(utils.parse_issue_tag('Supl 1'), (None, 'Supl', '1'))
+
+
+class SupplementTypeTests(unittest.TestCase):
+
+    def test_supplement_type_of_no_supplements(self):
+        self.assertEqual(utils.supplement_type('31', '1', None), (None, None))
+
+    def test_supplement_type_of_suppl_number(self):
+        self.assertEqual(utils.supplement_type('31', '1', '2'), (None, '2'))
+
+    def test_supplement_type_of_suppl_volume(self):
+        self.assertEqual(utils.supplement_type('31', None, '2'), ('2', None))
+
+
+class IssueIdentificationTests(unittest.TestCase):
+
+    def test_issue_identification_volume(self):
+        self.assertEqual(utils.issue_identification('31', None, None), ('31', None, None, None))
+
+    def test_issue_identification_number(self):
+        self.assertEqual(utils.issue_identification(None, '1', None), (None, None, '1', None))
+
+    def test_issue_identification_volume_and_number(self):
+        self.assertEqual(utils.issue_identification('31', '1', None), ('31', None, '1', None))
+
+    def test_issue_identification_volume_number_and_suppl(self):
+        self.assertEqual(utils.issue_identification('31', '1', '2'), ('31', None, '1', '2'))
+
+    def test_issue_identification_volume_and_suppl(self):
+        self.assertEqual(utils.issue_identification('31', None, '2'), ('31', '2', None, None))
+
+    def test_issue_identification_number_and_suppl(self):
+        self.assertEqual(utils.issue_identification(None, '4', '2'), (None, None, '4', '2'))

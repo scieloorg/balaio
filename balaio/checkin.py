@@ -38,19 +38,22 @@ class SPSMixin(object):
     def meta(self):
         dct_mta = {}
 
-        xml_nodes = {"journal_title": ".//journal-title-group/journal-title",
-                     "journal_eissn": ".//issn[@pub-type='epub']",
-                     "journal_pissn": ".//issn[@pub-type='ppub']",
-                     "article_title": ".//title-group/article-title",
-                     "issue_year": ".//pub-date/year",
-                     "issue_volume": ".//volume",
-                     "issue_number": ".//issue",
+        xml_nodes = {"journal_title": ".//journal-meta/journal-title-group/journal-title",
+                     "journal_eissn": ".//journal-meta/issn[@pub-type='epub']",
+                     "journal_pissn": ".//journal-meta/issn[@pub-type='ppub']",
+                     "article_title": ".//article-meta/title-group/article-title",
+                     "issue_year": ".//article-meta/pub-date/year",
+                     "issue_volume": ".//article-meta/volume",
+                     "issue_number": ".//article-meta/issue",
+                     "supplement": ".//article-meta/supplement",
                      }
 
         for node_k, node_v in xml_nodes.items():
             node = self.xml.find(node_v)
             dct_mta[node_k] = getattr(node, 'text', None)
 
+        ign, dct_mta['issue_suppl_volume'], dct_mta['issue_number'], dct_mta['issue_suppl_number'] = utils.issue_identification(dct_mta['issue_volume'], dct_mta['issue_number'], dct_mta['supplement'])
+        del dct_mta['supplement']
         return dct_mta
 
 
