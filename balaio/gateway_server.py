@@ -67,14 +67,12 @@ def attempt(request):
     """
     Get a single object and return a serialized dict
     """
-    session = Session()
-
     try:
-        article = session.query(models.Attempt).filter_by(id=request.matchdict['id']).one()
+        attempt = Session().query(models.Attempt).filter_by(id=request.matchdict['id']).one()
     except NoResultFound:
         return HTTPNotFound()
 
-    return article.to_dict()
+    return attempt.to_dict()
 
 
 @view_config(route_name='attempts', request_method='GET', renderer="gtw")
@@ -88,12 +86,12 @@ def attempts(request):
     limit = request.params.get('limit', __limit__)
     offset = request.params.get('offset', 0)
 
-    articles = session.query(models.Attempt).limit(limit).offset(offset)
+    attempts = session.query(models.Attempt).limit(limit).offset(offset)
 
     return {'limit': limit,
             'offset': offset,
             'total': session.query(models.Attempt).count(),
-            'objects': [article.to_dict() for article in articles]}
+            'objects': [attempt.to_dict() for attempt in attempts]}
 
 
 if __name__ == '__main__':

@@ -57,6 +57,17 @@ class Attempt(Base):
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
 
+    def to_dict(self):
+        return dict(id=self.id,
+                    package_checksum=self.package_checksum,
+                    articlepkg_id=self.articlepkg_id,
+                    collection_uri=self.collection_uri,
+                    started_at=self.started_at,
+                    finished_at=self.finished_at,
+                    filepath=self.filepath,
+                    is_valid=self.is_valid
+                    )
+
 
 class ArticlePkg(Base):
     __tablename__ = 'articlepkg'

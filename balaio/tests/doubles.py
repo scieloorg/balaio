@@ -123,3 +123,4 @@ class PipeStub(object):
     def __iter__(self):
         for i in self.data:
             yield i
+
