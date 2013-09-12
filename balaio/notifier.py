@@ -1,135 +1,121 @@
 # coding: utf-8
-import ConfigParser
-import urllib2
-import urllib
+import scieloapi
+import sqlalchemy
 
 from utils import SingletonMixin, Configuration
+import models
 
 
-config = Configuration.from_env()
+def auto_commit_or_rollback(method):
+    def _method(self, *args, **kwargs):
+        try:
+            _return = method(self, *args, **kwargs)
+            self.db_session.commit()
+        except sqlalchemy.exc.IntegrityError:
+            self.db_session.rollback()
+            raise
+        else:
+            return _return
+
+    return _method
 
 
-CHECKIN_MESSAGE_FIELDS = ('checkin_id', 'collection_uri', 'article_title',
-    'journal_title', 'issue_label', 'pkgmeta_filename', 'pkgmeta_md5',
-    'pkgmeta_filesize', 'pkgmeta_filecount', 'pkgmeta_submitter')
-
-
-def _extract_settings(settings):
+class Notifier(object):
     """
-    Returns a tuple with url, username and apikey values.
+    Acts as a broker to notifications.
     """
-    try:
-        api_username = settings.get('manager', 'api_username')
-        api_key = settings.get('manager', 'api_key')
-        api_url = settings.get('manager', 'api_url')
-    except (ConfigParser.NoSectionError,
-            ConfigParser.NoOptionError):
-        raise ValueError('Missing configuration: manager')
 
-    url = api_url
-    if not url.startswith('http://'):
-        url = 'http://' + url
-
-    return (url, api_username, api_key)
-
-
-class Request(SingletonMixin):
-
-    def __init__(self,
-                 url,
-                 api_username,
-                 api_key,
-                 urlencode_dep=urllib.urlencode,
-                 urllib_dep=urllib2):
+    def __init__(self, checkpoint, scieloapi_client, db_session):
         """
-        ``url``
-        ``api_username``
-        ``api_key``
+        :param checkpoint: is a :class:`models.Checkpoint` instance.
+        :param scieloapi_client: instance of `scieloapi.Client`.
+        :param db_session:
         """
-        self._urlencode = urlencode_dep
-        self._urllib2 = urllib_dep
+        self.scieloapi = scieloapi_client
+        self.db_session = db_session
+        self.checkpoint = checkpoint
 
-        self.url = url
-        self.username = api_username
-        self.apikey = api_key
+        # make sure checkpoint is held by the session
+        if self.checkpoint not in self.db_session:
+            self.db_session.add(self.checkpoint)
 
-    def _new_http_request(self):
-        request = self._urllib2.Request(self.url)
-        request.add_header(
-            'HTTP_AUTHORIZATION',
-            'ApiKey {0}:{1}'.format(self.username, self.apikey))
 
-        return request
-
-    def _prepare_data(self, data):
-        return self._urlencode(data)
-
-    def post(self, data):
+    @auto_commit_or_rollback
+    def tell(self, message, status, label=None):
         """
-        Assembles an HTTP POST and returns a file-object.
+        Adds the notice on checkpoint, and sends a notification to
+        SciELO Manager.
 
-        ``data`` is a mapping.
+        :param message: a string
+        :param status: instance of :class:`models.Status`.
+        :param label: (optional)
         """
-        req = self._new_http_request()
-        req.add_data(self._prepare_data(data))
+        self.checkpoint.tell(message, status, label=label)
 
-        return self._urllib2.urlopen(req)
+    @auto_commit_or_rollback
+    def start(self):
+        self.checkpoint.start()
 
-
-class Notifier(SingletonMixin):
-
-    def __init__(self, settings=config, request_dep=Request):
-        """
-        ``settings`` is an instance of ConfigParser.ConfigParser.
-        """
-        self._request = request_dep
-        self._url, self._username, self._apikey = _extract_settings(settings)
-
-    def _prepare_url(self, endpoint):
-        return '%s/%s/' % (self._url, endpoint)
-
-    def _submit(self, endpoint, data):
-        """
-        Submits json-encoded data to the given endpoint.
-
-        ``endpoint`` is a string representing an available
-        endpoint at SciELO Manager.
-        See: http://manager.scielo.org/api/v1/
-        ``data`` is a mapping in the format expected
-        by the remote endpoint.
-        """
-        full_url = self._prepare_url(endpoint)
-        req = self._request(full_url, self._username, self._apikey)
-        req.post(data)
-
-    def checkin(self, message):
-        """
-        Sends a checkin notification event to a remote endpoint.
-
-        ``message`` is a mapping with the fields listed at
-        CHECKIN_MESSAGE_FIELDS.
-        """
-        if not validate_notification_message(message, CHECKIN_MESSAGE_FIELDS):
-            raise ValueError('invalid message')
-
-        self._submit('articlepkg_checkins', message)
-
-    def validation_event(self, message):
-        """
-        Sends a validation checkpoint notification event to a
-        remote endpoint.
-
-        ``message`` is a mapping with the fields listed at
-        VALIDATION_MESSAGE_FIELDS.
-        """
+    @auto_commit_or_rollback
+    def end(self):
+        self.checkpoint.end()
 
 
-def validate_notification_message(message, fields):
+class DBSessionFactory(SingletonMixin, object):
     """
-    ``message`` is what needs to be validaded.
-    ``fields`` is a tuple of field names that need to be present.
+    Encapsulates the `models.Session` configuration.
     """
-    fields_set = set(fields)
-    msg_fields_set = set(message.keys())
+    def __init__(self, config):
+        self.config = config
 
-    return fields_set == msg_fields_set
+    def __call__(self):
+        Session = models.Session
+        Session.configure(bind=models.create_engine_from_config(self.config))
+        return Session
+
+
+def create_checkpoint_notifier(config, point):
+    SessionFactory = DBSessionFactory(config)
+    Session = SessionFactory()
+
+    scieloapi_client = None  # scieloapi.Client('some.user', 'some.key')
+
+    def _checkin_notifier_factory(attempt):
+        session = Session()
+        try:
+            checkpoint = session.query(models.Checkpoint).filter(
+                models.Checkpoint.attempt == attempt).filter(
+                models.Checkpoint.point == point.value).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            checkpoint = models.Checkpoint(point, attempt=attempt)
+        except sqlalchemy.orm.exc.MultipleResultsFound as e:
+            #logger.error(e.message)
+            pass
+
+        return Notifier(checkpoint,
+                        scieloapi_client,
+                        session)
+
+    return _checkin_notifier_factory
+
+
+def checkin_notifier_factory(config):
+    """
+    Creates a :class:`Notifier` bound to a :attribute:`models.Checkpoint.checkin`
+    """
+    return create_checkpoint_notifier(config, models.Point.checkin)
+
+
+def validation_notifier_factory(config):
+    """
+    Creates a :class:`Notifier` bound to a :attribute:`models.Checkpoint.validation`
+    """
+    return create_checkpoint_notifier(config, models.Point.validation)
+
+
+def checkout_notifier_factory(config):
+    """
+    Creates a :class:`Notifier` bound to a :attribute:`models.Checkpoint.checkout`
+    """
+    return create_checkpoint_notifier(config, models.Point.checkout)
+
