@@ -9,7 +9,8 @@ import checkin
 import zipfile
 import pyinotify
 
-import utils
+from . import utils
+from . import models
 
 
 logger = logging.getLogger('balaio.monitor')
@@ -33,7 +34,6 @@ class Monitor(object):
     def handle_events(self, job_queue):
         while True:
             filepath = job_queue.get()
-
             logger.debug('Started handling event for %s' % filepath)
 
             try:
