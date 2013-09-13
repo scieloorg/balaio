@@ -54,6 +54,16 @@ class Attempt(Base):
         self.started_at = datetime.datetime.now()
         self.is_valid = True
 
+    def to_dict(self):
+        return dict(id=self.id,
+                    package_checksum=self.package_checksum,
+                    articlepkg_id=self.articlepkg_id,
+                    started_at=self.started_at,
+                    finished_at=self.finished_at,
+                    collection_uri=self.collection_uri,
+                    filepath=self.filepath,
+                    is_valid=self.is_valid)
+
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
 
@@ -80,7 +90,10 @@ class ArticlePkg(Base):
                     journal_title=self.journal_title,
                     issue_year=self.issue_year,
                     issue_volume=self.issue_volume,
-                    issue_number=self.issue_number
+                    issue_number=self.issue_number,
+                    issue_suppl_volume=self.issue_suppl_volume,
+                    issue_suppl_number=self.issue_suppl_number,
+                    attempts=[['Attempt', attempt.id] for attempt in self.attempts]
                     )
 
     def __repr__(self):

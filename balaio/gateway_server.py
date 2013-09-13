@@ -11,11 +11,7 @@ import models
 
 from models import(
     Session,
-    Base,)
-
-__limit__ = 20
-
-__version__ = "v1"
+    Base)
 
 session = Session()
 
@@ -27,10 +23,10 @@ def notfound(request):
 
 @view_config(route_name='index')
 def index(request):
-    return Response('Gateway version %s' % __version__)
+    return Response('Gateway version %s' % config.get('http_server', 'version'))
 
 
-@view_config(route_name='package', request_method='GET', renderer="gtw")
+@view_config(route_name='ArticlePkg', request_method='GET', renderer="gtw")
 def package(request):
     """
     Get a single object and return a serialized dict
@@ -51,7 +47,7 @@ def list_package(request):
     Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
     """
 
-    limit = request.params.get('limit', __limit__)
+    limit = request.params.get('limit', config.get('http_server', 'limit'))
     offset = request.params.get('offset', 0)
 
     articles = session.query(models.ArticlePkg).limit(limit).offset(offset)
@@ -69,17 +65,19 @@ if __name__ == '__main__':
     Session.configure(bind=engine)
     Base.metadata.bind = engine
 
-    config = Configurator()
-    config.add_route('index', '/')
+    config_pyrmd = Configurator()
+    config_pyrmd.add_route('index', '/')
 
-    config.add_route('list_package', '/api/%s/packages/' % __version__)
-    config.add_route('package', '/api/%s/packages/{id}' % __version__)
+    config_pyrmd.add_route('ArticlePkg', '/api/%s/packages/{id}' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('Attempt', '/api/%s/attempts/{id}' % config.get('http_server', 'version'))
 
-    #Gateway renderer
-    config.add_renderer('gtw', factory='renderers.GtwFactory')
+    config_pyrmd.add_route('list_package', '/api/%s/packages/' % config.get('http_server', 'version'))
 
-    config.scan()
+    config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 
-    app = config.make_wsgi_app()
-    server = make_server('0.0.0.0', 8080, app)
+    config_pyrmd.scan()
+
+    app = config_pyrmd.make_wsgi_app()
+
+    server = make_server(config.get('http_server', 'ip'), config.getint('http_server', 'port'), app)
     server.serve_forever()
