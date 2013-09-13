@@ -37,7 +37,7 @@ def package(request):
     """
 
     try:
-        article = session.query(models.ArticlePkg).filter_by(id=request.matchdict['id']).one()
+        article = request.session.query(models.ArticlePkg).filter_by(id=request.matchdict['id']).one()
     except NoResultFound:
         return HTTPNotFound()
 
@@ -54,11 +54,12 @@ def list_package(request):
     limit = request.params.get('limit', __limit__)
     offset = request.params.get('offset', 0)
 
-    articles = session.query(models.ArticlePkg).limit(limit).offset(offset)
+    q = request.session.query(models.ArticlePkg)
+    articles = q.limit(limit).offset(offset)
 
     return {'limit': limit,
             'offset': offset,
-            'total': session.query(models.ArticlePkg).count(),
+            'total': q.count(),
             'objects': [article.to_dict() for article in articles]}
 
 
@@ -68,7 +69,7 @@ def attempt(request):
     Get a single object and return a serialized dict
     """
     try:
-        attempt = Session().query(models.Attempt).filter_by(id=request.matchdict['id']).one()
+        attempt = request.session.query(models.Attempt).filter_by(id=request.matchdict['id']).one()
     except NoResultFound:
         return HTTPNotFound()
 
@@ -81,16 +82,14 @@ def attempts(request):
     Return a dict content the total param and the objects list
     Example: {'total': 12, 'limit': 20, offset:0, 'objects': [object, object,...]}
     """
-    session = Session()
-
     limit = request.params.get('limit', __limit__)
     offset = request.params.get('offset', 0)
-
-    attempts = session.query(models.Attempt).limit(limit).offset(offset)
+    query = request.session.query(models.Attempt)
+    attempts = query.limit(limit).offset(offset)
 
     return {'limit': limit,
             'offset': offset,
-            'total': session.query(models.Attempt).count(),
+            'total': query.count(),
             'objects': [attempt.to_dict() for attempt in attempts]}
 
 
@@ -105,9 +104,9 @@ if __name__ == '__main__':
     config.add_route('index', '/')
 
     config.add_route('list_package', '/api/%s/packages/' % __version__)
-    config.add_route('package', '/api/%s/packages/{id}' % __version__)
-    config.add_route('attempts', '/api/%s/attempts/' % __version__)
-    config.add_route('attempt', '/api/%s/attempts/{id}' % __version__)
+    config.add_route('Package', '/api/%s/packages/{id}' % __version__)
+    config.add_route('Attempts', '/api/%s/attempts/' % __version__)
+    config.add_route('Attempt', '/api/%s/attempts/{id}' % __version__)
 
     #Gateway renderer
     config.add_renderer('gtw', factory='renderers.GtwFactory')

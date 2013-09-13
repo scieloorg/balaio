@@ -107,11 +107,33 @@ class ArticlePkgStub(object):
         self.issue_suppl_volume = None
         self.issue_suppl_number = None
 
+    def to_dict(self):
+        return dict(id=3,
+                    package_checksum='876',
+                    articlepkg_id=5,
+                    collection_uri='///',
+                    started_at=None,
+                    finished_at=None,
+                    filepath=None,
+                    is_valid=True
+                    )
+
 
 class AttemptStub(object):
     def __init__(self, *args, **kwargs):
         self.articlepkg = ArticlePkgStub()
         self.filepath = '/tmp/foo/bar.zip'
+
+    def to_dict(self):
+        return dict(id=1,
+                    package_checksum='1212',
+                    articlepkg_id=1,
+                    collection_uri='/',
+                    started_at='started_at',
+                    finished_at='finished_at',
+                    filepath=self.filepath,
+                    is_valid=True
+                    )
 
 
 class ConfigStub(object):
@@ -125,4 +147,3 @@ class PipeStub(object):
     def __iter__(self):
         for i in self.data:
             yield i
-
