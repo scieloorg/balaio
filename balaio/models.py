@@ -17,7 +17,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 
@@ -121,12 +121,26 @@ class Notice(Base):
     when = Column(DateTime(timezone=True))
     label = Column(String)
     message = Column(String, nullable=False)
-    status = Column(String, nullable=False)
+    _status = Column('status', Integer, nullable=False)
     checkpoint_id = Column(Integer, ForeignKey('checkpoint.id'))
 
     def __init__(self, *args, **kwargs):
+        # _status kwarg breaks sqlalchemy's default __init__
+        _status = kwargs.pop('status', None)
+
         super(Notice, self).__init__(*args, **kwargs)
         self.when = datetime.datetime.now()
+
+        if _status:
+            self.status = _status
+
+    @hybrid_property
+    def status(self):
+        return Status(self._status)
+
+    @status.setter
+    def status(self, st):
+        self._status = st.value
 
 
 class Checkpoint(Base):
@@ -135,9 +149,12 @@ class Checkpoint(Base):
     started_at = Column(DateTime(timezone=True))
     ended_at = Column(DateTime(timezone=True))
     _point = Column('point', Integer, nullable=False)
+    attempt_id = Column(Integer, ForeignKey('attempt.id'))
     messages = relationship('Notice',
                             order_by='Notice.when',
                             backref=backref('checkpoint'))
+    attempt = relationship('Attempt',
+                           backref=backref('checkpoint'))
 
     def __init__(self, point):
         """
@@ -187,4 +204,8 @@ class Checkpoint(Base):
     @point.setter
     def point(self, pt):
         self._point = pt.value
+
+    @point.expression
+    def point(cls):
+        return cls._point
 
