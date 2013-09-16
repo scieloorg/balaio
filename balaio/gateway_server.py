@@ -3,21 +3,13 @@ from pyramid.config import Configurator
 from wsgiref.simple_server import make_server
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.view import notfound_view_config, view_config
+from pyramid.events import NewRequest
 
+from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 
 import utils
 import models
-
-from models import(
-    Session,
-    Base,)
-
-__limit__ = 20
-
-__version__ = "v1"
-
-session = Session()
 
 
 @notfound_view_config(append_slash=True)
@@ -27,17 +19,17 @@ def notfound(request):
 
 @view_config(route_name='index')
 def index(request):
-    return Response('Gateway version %s' % __version__)
+    return Response('Gateway version %s' % config.get('http_server', 'version'))
 
 
-@view_config(route_name='package', request_method='GET', renderer="gtw")
+@view_config(route_name='ArticlePkg', request_method='GET', renderer="gtw")
 def package(request):
     """
     Get a single object and return a serialized dict
     """
 
     try:
-        article = request.session.query(models.ArticlePkg).filter_by(id=request.matchdict['id']).one()
+        article = request.db.query(models.ArticlePkg).filter_by(id=request.matchdict['id']).one()
     except NoResultFound:
         return HTTPNotFound()
 
@@ -51,15 +43,14 @@ def list_package(request):
     Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
     """
 
-    limit = request.params.get('limit', __limit__)
+    limit = request.params.get('limit', config.get('http_server', 'limit'))
     offset = request.params.get('offset', 0)
 
-    q = request.session.query(models.ArticlePkg)
-    articles = q.limit(limit).offset(offset)
+    articles = request.db.query(models.ArticlePkg).limit(limit).offset(offset)
 
     return {'limit': limit,
             'offset': offset,
-            'total': q.count(),
+            'total': request.db.query(func.count(models.ArticlePkg.id)).scalar(),
             'objects': [article.to_dict() for article in articles]}
 
 
@@ -94,25 +85,34 @@ def attempts(request):
 
 
 if __name__ == '__main__':
+
+    def bind_db(event):
+        event.request.db = event.request.registry.Session()
+
     #Database configurator
     config = utils.Configuration.from_env()
     engine = models.create_engine_from_config(config)
-    Session.configure(bind=engine)
-    Base.metadata.bind = engine
 
-    config = Configurator()
-    config.add_route('index', '/')
+    config_pyrmd = Configurator()
+    config_pyrmd.add_route('index', '/')
 
-    config.add_route('list_package', '/api/%s/packages/' % __version__)
-    config.add_route('Package', '/api/%s/packages/{id}' % __version__)
-    config.add_route('Attempts', '/api/%s/attempts/' % __version__)
-    config.add_route('Attempt', '/api/%s/attempts/{id}' % __version__)
+    config_pyrmd.add_route('ArticlePkg',
+        '/api/%s/packages/{id}/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('Attempt',
+        '/api/%s/attempts/{id}/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('list_package',
+        '/api/%s/packages/' % config.get('http_server', 'version'))
 
-    #Gateway renderer
-    config.add_renderer('gtw', factory='renderers.GtwFactory')
+    config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 
-    config.scan()
+    #DB session bound to each request
+    config_pyrmd.registry.Session = models.Session
+    config_pyrmd.registry.Session.configure(bind=engine)
+    config_pyrmd.add_subscriber(bind_db, NewRequest)
 
-    app = config.make_wsgi_app()
-    server = make_server('0.0.0.0', 8080, app)
+    config_pyrmd.scan()
+
+    app = config_pyrmd.make_wsgi_app()
+
+    server = make_server(config.get('http_server', 'ip'), config.getint('http_server', 'port'), app)
     server.serve_forever()

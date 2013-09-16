@@ -1,21 +1,34 @@
+from pyramid.url import route_path
 from pyramid.renderers import JSONP
 
 
 class GtwMetaFactory(JSONP):
 
-    def add_resource(self, value, path):
+    def translate_ref(self, ref):
         """
-        Add the resource URI to each object
+        Translates the url of the resource list
         """
-        if 'objects' in value:
-            for obj in value['objects']:
-                obj['resource_uri'] = path + str(obj['id'])
+        return [route_path(obj_type, self.request, id=obj_id) for obj_type, obj_id in ref]
+
+    def add_resource_uri(self, value):
+        """
+        Add the URL of the resource to the own object
+        """
+        if isinstance(value, (list, tuple)):
+            for obj in value:
+                obj['resource_uri'] = self.request.path + str(obj['id'])
+                for k, v in obj.items():
+                    if isinstance(v, list):
+                        obj[k] = self.translate_ref(v)
             return value
         else:
-            value['resource_uri'] = path
+            value['resource_uri'] = self.request.path + str(value['id'])
+            for k, v in value.items():
+                if isinstance(v, list):
+                    value[k] = self.translate_ref(v)
             return value
 
-    def add_meta(self, value, system):
+    def add_meta(self, value):
         """
         Add information meta on top of the response
         """
@@ -28,15 +41,16 @@ class GtwMetaFactory(JSONP):
                 'total_count': value['total']
             }
 
-            dct_meta['objects'] = self.add_resource(value, system.get('request').path)
+            dct_meta['objects'] = self.add_resource_uri(value['objects'])
 
             return dct_meta
         else:
-            return self.add_resource(value, system.get('request').path)
+            return self.add_resource_uri(value)
 
     def tamper(self, render):
         def wrapper(value, system):
-            return render(self.add_meta(value, system), system)
+            self.request = system.get('request')
+            return render(self.add_meta(value), system)
         return wrapper
 
     def __call__(self, info):
