@@ -19,7 +19,7 @@ def notfound(request):
 
 @view_config(route_name='index')
 def index(request):
-    return Response('Gateway version %s' % config.get('http_server', 'version'))
+    return Response('Gateway version %s' % request.registry.settings['http_server']['version'])
 
 
 @view_config(route_name='ArticlePkg', request_method='GET', renderer="gtw")
@@ -43,7 +43,7 @@ def list_package(request):
     Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
     """
 
-    limit = request.params.get('limit', config.get('http_server', 'limit'))
+    limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
     offset = request.params.get('offset', 0)
 
     articles = request.db.query(models.ArticlePkg).limit(limit).offset(offset)
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     config = utils.Configuration.from_env()
     engine = models.create_engine_from_config(config)
 
-    config_pyrmd = Configurator()
+    config_pyrmd = Configurator(settings=dict(config.items()))
     config_pyrmd.add_route('index', '/')
 
     config_pyrmd.add_route('ArticlePkg',
@@ -83,6 +83,5 @@ if __name__ == '__main__':
     config_pyrmd.scan()
 
     app = config_pyrmd.make_wsgi_app()
-
     server = make_server(config.get('http_server', 'ip'), config.getint('http_server', 'port'), app)
     server.serve_forever()

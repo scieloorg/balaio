@@ -77,6 +77,12 @@ class Configuration(SingletonMixin):
     def __getattr__(self, attr):
         return getattr(self.conf, attr)
 
+    def items(self):
+        """Settings as key-value pair.
+        """
+        return [(section, dict(self.conf.items(section))) for \
+            section in [section for section in self.conf.sections()]]
+
 
 def make_digest(message, secret='sekretz'):
     """
