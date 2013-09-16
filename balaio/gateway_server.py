@@ -55,7 +55,7 @@ def list_package(request):
 
 
 @view_config(route_name='Validation', request_method='GET', renderer="gtw")
-def ticket(request):
+def validation(request):
     """
     Get a single object and return a serialized dict
     """
@@ -69,7 +69,7 @@ def ticket(request):
 
 
 @view_config(route_name='list_validation', request_method='GET', renderer="gtw")
-def list_ticket(request):
+def list_validation(request):
     """
     Return a dict content the total param and the objects list
     Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
