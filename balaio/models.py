@@ -100,6 +100,33 @@ class ArticlePkg(Base):
         return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
 
 
+class Validation(Base):
+    __tablename__ = 'validation'
+
+    id = Column(Integer, primary_key=True)
+    message = Column(String, nullable=False)
+    stage = Column(String, nullable=False)
+    status = Column(Integer, nullable=False)
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+
+    articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
+    attempt_id = Column(Integer, ForeignKey('attempt.id'))
+
+    def to_dict(self):
+        return dict(id=self.id,
+                    message=self.message,
+                    stage=self.stage,
+                    status=self.status,
+                    started_at=self.started_at,
+                    finished_at=self.finished_at,
+                    articlepkg_id=self.articlepkg_id,
+                    attempt_id=self.attempt_id)
+
+    def __repr__(self):
+        return "<Validation('%s')>" % self.id
+
+
 ##
 # Represents system-wide checkpoints
 ##
