@@ -147,3 +147,40 @@ class PipeStub(object):
     def __iter__(self):
         for i in self.data:
             yield i
+
+
+class ObjectStub(object):
+    pass
+
+
+class QueryStub(object):
+    def __init__(self, params):
+        object.__init__(self)
+
+    def scalar(self):
+        return 200
+
+    def limit(self, args):
+        o = ObjectStub()
+        o.offset = lambda params: []
+        if self.found:
+            o.offset = lambda params: [self.model(), self.model()]
+        return o
+
+    def filter_by(self, **kwargs):
+        o = ObjectStub()
+        o.one = lambda params: []
+        if self.found:
+            o.one = lambda params: self.model()
+        return o
+
+
+class RequestStub(object):
+    def __init__(self):
+        self.registry = ObjectStub()
+        self.registry.settings = {'http_server': {'version': 'v1'}}
+
+        self.params = {'limit': 20, 'offset': 0}
+
+        self.db = ObjectStub()
+        

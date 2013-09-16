@@ -72,7 +72,7 @@ def attempts(request):
     Return a dict content the total param and the objects list
     Example: {'total': 12, 'limit': 20, offset:0, 'objects': [object, object,...]}
     """
-    limit = request.params.get('limit', config.get('http_server', 'limit'))
+    limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
     offset = request.params.get('offset', 0)
 
     attempts = request.db.query(models.Attempt).limit(limit).offset(offset)
