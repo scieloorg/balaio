@@ -49,26 +49,3 @@ class AttemptsAPITest(mocker.MockerTestCase):
         self.assertEqual(
             gateway_server.attempts(req),
             expected)
-
-    # def test_view_attempts(self):
-    #     expected = {'limit': 20,
-    #                 'offset': 0,
-    #                 'total': 200,
-    #                 'objects': [AttemptStub().to_dict(), AttemptStub().to_dict()]}
-
-    #     request = RequestStub(AttemptStub)
-    #     self.assertEqual(
-    #         gateway_server.attempts(request),
-    #         expected)
-
-    # def test_view_attempts_no_result(self):
-    #     expected = {'limit': 20,
-    #                 'offset': 0,
-    #                 'total': 200,
-    #                 'objects': []}
-
-    #     request = RequestStub(None)
-    #     self.assertEqual(
-    #         gateway_server.attempts(request),
-    #         expected)
-
