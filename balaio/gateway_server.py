@@ -54,33 +54,32 @@ def list_package(request):
             'objects': [article.to_dict() for article in articles]}
 
 
-@view_config(route_name='attempt', request_method='GET', renderer="gtw")
+@view_config(route_name='Attempt', request_method='GET', renderer="gtw")
 def attempt(request):
     """
     Get a single object and return a serialized dict
     """
-    try:
-        attempt = request.session.query(models.Attempt).filter_by(id=request.matchdict['id']).one()
-    except NoResultFound:
+    attempt = request.db.query(models.Attempt).filter_by(id=request.matchdict['id']).one()
+    if not attempt:
         return HTTPNotFound()
 
     return attempt.to_dict()
 
 
-@view_config(route_name='attempts', request_method='GET', renderer="gtw")
+@view_config(route_name='list_attempts', request_method='GET', renderer="gtw")
 def attempts(request):
     """
     Return a dict content the total param and the objects list
     Example: {'total': 12, 'limit': 20, offset:0, 'objects': [object, object,...]}
     """
-    limit = request.params.get('limit', __limit__)
+    limit = request.params.get('limit', config.get('http_server', 'limit'))
     offset = request.params.get('offset', 0)
-    query = request.session.query(models.Attempt)
-    attempts = query.limit(limit).offset(offset)
+
+    attempts = request.db.query(models.Attempt).limit(limit).offset(offset)
 
     return {'limit': limit,
             'offset': offset,
-            'total': query.count(),
+            'total': request.db.query(func.count(models.Attempt.id)).scalar(),
             'objects': [attempt.to_dict() for attempt in attempts]}
 
 
@@ -102,6 +101,8 @@ if __name__ == '__main__':
         '/api/%s/attempts/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_package',
         '/api/%s/packages/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('list_attempts',
+        '/api/%s/attempts/' % config.get('http_server', 'version'))
 
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 
