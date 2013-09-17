@@ -16,7 +16,7 @@ class GtwMetaFactory(JSONP):
         """
         if isinstance(value, (list, tuple)):
             for obj in value:
-                obj['resource_uri'] = current_route_path(self.request) + str(obj['id'])
+                obj['resource_uri'] = current_route_path(self.request) + '%s/' % str(obj['id'])
                 for k, v in obj.items():
                     if isinstance(v, list):
                         obj[k] = self.translate_ref(v)
