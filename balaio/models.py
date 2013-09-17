@@ -134,6 +134,7 @@ class Validation(Base):
 class Comment(Base):
     __tablename__ = 'comment'
 
+    id = Column(Integer, primary_key=True)
     message = Column(String, nullable=False)
     ticket_id = Column(Integer, ForeignKey('ticket.id'))
 
@@ -142,7 +143,8 @@ class Comment(Base):
                            cascade='all, delete-orphan'))
 
     def to_dict(self):
-        return dict(message=self.message,
+        return dict(id=self.id,
+                    message=self.message,
                     ticket_id=self.ticket_id)
 
     def __repr__(self):
@@ -153,7 +155,7 @@ class Ticket(Base):
     __tablename__ = 'ticket'
 
     id = Column(Integer, primary_key=True)
-    is_open = Column(Boolean, create_constraint=False)
+    is_open = Column(Boolean(create_constraint=False))
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
 
