@@ -113,6 +113,10 @@ class Validation(Base):
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
     attempt_id = Column(Integer, ForeignKey('attempt.id'))
 
+    def __init__(self, *args, **kwargs):
+        super(Validation, self).__init__(*args, **kwargs)
+        self.started_at = datetime.datetime.now()
+
     def to_dict(self):
         return dict(id=self.id,
                     message=self.message,
@@ -125,6 +129,49 @@ class Validation(Base):
 
     def __repr__(self):
         return "<Validation('%s')>" % self.id
+
+
+class Comment(Base):
+    __tablename__ = 'comment'
+
+    message = Column(String, nullable=False)
+    ticket_id = Column(Integer, ForeignKey('ticket.id'))
+
+    tickets = relationship('Ticket',
+                           backref=backref('comments',
+                           cascade='all, delete-orphan'))
+
+    def to_dict(self):
+        return dict(message=self.message,
+                    ticket_id=self.ticket_id)
+
+    def __repr__(self):
+        return "<Comment('%s')>" % self.id
+
+
+class Ticket(Base):
+    __tablename__ = 'ticket'
+
+    id = Column(Integer, primary_key=True)
+    is_open = Column(Boolean, create_constraint=False)
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+
+    articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
+
+    def __init__(self, *args, **kwargs):
+        super(Ticket, self).__init__(*args, **kwargs)
+        self.started_at = datetime.datetime.now()
+
+    def to_dict(self):
+        return dict(id=self.id,
+                    is_open=self.is_open,
+                    started_at=self.started_at,
+                    finished_at=self.finished_at,
+                    comments=[['Comment', comment.id] for comment in self.comments])
+
+    def __repr__(self):
+        return "<Ticket('%s')>" % self.id
 
 
 ##

@@ -86,6 +86,39 @@ def list_validation(request):
             'objects': [validation.to_dict() for validation in validations]}
 
 
+@view_config(route_name='Ticket', request_method='POST', renderer="gtw")
+@view_config(route_name='Ticket', request_method='GET', renderer="gtw")
+def ticket(request):
+    """
+    Get a single object and return a serialized dict
+    """
+
+    ticket = request.db.query(models.Ticket).get(request.matchdict['id'])
+
+    if ticket is None:
+        return HTTPNotFound()
+
+    return ticket.to_dict()
+
+
+@view_config(route_name='list_ticket', request_method='GET', renderer="gtw")
+def list_ticket(request):
+    """
+    Return a dict content the total param and the objects list
+    Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
+    """
+
+    limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
+    offset = request.params.get('offset', 0)
+
+    tickets = request.db.query(models.Ticket).limit(limit).offset(offset)
+
+    return {'limit': limit,
+            'offset': offset,
+            'total': request.db.query(func.count(models.Ticket.id)).scalar(),
+            'objects': [ticket.to_dict() for ticket in tickets]}
+
+
 if __name__ == '__main__':
 
     def bind_db(event):
@@ -104,10 +137,14 @@ if __name__ == '__main__':
         '/api/%s/attempts/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Validation',
         '/api/%s/validations/{id}/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('Ticket',
+        '/api/%s/itckets/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_package',
         '/api/%s/packages/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_validation',
         '/api/%s/validations/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('list_ticket',
+        '/api/%s/tickets/' % config.get('http_server', 'version'))
 
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 
