@@ -12,23 +12,24 @@ from balaio import models
 
 class AttemptsAPITest(mocker.MockerTestCase):
 
+    def setUp(self):
+        self.req = testing.DummyRequest()
+        self.req.registry.settings = {'http_server': {'version': 'v1'}}
+        self.req.params = {'limit': 20, 'offset': 0}
+        self.req.db = ObjectStub()
+        self.req.db.query = QueryStub
+        self.req.db.query.model = AttemptStub
+
     def test_view_attempts(self):
         expected = {'limit': 20,
                     'offset': 0,
                     'total': 200,
                     'objects': [AttemptStub().to_dict(), AttemptStub().to_dict()]}
-
-        #request = RequestStub()
-        req = testing.DummyRequest()
-        req.registry.settings = {'http_server': {'version': 'v1'}}
-        req.params = {'limit': 20, 'offset': 0}
-        req.db = ObjectStub()
-        req.db.query = QueryStub
-        req.db.query.model = AttemptStub
-        req.db.query.found = True
+        self.setUp()
+        self.req.db.query.found = True
 
         self.assertEqual(
-            gateway_server.attempts(req),
+            gateway_server.attempts(self.req),
             expected)
 
     def test_view_attempts_no_result(self):
@@ -36,16 +37,9 @@ class AttemptsAPITest(mocker.MockerTestCase):
                     'offset': 0,
                     'total': 200,
                     'objects': []}
-
-        #request = RequestStub()
-        req = testing.DummyRequest()
-        req.registry.settings = {'http_server': {'version': 'v1'}}
-        req.params = {'limit': 20, 'offset': 0}
-        req.db = ObjectStub()
-        req.db.query = QueryStub
-        req.db.query.model = AttemptStub
-        req.db.query.found = False
+        self.setUp()
+        self.req.db.query.found = False
 
         self.assertEqual(
-            gateway_server.attempts(req),
+            gateway_server.attempts(self.req),
             expected)

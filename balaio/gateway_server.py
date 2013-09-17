@@ -59,11 +59,11 @@ def attempt(request):
     """
     Get a single object and return a serialized dict
     """
-    attempt = request.db.query(models.Attempt).filter_by(id=request.matchdict['id']).one()
+    attempt = request.db.query(models.Attempt).filter_by(id=request.matchdict['id'])
     if not attempt:
         return HTTPNotFound()
 
-    return attempt.to_dict()
+    return attempt.one().to_dict()
 
 
 @view_config(route_name='list_attempts', request_method='GET', renderer="gtw")
