@@ -107,11 +107,33 @@ class ArticlePkgStub(object):
         self.issue_suppl_volume = None
         self.issue_suppl_number = None
 
+    def to_dict(self):
+        return dict(id=3,
+                    package_checksum='876',
+                    articlepkg_id=5,
+                    collection_uri='///',
+                    started_at=None,
+                    finished_at=None,
+                    filepath=None,
+                    is_valid=True
+                    )
+
 
 class AttemptStub(object):
     def __init__(self, *args, **kwargs):
         self.articlepkg = ArticlePkgStub()
         self.filepath = '/tmp/foo/bar.zip'
+
+    def to_dict(self):
+        return dict(id=1,
+                    package_checksum='1212',
+                    articlepkg_id=1,
+                    collection_uri='/',
+                    started_at='started_at',
+                    finished_at='finished_at',
+                    filepath=self.filepath,
+                    is_valid=True
+                    )
 
 
 class ConfigStub(object):
@@ -125,3 +147,40 @@ class PipeStub(object):
     def __iter__(self):
         for i in self.data:
             yield i
+
+
+class ObjectStub(object):
+    pass
+
+
+class QueryStub(object):
+    def __init__(self, params):
+        object.__init__(self)
+
+    def scalar(self):
+        return 200
+
+    def limit(self, args):
+        o = ObjectStub()
+        o.offset = lambda params: []
+        if self.found:
+            o.offset = lambda params: [self.model(), self.model()]
+        return o
+
+    def filter_by(self, **kwargs):
+        o = None
+        if self.found:
+            o = ObjectStub()
+            o.one = lambda: self.model()
+        return o
+
+
+class RequestStub(object):
+    def __init__(self):
+        self.registry = ObjectStub()
+        self.registry.settings = {'http_server': {'version': 'v1'}}
+
+        self.params = {'limit': 20, 'offset': 0}
+
+        self.db = ObjectStub()
+        
