@@ -168,10 +168,10 @@ class QueryStub(object):
         return o
 
     def filter_by(self, **kwargs):
-        o = ObjectStub()
-        o.one = lambda params: []
+        o = None
         if self.found:
-            o.one = lambda params: self.model()
+            o = ObjectStub()
+            o.one = lambda: self.model()
         return o
 
 
