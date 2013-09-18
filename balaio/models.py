@@ -155,15 +155,19 @@ class Ticket(Base):
     __tablename__ = 'ticket'
 
     id = Column(Integer, primary_key=True)
-    is_open = Column(Boolean(create_constraint=False))
+    is_open = Column(Boolean)
     started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)
-
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
+
+    articlepkg = relationship('ArticlePkg',
+                              backref=backref('tickets',
+                              cascade='all, delete-orphan'))
 
     def __init__(self, *args, **kwargs):
         super(Ticket, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
+        self.is_open = True
 
     def to_dict(self):
         return dict(id=self.id,
