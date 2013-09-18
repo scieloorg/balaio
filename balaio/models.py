@@ -59,7 +59,7 @@ class Attempt(Base):
                     package_checksum=self.package_checksum,
                     articlepkg_id=self.articlepkg_id,
                     started_at=str(self.started_at),
-                    finished_at=str(self.finished_at),
+                    finished_at=str(self.finished_at) if self.finished_at else None,
                     collection_uri=self.collection_uri,
                     filepath=self.filepath,
                     is_valid=self.is_valid)
@@ -123,7 +123,7 @@ class Validation(Base):
                     stage=self.stage,
                     status=self.status,
                     started_at=str(self.started_at),
-                    finished_at=str(self.finished_at),
+                    finished_at=str(self.finished_at) if self.finished_at else None,
                     articlepkg_id=self.articlepkg_id,
                     attempt_id=self.attempt_id)
 
@@ -169,7 +169,7 @@ class Ticket(Base):
         return dict(id=self.id,
                     is_open=self.is_open,
                     started_at=str(self.started_at),
-                    finished_at=str(self.finished_at),
+                    finished_at=str(self.finished_at) if self.finished_at else None,
                     comments=[['Comment', comment.id] for comment in self.comments])
 
     def __repr__(self):
