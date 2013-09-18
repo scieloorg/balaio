@@ -28,9 +28,9 @@ def package(request):
     Get a single object and return a serialized dict
     """
 
-    try:
-        article = request.db.query(models.ArticlePkg).filter_by(id=request.matchdict['id']).one()
-    except NoResultFound:
+    article = request.db.query(models.ArticlePkg).get(request.matchdict['id'])
+
+    if article is None:
         return HTTPNotFound()
 
     return article.to_dict()
@@ -54,16 +54,49 @@ def list_package(request):
             'objects': [article.to_dict() for article in articles]}
 
 
+@view_config(route_name='Validation', request_method='GET', renderer="gtw")
+def validation(request):
+    """
+    Get a single object and return a serialized dict
+    """
+
+    validation = request.db.query(models.Validation).get(request.matchdict['id'])
+
+    if validation is None:
+        return HTTPNotFound()
+
+    return validation.to_dict()
+
+
+@view_config(route_name='list_validation', request_method='GET', renderer="gtw")
+def list_validation(request):
+    """
+    Return a dict content the total param and the objects list
+    Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
+    """
+
+    limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
+    offset = request.params.get('offset', 0)
+
+    validations = request.db.query(models.Validation).limit(limit).offset(offset)
+
+    return {'limit': limit,
+            'offset': offset,
+            'total': request.db.query(func.count(models.Validation.id)).scalar(),
+            'objects': [validation.to_dict() for validation in validations]}
+
+
 @view_config(route_name='Attempt', request_method='GET', renderer="gtw")
 def attempt(request):
     """
     Get a single object and return a serialized dict
     """
-    attempt = request.db.query(models.Attempt).filter_by(id=request.matchdict['id'])
+    attempt = request.db.query(models.Attempt).get(request.matchdict['id'])
+
     if not attempt:
         return HTTPNotFound()
 
-    return attempt.one().to_dict()
+    return attempt.to_dict()
 
 
 @view_config(route_name='list_attempts', request_method='GET', renderer="gtw")
@@ -83,6 +116,38 @@ def attempts(request):
             'objects': [attempt.to_dict() for attempt in attempts]}
 
 
+@view_config(route_name='Ticket', request_method='GET', renderer="gtw")
+def ticket(request):
+    """
+    Get a single object and return a serialized dict
+    """
+
+    ticket = request.db.query(models.Ticket).get(request.matchdict['id'])
+
+    if ticket is None:
+        return HTTPNotFound()
+
+    return ticket.to_dict()
+
+
+@view_config(route_name='list_ticket', request_method='GET', renderer="gtw")
+def list_ticket(request):
+    """
+    Return a dict content the total param and the objects list
+    Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
+    """
+
+    limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
+    offset = request.params.get('offset', 0)
+
+    tickets = request.db.query(models.Ticket).limit(limit).offset(offset)
+
+    return {'limit': limit,
+            'offset': offset,
+            'total': request.db.query(func.count(models.Ticket.id)).scalar(),
+            'objects': [ticket.to_dict() for ticket in tickets]}
+
+
 if __name__ == '__main__':
 
     def bind_db(event):
@@ -99,10 +164,21 @@ if __name__ == '__main__':
         '/api/%s/packages/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Attempt',
         '/api/%s/attempts/{id}/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('Validation',
+        '/api/%s/validations/{id}/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('Comment',
+        '/api/%s/comments/{id}/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('Ticket',
+        '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_package',
         '/api/%s/packages/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('list_validation',
+        '/api/%s/validations/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('list_ticket',
+        '/api/%s/tickets/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_attempts',
         '/api/%s/attempts/' % config.get('http_server', 'version'))
+
 
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 
