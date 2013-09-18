@@ -58,8 +58,8 @@ class Attempt(Base):
         return dict(id=self.id,
                     package_checksum=self.package_checksum,
                     articlepkg_id=self.articlepkg_id,
-                    started_at=self.started_at,
-                    finished_at=self.finished_at,
+                    started_at=str(self.started_at),
+                    finished_at=str(self.finished_at),
                     collection_uri=self.collection_uri,
                     filepath=self.filepath,
                     is_valid=self.is_valid)
@@ -107,7 +107,7 @@ class Validation(Base):
     message = Column(String, nullable=False)
     stage = Column(String, nullable=False)
     status = Column(Integer, nullable=False)
-    started_at = Column(DateTime)
+    started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)
 
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
@@ -122,13 +122,13 @@ class Validation(Base):
                     message=self.message,
                     stage=self.stage,
                     status=self.status,
-                    started_at=self.started_at,
-                    finished_at=self.finished_at,
+                    started_at=str(self.started_at),
+                    finished_at=str(self.finished_at),
                     articlepkg_id=self.articlepkg_id,
                     attempt_id=self.attempt_id)
 
     def __repr__(self):
-        return "<Validation('%s')>" % self.id
+        return "<Validation('%s', '%s')>" % (self.id, self.stage)
 
 
 class Comment(Base):
@@ -138,9 +138,9 @@ class Comment(Base):
     message = Column(String, nullable=False)
     ticket_id = Column(Integer, ForeignKey('ticket.id'))
 
-    tickets = relationship('Ticket',
-                           backref=backref('comments',
-                           cascade='all, delete-orphan'))
+    ticket = relationship('Ticket',
+                          backref=backref('comments',
+                          cascade='all, delete-orphan'))
 
     def to_dict(self):
         return dict(id=self.id,
@@ -156,7 +156,7 @@ class Ticket(Base):
 
     id = Column(Integer, primary_key=True)
     is_open = Column(Boolean(create_constraint=False))
-    started_at = Column(DateTime)
+    started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)
 
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
@@ -168,8 +168,8 @@ class Ticket(Base):
     def to_dict(self):
         return dict(id=self.id,
                     is_open=self.is_open,
-                    started_at=self.started_at,
-                    finished_at=self.finished_at,
+                    started_at=str(self.started_at),
+                    finished_at=str(self.finished_at),
                     comments=[['Comment', comment.id] for comment in self.comments])
 
     def __repr__(self):
