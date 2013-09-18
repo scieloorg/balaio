@@ -1,5 +1,6 @@
 # coding: utf-8
 from StringIO import StringIO
+import datetime
 from xml.etree.ElementTree import ElementTree
 import types
 
@@ -100,40 +101,92 @@ def get_ScieloAPIToolbeltStubModule():
 
 class ArticlePkgStub(object):
     def __init__(self, *args, **kwargs):
-        self.journal_pissn = '0100-879X'
-        self.journal_eissn = '0100-879X'
+        self.id = 1
         self.issue_volume = '31'
         self.issue_number = '1'
         self.issue_suppl_volume = None
         self.issue_suppl_number = None
+        self.journal_eissn = '0100-879X'
+        self.journal_pissn = '0100-879X'
 
     def to_dict(self):
-        return dict(id=3,
-                    package_checksum='876',
-                    articlepkg_id=5,
-                    collection_uri='///',
-                    started_at=None,
-                    finished_at=None,
-                    filepath=None,
-                    is_valid=True
+        return dict(id=self.id,
+                    journal_pissn=self.journal_pissn,
+                    journal_eissn=self.journal_eissn,
+                    issue_volume=self.issue_volume,
+                    issue_number=self.issue_number,
+                    issue_suppl_volume=self.issue_suppl_volume,
+                    issue_suppl_number=self.issue_suppl_number
                     )
+
+
+class ValidationStub(object):
+    def __init__(self, *args, **kwargs):
+        self.id = 1
+        self.status = 1
+        self.started_at = '2013-09-18 14:11:04.129956'
+        self.finished_at = None
+        self.stage = 'Reference'
+        self.message = 'Erro no param x...'
+
+    def to_dict(self):
+        return dict(id=self.id,
+                    message=self.message,
+                    stage=self.stage,
+                    status=self.status,
+                    started_at=str(self.started_at),
+                    finished_at=self.finished_at,
+                    articlepkg_id=ArticlePkgStub().id,
+                    attempt_id=AttemptStub().id)
 
 
 class AttemptStub(object):
     def __init__(self, *args, **kwargs):
-        self.articlepkg = ArticlePkgStub()
+        self.id = 1
+        self.is_valid = True
+        self.started_at = '2013-09-18 14:11:04.129956'
+        self.finished_at = None
         self.filepath = '/tmp/foo/bar.zip'
+        self.collection_uri = '/api/v1/collection/xxx/'
+        self.package_checksum = 'ol9j27n3f52kne7hbn'
+        self.articlepkg = ArticlePkgStub()
 
     def to_dict(self):
-        return dict(id=1,
-                    package_checksum='1212',
-                    articlepkg_id=1,
-                    collection_uri='/',
-                    started_at='started_at',
-                    finished_at='finished_at',
+        return dict(id=self.id,
+                    package_checksum=self.package_checksum,
+                    articlepkg_id=ArticlePkgStub().id,
+                    started_at=str(self.started_at),
+                    finished_at=self.finished_at,
+                    collection_uri=self.collection_uri,
                     filepath=self.filepath,
-                    is_valid=True
-                    )
+                    is_valid=self.is_valid)
+
+
+class CommentStub(object):
+    def __init__(self, *args, **kwargs):
+        self.id = 1
+        self.message = 'Erro no stage xxx'
+
+    def to_dict(self):
+        return dict(id=self.id,
+                    message=self.message)
+
+
+class TicketStub(object):
+    def __init__(self, *args, **kwargs):
+        self.id = 1
+        self.is_open = True
+        self.started_at = '2013-09-18 14:11:04.129956'
+        self.finished_at = None
+        self.comments = [['Comment', CommentStub().id]]
+
+    def to_dict(self):
+        return dict(id=self.id,
+                    is_open=self.is_open,
+                    started_at=str(self.started_at),
+                    finished_at=self.finished_at,
+                    comments=self.comments,
+                    articlepkg_id=ArticlePkgStub().id)
 
 
 class ConfigStub(object):
@@ -168,11 +221,16 @@ class QueryStub(object):
         return o
 
     def filter_by(self, **kwargs):
-        o = None
-        if self.found:
-            o = ObjectStub()
-            o.one = lambda: self.model()
-        return o
+        if not self.found:
+            return None
+
+        return self.model()
+
+    def get(self, id):
+        if not self.found:
+            return None
+
+        return self.model()
 
 
 class RequestStub(object):
@@ -183,4 +241,3 @@ class RequestStub(object):
         self.params = {'limit': 20, 'offset': 0}
 
         self.db = ObjectStub()
-        
