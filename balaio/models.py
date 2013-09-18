@@ -35,6 +35,7 @@ def create_engine_from_config(config):
 
 class Attempt(Base):
     __tablename__ = 'attempt'
+    _filters = ['articlepkg_id', 'started_at', 'finished_at', 'is_valid', ]
 
     id = Column(Integer, primary_key=True)
     package_checksum = Column(String(length=32), unique=True)
@@ -70,6 +71,7 @@ class Attempt(Base):
 
 class ArticlePkg(Base):
     __tablename__ = 'articlepkg'
+    _filters = ['journal_pissn', 'journal_eissn', 'issue_volume', 'issue_number', 'issue_suppl_volume', 'issue_suppl_number', ]
 
     id = Column(Integer, primary_key=True)
     article_title = Column(String, nullable=False)
@@ -102,6 +104,7 @@ class ArticlePkg(Base):
 
 class Validation(Base):
     __tablename__ = 'validation'
+    _filters = ['articlepkg_id', 'attempt_id', 'started_at', 'finished_at', 'stage', 'message', ]
 
     id = Column(Integer, primary_key=True)
     message = Column(String, nullable=False)
@@ -153,6 +156,7 @@ class Comment(Base):
 
 class Ticket(Base):
     __tablename__ = 'ticket'
+    _filters = ['articlepkg_id', 'is_open']
 
     id = Column(Integer, primary_key=True)
     is_open = Column(Boolean(create_constraint=False))
