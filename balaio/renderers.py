@@ -1,4 +1,4 @@
-from pyramid.url import route_path
+from pyramid.url import route_path, current_route_path
 from pyramid.renderers import JSONP
 
 
@@ -16,13 +16,13 @@ class GtwMetaFactory(JSONP):
         """
         if isinstance(value, (list, tuple)):
             for obj in value:
-                obj['resource_uri'] = self.request.path + str(obj['id'])
+                obj['resource_uri'] = current_route_path(self.request) + '%s/' % str(obj['id'])
                 for k, v in obj.items():
                     if isinstance(v, list):
                         obj[k] = self.translate_ref(v)
             return value
         else:
-            value['resource_uri'] = self.request.path + str(value['id'])
+            value['resource_uri'] = current_route_path(self.request)
             for k, v in value.items():
                 if isinstance(v, list):
                     value[k] = self.translate_ref(v)
