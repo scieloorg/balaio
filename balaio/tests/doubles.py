@@ -116,7 +116,8 @@ class ArticlePkgStub(object):
                     issue_volume=self.issue_volume,
                     issue_number=self.issue_number,
                     issue_suppl_volume=self.issue_suppl_volume,
-                    issue_suppl_number=self.issue_suppl_number
+                    issue_suppl_number=self.issue_suppl_number,
+                    attempts=[['Attempt', AttemptStub().id]]
                     )
 
 
