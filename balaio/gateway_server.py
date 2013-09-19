@@ -12,6 +12,15 @@ import utils
 import models
 
 
+def query_filters(model, request_params):
+    filters = {}
+    for filter_name in model._filters:
+        filter_value = request_params.get(filter_name, None)
+        if filter_value:
+            filters[filter_name] = filter_value
+    return filters
+
+
 @notfound_view_config(append_slash=True)
 def notfound(request):
     return HTTPNotFound('Not found')
@@ -42,11 +51,11 @@ def list_package(request):
     Return a dict content the total param and the objects list
     Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
     """
-
     limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
     offset = request.params.get('offset', 0)
 
-    articles = request.db.query(models.ArticlePkg).limit(limit).offset(offset)
+    filters = query_filters(models.ArticlePkg, request.params)
+    articles = request.db.query(models.ArticlePkg).filter_by(**filters).limit(limit).offset(offset)
 
     return {'limit': limit,
             'offset': offset,
@@ -78,7 +87,8 @@ def list_validation(request):
     limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
     offset = request.params.get('offset', 0)
 
-    validations = request.db.query(models.Validation).limit(limit).offset(offset)
+    filters = query_filters(models.Validation, request.params)
+    validations = request.db.query(models.Validation).filter_by(**filters).limit(limit).offset(offset)
 
     return {'limit': limit,
             'offset': offset,
@@ -108,7 +118,8 @@ def attempts(request):
     limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
     offset = request.params.get('offset', 0)
 
-    attempts = request.db.query(models.Attempt).limit(limit).offset(offset)
+    filters = query_filters(models.Attempt, request.params)
+    attempts = request.db.query(models.Attempt).filter_by(**filters).limit(limit).offset(offset)
 
     return {'limit': limit,
             'offset': offset,
@@ -139,8 +150,8 @@ def list_ticket(request):
 
     limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
     offset = request.params.get('offset', 0)
-
-    tickets = request.db.query(models.Ticket).limit(limit).offset(offset)
+    filters = query_filters(models.Ticket, request.params)
+    tickets = request.db.query(models.Ticket).filter_by(**filters).limit(limit).offset(offset)
 
     return {'limit': limit,
             'offset': offset,

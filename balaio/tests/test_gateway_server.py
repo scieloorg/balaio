@@ -222,3 +222,26 @@ class TicketAPITest(unittest.TestCase):
             gateway_server.ticket(self.req),
             HTTPNotFound
         )
+
+
+class QueryFiltersTest(unittest.TestCase):
+
+    def test_query_filter(self):
+        expected = {'journal_pissn': '0100-879X',
+                    'journal_eissn': '0900-879X',
+                    }
+
+        request_params = {
+                            'format': 'json',
+                            'offset': 20,
+                            'limit': 50,
+                            'journal_pissn': '0100-879X',
+                            'journal_eissn': '0900-879X',
+                        }
+
+        model = ArticlePkgStub
+
+        self.assertEqual(
+            expected, 
+            gateway_server.query_filters(model, request_params)
+            )
