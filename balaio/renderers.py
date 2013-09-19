@@ -1,4 +1,3 @@
-from pyramid.url import route_path
 from pyramid.renderers import JSONP
 
 
@@ -8,7 +7,7 @@ class GtwMetaFactory(JSONP):
         """
         Translates the url of the resource list
         """
-        return [route_path(obj_type, self.request, id=obj_id) for obj_type, obj_id in ref]
+        return [self.request.route_path(obj_type, id=obj_id) for obj_type, obj_id in ref]
 
     def add_resource_uri(self, value):
         """
