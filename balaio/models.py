@@ -100,38 +100,10 @@ class ArticlePkg(Base):
         return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
 
 
-class Validation(Base):
-    __tablename__ = 'validation'
-
-    id = Column(Integer, primary_key=True)
-    message = Column(String, nullable=False)
-    stage = Column(String, nullable=False)
-    status = Column(Integer, nullable=False)
-    started_at = Column(DateTime, nullable=False)
-    finished_at = Column(DateTime)
-
-    articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
-    attempt_id = Column(Integer, ForeignKey('attempt.id'))
-
-    def __init__(self, *args, **kwargs):
-        super(Validation, self).__init__(*args, **kwargs)
-        self.started_at = datetime.datetime.now()
-
-    def to_dict(self):
-        return dict(id=self.id,
-                    message=self.message,
-                    stage=self.stage,
-                    status=self.status,
-                    started_at=str(self.started_at),
-                    finished_at=str(self.finished_at) if self.finished_at else None,
-                    articlepkg_id=self.articlepkg_id,
-                    attempt_id=self.attempt_id)
-
-    def __repr__(self):
-        return "<Validation('%s', '%s')>" % (self.id, self.stage)
-
-
 class Comment(Base):
+    """
+    Represents comments assigned to a :class:`Ticket`.
+    """
     __tablename__ = 'comment'
 
     id = Column(Integer, primary_key=True)
@@ -152,6 +124,9 @@ class Comment(Base):
 
 
 class Ticket(Base):
+    """
+    Represents an issue related to an :class:`ArticlePkg`.
+    """
     __tablename__ = 'ticket'
 
     id = Column(Integer, primary_key=True)
