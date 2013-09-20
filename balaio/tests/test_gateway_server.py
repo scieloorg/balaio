@@ -1,7 +1,5 @@
 import unittest
 
-import mocker
-
 from pyramid import testing
 from balaio import gateway_server
 from balaio.tests.doubles import *
@@ -116,7 +114,7 @@ class ArticlePkgAPITest(unittest.TestCase):
         )
 
 
-class TicketAPITest(mocker.MockerTestCase):
+class TicketAPITest(unittest.TestCase):
 
     def setUp(self):
         self.req = testing.DummyRequest()
@@ -234,3 +232,26 @@ class TicketAPITest(mocker.MockerTestCase):
             expected
         )
 
+
+
+class QueryFiltersTest(unittest.TestCase):
+
+    def test_get_query_filter(self):
+        expected = {'journal_pissn': '0100-879X',
+                    'journal_eissn': '0900-879X',
+                    }
+
+        request_params = {
+                            'format': 'json',
+                            'offset': 20,
+                            'limit': 50,
+                            'journal_pissn': '0100-879X',
+                            'journal_eissn': '0900-879X',
+                        }
+
+        model = ArticlePkgStub
+
+        self.assertEqual(
+            expected, 
+            gateway_server.get_query_filters(model, request_params)
+            )
