@@ -41,7 +41,7 @@ class TestRenderer(unittest.TestCase):
                             'started_at': '2013-09-18 14:11:04.129956',
                             'id': 1,
                             'package_checksum': 'ol9j27n3f52kne7hbn',
-                            'resource_uri': '/api/v1/attempts/1'
+                            'resource_uri': '/api/v1/attempts/1/'
                         }
                        ]})
 
@@ -77,7 +77,7 @@ class TestRenderer(unittest.TestCase):
                                 ],
                             'issue_suppl_volume': None,
                             'issue_volume': '31',
-                            'resource_uri': '/api/v1/packages/1',
+                            'resource_uri': '/api/v1/packages/1/',
                             'id': 1,
                             'issue_number': '1'
                         }
@@ -100,7 +100,7 @@ class TestRenderer(unittest.TestCase):
                     'started_at': '2013-09-18 14:11:04.129956',
                     'id': 1,
                     'package_checksum': 'ol9j27n3f52kne7hbn',
-                    'resource_uri':'/api/v1/attempts/1'
+                    'resource_uri':'/api/v1/attempts/1/'
                 }])
 
     def test_add_resource_with_reference_list(self):
@@ -123,7 +123,7 @@ class TestRenderer(unittest.TestCase):
                         ],
                     'issue_suppl_volume': None,
                     'issue_volume': '31',
-                    'resource_uri': '/api/v1/packages/1',
+                    'resource_uri': '/api/v1/packages/1/',
                     'id': 1,
                     'issue_number': '1'
                 }])
