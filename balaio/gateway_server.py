@@ -130,19 +130,6 @@ def new_ticket(request):
     """
     Creates a ticket with or without comment.
     Returns the new ticket as a serialized dict
-
-    :returns::
-        {
-            "articlepkg_id": 1,
-            "id": 1,
-            "finished_at": None,
-            "is_open": True,
-            "resource_uri": "/api/v1/tickets/1/",
-            "started_at": "2012-07-24T21:53:23.909404",
-            "comments": [
-              "comments",
-            ],
-        }
     """
     ticket = models.Ticket()
     if 'submit' in request.params:
