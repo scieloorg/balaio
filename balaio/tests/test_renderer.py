@@ -10,6 +10,9 @@ class TestRenderer(unittest.TestCase):
         self.req = testing.DummyRequest()
         self.config = testing.setUp(request=self.req)
 
+    def tearDown(self):
+        testing.tearDown()
+
     def test_add_meta_without_reference_list(self):
         data = {'limit': 20,
                 'offset': 0,
