@@ -107,17 +107,25 @@ class Comment(Base):
     __tablename__ = 'comment'
 
     id = Column(Integer, primary_key=True)
+    date = Column(DateTime, nullable=False)
+    author = Column(String)
     message = Column(String, nullable=False)
     ticket_id = Column(Integer, ForeignKey('ticket.id'))
 
     ticket = relationship('Ticket',
                           backref=backref('comments',
                           cascade='all, delete-orphan'))
+    
+    def __init__(self, *args, **kwargs):
+        super(Comment, self).__init__(*args, **kwargs)
+        self.date = datetime.datetime.now()
 
     def to_dict(self):
         return dict(id=self.id,
                     message=self.message,
-                    ticket_id=self.ticket_id)
+                    ticket_id=self.ticket_id,
+                    comment_author=self.author,
+                    comment_date=str(self.date))
 
     def __repr__(self):
         return "<Comment('%s')>" % self.id
@@ -143,6 +151,14 @@ class Ticket(Base):
         super(Ticket, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
         self.is_open = True
+
+    def update(self, params):
+        self.is_open = params.get('is_open')
+        if 'message' in params:
+            comment = Comment()
+            comment.message = params.get('message')
+            comment.author = params.get('comment_author')
+            self.comments.append(comment)
 
     def to_dict(self):
         return dict(id=self.id,

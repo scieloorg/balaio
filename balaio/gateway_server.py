@@ -1,7 +1,7 @@
 from pyramid.response import Response
 from pyramid.config import Configurator
 from wsgiref.simple_server import make_server
-from pyramid.httpexceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted
 from pyramid.view import notfound_view_config, view_config
 from pyramid.events import NewRequest
 
@@ -125,6 +125,25 @@ def list_ticket(request):
             'objects': [ticket.to_dict() for ticket in tickets]}
 
 
+@view_config(route_name='update_ticket', request_method='PATCH', renderer="gtw")
+def update_ticket(request):
+    """
+    Update a ticket
+    """
+    #http://docs.sqlalchemy.org/en/latest/orm/session.html#embedding-sql-insert-update-expressions-into-a-flush
+    ticket = request.db.query(models.Ticket).get(request.matchdict['id'])
+    if ticket:
+        ticket.update(request.PATCH)
+        try:
+            request.db.commit()
+            return HTTPAccepted()
+        except:
+            request.db.rollback()
+            raise
+    else:
+        return HTTPNotFound()
+
+
 if __name__ == '__main__':
 
     def bind_db(event):
@@ -142,6 +161,8 @@ if __name__ == '__main__':
     config_pyrmd.add_route('Attempt',
         '/api/%s/attempts/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Ticket',
+        '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('update_ticket',
         '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_package',
         '/api/%s/packages/' % config.get('http_server', 'version'))

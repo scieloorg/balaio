@@ -3,7 +3,7 @@ import unittest
 from pyramid import testing
 from balaio import gateway_server
 from balaio.tests.doubles import *
-from pyramid.httpexceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted
 
 
 class AttemptsAPITest(unittest.TestCase):
@@ -122,6 +122,7 @@ class TicketAPITest(unittest.TestCase):
         self.req.db = ObjectStub()
         self.req.db.query = QueryStub
         self.req.db.query.model = TicketStub
+        self.req.db.commit = lambda: None
 
     def test_view_tickets(self):
         expected = {'limit': 20,
@@ -166,6 +167,59 @@ class TicketAPITest(unittest.TestCase):
         self.assertIsInstance(
             gateway_server.ticket(self.req),
             HTTPNotFound
+        )
+
+    def test_view_update_ticket_an_not_found_ticket(self):
+        from balaio.models import Ticket
+
+        self.req.db.query.model = Ticket
+        self.req.db.query.found = False
+
+        self.req.db.rollback = lambda: None
+
+        self.req.matchdict = {'id': 1}
+        self.req.PATCH = {
+            'is_open': False,
+        }
+        self.assertIsInstance(
+            gateway_server.update_ticket(self.req),
+            HTTPNotFound
+        )
+
+    def test_view_update_ticket_no_comment(self):
+        from balaio.models import Ticket
+
+        self.req.db.query.model = Ticket
+        self.req.db.query.found = True
+
+        self.req.db.rollback = lambda: None
+
+        self.req.matchdict = {'id': 1}
+        self.req.PATCH = {
+            'is_open': False,
+        }
+        self.assertIsInstance(
+            gateway_server.update_ticket(self.req),
+            HTTPAccepted
+        )
+
+    def test_view_update_ticket_with_comment(self):
+        #http://docs.sqlalchemy.org/en/latest/orm/session.html#embedding-sql-insert-update-expressions-into-a-flush
+        from balaio.models import Ticket
+        self.req.db.query.model = Ticket
+        self.req.db.query.found = True
+
+        self.req.db.rollback = lambda: None
+
+        self.req.matchdict = {'id': 1}
+        self.req.PATCH = {
+            'comment_author': 'username',
+            'message': '....',
+            'is_open': True,
+        }
+        self.assertIsInstance(
+            gateway_server.update_ticket(self.req),
+            HTTPAccepted
         )
 
 
