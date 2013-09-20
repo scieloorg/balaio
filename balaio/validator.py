@@ -9,7 +9,6 @@ import scieloapi
 
 import vpipes
 import utils
-import notifier
 import checkin
 import scieloapitoolbelt
 import models
@@ -528,7 +527,7 @@ if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
                                  config.get('manager', 'api_key'))
-    notifier_dep = notifier.Notifier()
+    notifier_dep = None
 
     ppl = vpipes.Pipeline(SetupPipe,
                           PublisherNameValidationPipe,
