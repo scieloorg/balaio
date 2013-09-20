@@ -1,5 +1,7 @@
 import unittest
 
+import mocker
+
 from pyramid import testing
 from balaio import gateway_server
 from balaio.tests.doubles import *
@@ -114,7 +116,7 @@ class ArticlePkgAPITest(unittest.TestCase):
         )
 
 
-class TicketAPITest(unittest.TestCase):
+class TicketAPITest(mocker.MockerTestCase):
 
     def setUp(self):
         self.req = testing.DummyRequest()
@@ -122,6 +124,7 @@ class TicketAPITest(unittest.TestCase):
         self.req.db = ObjectStub()
         self.req.db.query = QueryStub
         self.req.db.query.model = TicketStub
+        self.req.db.add = lambda doc: None
 
     def test_view_tickets(self):
         expected = {'limit': 20,
@@ -169,28 +172,65 @@ class TicketAPITest(unittest.TestCase):
         )
 
     def test_new_ticket_no_comments(self):
+        from datetime import datetime
         expected = {
             "articlepkg_id": 3,
-            "id": 5,
+            "id": None,
             "finished_at": None,
+            'title': 'Ticket ....',
             "is_open": True,
-            "resource_uri": "/api/v1/tickets/1/",
-            "started_at": "2012-07-24T21:53:23.909404",
+            'ticket_author': 'ticket.author@scielo.org',
             "comments": [],
         }
         self.req.params = {'submit': True}
         self.req.POST = {
             'articlepkg_id': 3,
+            'ticket_author': 'ticket.author@scielo.org',
+            'title': 'Ticket ....',
         }
 
-        mock_model = self.mocker.mock()
-        mock_model.Ticket()
-        self.mocker.result(TicketStub())
-
+        self.req.db.commit = lambda: None
+        result = gateway_server.new_ticket(self.req)
+        expected['started_at'] = result['started_at']
+        
         self.assertEqual(
-            gateway_server.new_ticket(self.req),
+            result,
             expected
         )
 
-        comments = relationship('Comment', backref='ticket')
+    def test_new_ticket_with_comments(self):
+        from datetime import datetime
+        expected = {
+            "articlepkg_id": 3,
+            "id": None,
+            "finished_at": None,
+            'title': 'Ticket ....',
+            "is_open": True,
+            'ticket_author': 'ticket.author@scielo.org',
+            "comments": [ {
+                'comment_date': '', 
+                'comment_author': 'ticket.author@scielo.org', 
+                'message': 'Corrigir ....', 
+                'ticket_id': None,
+                'id': None,
+
+                }, ],
+        }
+        self.req.params = {'submit': True}
+        self.req.POST = {
+            'articlepkg_id': 3,
+            'message': 'Corrigir ....',
+            'ticket_author': 'ticket.author@scielo.org',
+            'title': 'Ticket ....',
+        }
+
+        self.req.db.commit = lambda: None
+        result = gateway_server.new_ticket(self.req)
+        expected['started_at'] = result['started_at']
+        expected['comments'][0]['comment_date'] = result['comments'][0]['comment_date']
+
+        self.assertEqual(
+            result,
+            expected
+        )
 

@@ -232,13 +232,3 @@ class QueryStub(object):
             return None
 
         return self.model()
-
-
-class RequestStub(object):
-    def __init__(self):
-        self.registry = ObjectStub()
-        self.registry.settings = {'http_server': {'version': 'v1'}}
-
-        self.params = {'limit': 20, 'offset': 0}
-
-        self.db = ObjectStub()

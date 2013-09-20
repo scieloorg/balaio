@@ -137,7 +137,7 @@ def new_ticket(request):
     """
     ticket = models.Ticket()
     if 'submit' in request.params:
-        ticket.new(**request.POST)
+        ticket.new(request.POST)
         request.db.add(ticket)
         request.db.commit()
     return ticket.to_dict()
@@ -159,18 +159,12 @@ if __name__ == '__main__':
         '/api/%s/packages/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Attempt',
         '/api/%s/attempts/{id}/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('Validation',
-        '/api/%s/validations/{id}/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('Comment',
-        '/api/%s/comments/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Ticket',
         '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('new_ticket',
         '/api/%s/tickets/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_package',
         '/api/%s/packages/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('list_validation',
-        '/api/%s/validations/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_ticket',
         '/api/%s/tickets/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_attempts',
