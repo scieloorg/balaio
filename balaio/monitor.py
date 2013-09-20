@@ -9,8 +9,8 @@ import checkin
 import zipfile
 import pyinotify
 
-from . import utils
-from . import models
+import utils
+import models
 
 
 logger = logging.getLogger('balaio.monitor')
