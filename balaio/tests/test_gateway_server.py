@@ -114,61 +114,6 @@ class ArticlePkgAPITest(unittest.TestCase):
         )
 
 
-class ValidationAPITest(unittest.TestCase):
-
-    def setUp(self):
-        self.req = testing.DummyRequest()
-        self.req.registry.settings = {'http_server': {'version': 'v1'}}
-        self.req.db = ObjectStub()
-        self.req.db.query = QueryStub
-        self.req.db.query.model = ValidationStub
-
-    def test_view_validations(self):
-        expected = {'limit': 20,
-                    'offset': 0,
-                    'total': 200,
-                    'objects': [ValidationStub().to_dict(), ValidationStub().to_dict()]}
-
-        self.req.params = {'limit': 20, 'offset': 0}
-        self.req.db.query.found = True
-
-        self.assertEqual(
-            gateway_server.list_validation(self.req),
-            expected)
-
-    def test_view_validations_no_result(self):
-        expected = {'limit': 20,
-                    'offset': 0,
-                    'total': 200,
-                    'objects': []}
-
-        self.req.params = {'limit': 20, 'offset': 0}
-        self.req.db.query.found = False
-
-        self.assertEqual(
-            gateway_server.list_validation(self.req),
-            expected)
-
-    def test_view_validation(self):
-        expected = ValidationStub().to_dict()
-
-        self.req.db.query.found = True
-        self.req.matchdict = {'id': 1}
-
-        self.assertEqual(
-            gateway_server.validation(self.req),
-            expected)
-
-    def test_view_validation_no_result(self):
-        self.req.db.query.found = False
-        self.req.matchdict = {'id': 1}
-
-        self.assertIsInstance(
-            gateway_server.validation(self.req),
-            HTTPNotFound
-        )
-
-
 class TicketAPITest(unittest.TestCase):
 
     def setUp(self):

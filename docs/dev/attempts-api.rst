@@ -12,17 +12,16 @@ Parameters:
 
   **--**
 
-Required Parameters:
-
-  **articlepkg_id**
-
-    *Integer* of the **article package ID** to be used as a filter param.
 
 Optional Parameters:
 
   **callback**
 
     *String* of the callback identifier to be returned when using JSONP.
+
+  **articlepkg_id**
+
+    *Integer* of the **article package ID** to be used as a filter param.
 
   **started_at**
 

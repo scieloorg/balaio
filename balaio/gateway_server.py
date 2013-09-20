@@ -63,39 +63,6 @@ def list_package(request):
             'objects': [article.to_dict() for article in articles]}
 
 
-@view_config(route_name='Validation', request_method='GET', renderer="gtw")
-def validation(request):
-    """
-    Get a single object and return a serialized dict
-    """
-
-    validation = request.db.query(models.Validation).get(request.matchdict['id'])
-
-    if validation is None:
-        return HTTPNotFound()
-
-    return validation.to_dict()
-
-
-@view_config(route_name='list_validation', request_method='GET', renderer="gtw")
-def list_validation(request):
-    """
-    Return a dict content the total param and the objects list
-    Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
-    """
-
-    limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
-    offset = request.params.get('offset', 0)
-
-    filters = query_filters(models.Validation, request.params)
-    validations = request.db.query(models.Validation).filter_by(**filters).limit(limit).offset(offset)
-
-    return {'limit': limit,
-            'offset': offset,
-            'total': request.db.query(func.count(models.Validation.id)).scalar(),
-            'objects': [validation.to_dict() for validation in validations]}
-
-
 @view_config(route_name='Attempt', request_method='GET', renderer="gtw")
 def attempt(request):
     """

@@ -1,5 +1,6 @@
 # coding: utf-8
 from StringIO import StringIO
+import datetime
 from xml.etree.ElementTree import ElementTree
 import types
 
@@ -125,7 +126,7 @@ class ValidationStub(object):
     def __init__(self, *args, **kwargs):
         self.id = 1
         self.status = 1
-        self.started_at = None
+        self.started_at = '2013-09-18 14:11:04.129956'
         self.finished_at = None
         self.stage = 'Reference'
         self.message = 'Erro no param x...'
@@ -135,7 +136,7 @@ class ValidationStub(object):
                     message=self.message,
                     stage=self.stage,
                     status=self.status,
-                    started_at=self.started_at,
+                    started_at=str(self.started_at),
                     finished_at=self.finished_at,
                     articlepkg_id=ArticlePkgStub().id,
                     attempt_id=AttemptStub().id)
@@ -145,7 +146,7 @@ class AttemptStub(object):
     def __init__(self, *args, **kwargs):
         self.id = 1
         self.is_valid = True
-        self.started_at = None
+        self.started_at = '2013-09-18 14:11:04.129956'
         self.finished_at = None
         self.filepath = '/tmp/foo/bar.zip'
         self.collection_uri = '/api/v1/collection/xxx/'
@@ -156,7 +157,7 @@ class AttemptStub(object):
         return dict(id=self.id,
                     package_checksum=self.package_checksum,
                     articlepkg_id=ArticlePkgStub().id,
-                    started_at=self.started_at,
+                    started_at=str(self.started_at),
                     finished_at=self.finished_at,
                     collection_uri=self.collection_uri,
                     filepath=self.filepath,
@@ -177,14 +178,14 @@ class TicketStub(object):
     def __init__(self, *args, **kwargs):
         self.id = 1
         self.is_open = True
-        self.started_at = None
+        self.started_at = '2013-09-18 14:11:04.129956'
         self.finished_at = None
         self.comments = [['Comment', CommentStub().id]]
 
     def to_dict(self):
         return dict(id=self.id,
                     is_open=self.is_open,
-                    started_at=self.started_at,
+                    started_at=str(self.started_at),
                     finished_at=self.finished_at,
                     comments=self.comments,
                     articlepkg_id=ArticlePkgStub().id)

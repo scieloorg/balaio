@@ -81,7 +81,8 @@ Optional Parameters:
 
     *String* of the callback identifier to be returned when using JSONP.
 
-Payload:
+Payload::
+  
   {
       "articlepkg_id": 1,
       "is_open": true,
@@ -90,6 +91,7 @@ Payload:
   }
 
 Response::
+  
   {
       "articlepkg_id": 1,
       "id": "1",
@@ -101,7 +103,7 @@ Response::
         "comments",
       ],
       
-    }
+  }
 
 
 Update a ticket
@@ -128,7 +130,8 @@ Optional Parameters:
 
     *String* of the callback identifier to be returned when using JSONP.
 
-Payload:
+Payload::
+
   {
       "is_open": false,
       "comments": "comments",
