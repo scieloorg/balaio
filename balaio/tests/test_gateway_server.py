@@ -171,7 +171,7 @@ class TicketAPITest(unittest.TestCase):
 
 class QueryFiltersTest(unittest.TestCase):
 
-    def test_query_filter(self):
+    def test_get_query_filter(self):
         expected = {'journal_pissn': '0100-879X',
                     'journal_eissn': '0900-879X',
                     }
@@ -188,5 +188,5 @@ class QueryFiltersTest(unittest.TestCase):
 
         self.assertEqual(
             expected, 
-            gateway_server.query_filters(model, request_params)
+            gateway_server.get_query_filters(model, request_params)
             )

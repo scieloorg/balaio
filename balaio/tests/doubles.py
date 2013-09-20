@@ -100,7 +100,8 @@ def get_ScieloAPIToolbeltStubModule():
 
 
 class ArticlePkgStub(object):
-    _filters = ['journal_pissn', 'journal_eissn', 'issue_volume', 'issue_number', 'issue_suppl_volume', 'issue_suppl_number', ]
+    journal_eissn = '0100-879X'
+    journal_pissn = '0100-879X'
 
     def __init__(self, *args, **kwargs):
         self.id = 1
