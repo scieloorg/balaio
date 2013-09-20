@@ -167,3 +167,30 @@ class TicketAPITest(unittest.TestCase):
             gateway_server.ticket(self.req),
             HTTPNotFound
         )
+
+    def test_new_ticket_no_comments(self):
+        expected = {
+            "articlepkg_id": 3,
+            "id": 5,
+            "finished_at": None,
+            "is_open": True,
+            "resource_uri": "/api/v1/tickets/1/",
+            "started_at": "2012-07-24T21:53:23.909404",
+            "comments": [],
+        }
+        self.req.params = {'submit': True}
+        self.req.POST = {
+            'articlepkg_id': 3,
+        }
+
+        mock_model = self.mocker.mock()
+        mock_model.Ticket()
+        self.mocker.result(TicketStub())
+
+        self.assertEqual(
+            gateway_server.new_ticket(self.req),
+            expected
+        )
+
+        comments = relationship('Comment', backref='ticket')
+

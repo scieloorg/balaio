@@ -138,11 +138,19 @@ class Ticket(Base):
     articlepkg = relationship('ArticlePkg',
                               backref=backref('tickets',
                               cascade='all, delete-orphan'))
+    comments = relationship('Comment', backref='ticket')
 
     def __init__(self, *args, **kwargs):
         super(Ticket, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
         self.is_open = True
+
+    def new(self, **kwargs):
+        self.is_open = True
+        if kwargs.get('message', None):
+            comment = Comment()
+            comment.message = kwargs.get('message', None)
+            self.comments.append(comment)
 
     def to_dict(self):
         return dict(id=self.id,

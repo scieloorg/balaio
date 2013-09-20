@@ -165,6 +165,8 @@ if __name__ == '__main__':
         '/api/%s/comments/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Ticket',
         '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('new_ticket',
+        '/api/%s/tickets/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_package',
         '/api/%s/packages/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_validation',
