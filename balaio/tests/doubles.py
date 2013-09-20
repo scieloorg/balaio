@@ -100,6 +100,9 @@ def get_ScieloAPIToolbeltStubModule():
 
 
 class ArticlePkgStub(object):
+    journal_eissn = '0100-879X'
+    journal_pissn = '0100-879X'
+
     def __init__(self, *args, **kwargs):
         self.id = 1
         self.issue_volume = '31'
@@ -222,10 +225,9 @@ class QueryStub(object):
         return o
 
     def filter_by(self, **kwargs):
-        if not self.found:
-            return None
-
-        return self.model()
+        o = ObjectStub()
+        o.limit = self.limit
+        return o
 
     def get(self, id):
         if not self.found:
