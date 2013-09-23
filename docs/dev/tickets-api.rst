@@ -6,7 +6,7 @@ List all tickets
 
 Request::
 
-  GET /api/v1/tickets
+  GET /api/v1/tickets/
 
 Parameters:
 
@@ -33,30 +33,73 @@ Optional Parameters:
 Response::
 
   {
-  "meta": {
-    "limit": 20,
-    "next": null,
-    "offset": 0,
-    "previous": null,
-    "total_count": 1
-  },
-  "objects": [
-    {
-      "articlepkg_id": 1,
-      "id": "1",
-      "finished_at": "2012-07-24T21:59:23.909404",
-      "is_open": true,
-      "resource_uri": "/api/v1/tickets/1/",
-      "started_at": "2012-07-24T21:53:23.909404",
-      "comments": [
-        "comments ...",
-        "comments ...",
-        "comments ... ",
-      ],
-      
-    }
-  ]
+    "meta": {
+      "limit": 20,
+      "next": "/api/v1/packages/?limit=20&offset=40",
+      "offset": 20,
+      "previous": "/api/v1/packages/?limit=20&offset=0",
+      "total_count": 100
+    },
+    "objects": [
+      {
+        "articlepkg_id": 1,
+        "id": 1,
+        "finished_at": "2012-07-24T21:59:23.909404",
+        "is_open": true,
+        "resource_uri": "/api/v1/tickets/1/",
+        "started_at": "2012-07-24T21:53:23.909404",
+        "ticket_author": "username@scielo.org",
+        "title": "título para o ticket",
+        "comments": [
+          {
+            "comment_author": "user.name@scielo.org",
+            "comment_date": "2012-07-24T21:53:23.909404",
+            "message": 'Corrigir ...',
+          },
+        ],
+      }
+    ]
+  }
 
+
+Get a single ticket
+-------------------
+
+Request::
+
+  GET /api/v1/tickets/:id/
+
+Parameters:
+
+  **--**
+
+Optional Parameters:
+
+  **callback**
+
+    *String* of the callback identifier to be returned when using JSONP.
+
+
+Response::
+
+  {
+    "articlepkg_id": 1,
+    "id": 1,
+    "finished_at": "2012-07-24T21:59:23.909404",
+    "is_open": true,
+    "resource_uri": "/api/v1/tickets/1/",
+    "started_at": "2012-07-24T21:53:23.909404",
+    "ticket_author": "username@scielo.org",
+    "title": "título para o ticket",
+    "comments": [
+      {
+        "comment_author": "user.name@scielo.org",
+        "comment_date": "2012-07-24T21:53:23.909404",
+        "message": 'Corrigir ...',
+      },
+    ],
+  }
+  
 
 Open a ticket
 -------------
@@ -69,11 +112,6 @@ Parameters:
 
   **--**
 
-Required Parameters:
-
-  **articlepkg_id**
-
-    *Integer* of the **article package ID** to be used as a filter param.
 
 Optional Parameters:
 
@@ -85,25 +123,17 @@ Payload::
   
   {
       "articlepkg_id": 1,
-      "is_open": true,
-      "comments": "comments",
-      "started_at": "2012-07-24T21:53:23.909404",
+      "message": "comment",
+      "ticket_author": "username@scielo.org",
+      "title": "ticket title"
   }
+
 
 Response::
   
-  {
-      "articlepkg_id": 1,
-      "id": "1",
-      "finished_at": null,
-      "is_open": true,
-      "resource_uri": "/api/v1/tickets/1/",
-      "started_at": "2012-07-24T21:53:23.909404",
-      "comments": [
-        "comments",
-      ],
-      
-  }
+  HTTP STATUS CODE
+
+  201 Created
 
 
 Update a ticket
@@ -117,12 +147,6 @@ Parameters:
 
   **--**
 
-Required Parameters:
-
-  **ticket_id**
-
-    *Integer* of the **ticket  ID** to be used as a filter param.
-
 
 Optional Parameters:
 
@@ -134,8 +158,8 @@ Payload::
 
   {
       "is_open": false,
-      "comments": "comments",
-      "finished_at": "2012-07-24T21:53:23.909404",
+      "message": "comments",
+      "comment_author": "user.name@scielo.org",
   }
 
 Response::
