@@ -214,7 +214,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_source(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag source']
@@ -236,7 +236,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_source(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag source B24: missing tag source']
@@ -266,7 +266,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
         expected = [validator.STATUS_ERROR, ' B23: missing content in tag source']
@@ -288,7 +288,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
 
 class ReferenceValidationPipeTests(unittest.TestCase):
@@ -328,7 +328,7 @@ class ReferenceValidationPipeTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_with_missing_tag_ref(self):
         expected = [validator.STATUS_WARNING, 'tag reference missing']
@@ -342,7 +342,7 @@ class ReferenceValidationPipeTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
 
 class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
@@ -382,7 +382,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_article_title(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag article-title']
@@ -404,7 +404,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_article_title(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag article-title B24: missing tag article-title']
@@ -434,7 +434,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
         expected = [validator.STATUS_ERROR, ' B23: missing content in tag article-title']
@@ -456,7 +456,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
 
 class ReferenceDateValidationTests(unittest.TestCase):
@@ -497,7 +497,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_valid_and_well_format_tag_year(self):
         expected = [validator.STATUS_OK, '']
@@ -520,7 +520,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_valid_and_not_well_format_tag_year(self):
         expected = [validator.STATUS_ERROR, ' B23: date format is not good']
@@ -543,7 +543,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_year(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag year']
@@ -564,7 +564,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_year(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag year B24: missing tag year']
@@ -592,7 +592,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_year_missing_content(self):
         expected = [validator.STATUS_ERROR, ' B23: missing content in tag year']
@@ -615,7 +615,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
 
 class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
