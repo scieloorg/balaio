@@ -180,7 +180,6 @@ class TicketAPITest(unittest.TestCase):
             'ticket_author': 'ticket.author@scielo.org',
             "comments": [],
         }
-        self.req.params = {'submit': True}
         self.req.POST = {
             'articlepkg_id': 3,
             'ticket_author': 'ticket.author@scielo.org',
@@ -190,7 +189,7 @@ class TicketAPITest(unittest.TestCase):
         self.req.db.commit = lambda: None
         result = gateway_server.new_ticket(self.req)
         expected['started_at'] = result['started_at']
-        
+
         self.assertEqual(
             result,
             expected
@@ -215,7 +214,6 @@ class TicketAPITest(unittest.TestCase):
 
             #     }, ],
         }
-        self.req.params = {'submit': True}
         self.req.POST = {
             'articlepkg_id': 3,
             'message': 'Corrigir ....',
