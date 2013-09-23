@@ -169,7 +169,7 @@ class TicketAPITest(unittest.TestCase):
             HTTPNotFound
         )
 
-    def test_view_update_ticket_an_not_found_ticket(self):
+    def test_view_update_ticket_and_not_found_ticket(self):
         from balaio.models import Ticket
 
         self.req.db.query.model = Ticket
@@ -204,7 +204,6 @@ class TicketAPITest(unittest.TestCase):
         )
 
     def test_view_update_ticket_with_comment(self):
-        #http://docs.sqlalchemy.org/en/latest/orm/session.html#embedding-sql-insert-update-expressions-into-a-flush
         from balaio.models import Ticket
         self.req.db.query.model = Ticket
         self.req.db.query.found = True
