@@ -159,11 +159,12 @@ class ReferenceValidationPipe(vpipes.ValidationPipe):
     _stage_ = 'Reference Validation'
     __requires__ = ['_notifier', '_pkg_analyzer']
 
-    def validate(self, package_analyzer):
+    def validate(self, item):
         """
         The article may be a editorial why return a warning if no references
         """
-        refs = package_analyzer.xml.findall(".//ref-list/ref")
+        attempt, pkg_analyzer, journal_and_issue_data = item
+        refs = pkg_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
             return [STATUS_OK, '']
@@ -181,11 +182,11 @@ class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
     _stage_ = 'Reference Source Validation'
     __requires__ = ['_notifier', '_pkg_analyzer']
 
-    def validate(self, package_analyzer):
+    def validate(self, item):
 
         lst_errors = []
-
-        refs = package_analyzer.xml.findall(".//ref-list/ref")
+        attempt, pkg_analyzer, journal_and_issue_data = item
+        refs = pkg_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
             for ref in refs:
@@ -217,11 +218,12 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
     _stage_ = 'Reference Year Validation'
     __requires__ = ['_notifier', '_pkg_analyzer']
 
-    def validate(self, package_analyzer):
+    def validate(self, item):
 
         lst_errors = []
 
-        refs = package_analyzer.xml.findall(".//ref-list/ref")
+        attempt, pkg_analyzer, journal_and_issue_data = item
+        refs = pkg_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
             for ref in refs:
@@ -253,11 +255,12 @@ class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
     _stage_ = 'Reference Journal Type Article Title Validation'
     __requires__ = ['_notifier', '_pkg_analyzer']
 
-    def validate(self, package_analyzer):
+    def validate(self, item):
 
         lst_errors = []
 
-        refs = package_analyzer.xml.findall(".//ref-list/ref")
+        attempt, pkg_analyzer, journal_and_issue_data = item
+        refs = pkg_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
             for ref in refs:
@@ -556,3 +559,4 @@ if __name__ == '__main__':
         results = [msg for msg in ppl.run(messages)]
     except KeyboardInterrupt:
         sys.exit(0)
+
