@@ -108,7 +108,7 @@ class Comment(Base):
 
     id = Column(Integer, primary_key=True)
     date = Column(DateTime, nullable=False)
-    author = Column(String)
+    author = Column(String, nullable=False)
     message = Column(String, nullable=False)
     ticket_id = Column(Integer, ForeignKey('ticket.id'))
 
@@ -142,8 +142,8 @@ class Ticket(Base):
     started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
-    title = Column(String)
-    author = Column(String)
+    title = Column(String, nullable=False)
+    author = Column(String, nullable=False)
     articlepkg = relationship('ArticlePkg',
                               backref=backref('tickets',
                               cascade='all, delete-orphan'))
