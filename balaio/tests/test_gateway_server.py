@@ -205,14 +205,15 @@ class TicketAPITest(unittest.TestCase):
             'title': 'Ticket ....',
             "is_open": True,
             'ticket_author': 'ticket.author@scielo.org',
-            "comments": [ {
-                'comment_date': '', 
-                'comment_author': 'ticket.author@scielo.org', 
-                'message': 'Corrigir ....', 
-                'ticket_id': None,
-                'id': None,
+            "comments": [['Comment', None]],
+            # "comments": [ {
+            #     'comment_date': '', 
+            #     'comment_author': 'ticket.author@scielo.org', 
+            #     'message': 'Corrigir ....', 
+            #     'ticket_id': None,
+            #     'id': None,
 
-                }, ],
+            #     }, ],
         }
         self.req.params = {'submit': True}
         self.req.POST = {
@@ -225,7 +226,7 @@ class TicketAPITest(unittest.TestCase):
         self.req.db.commit = lambda: None
         result = gateway_server.new_ticket(self.req)
         expected['started_at'] = result['started_at']
-        expected['comments'][0]['comment_date'] = result['comments'][0]['comment_date']
+        expected['comments'][0] = result['comments'][0]
 
         self.assertEqual(
             result,

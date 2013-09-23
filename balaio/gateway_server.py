@@ -132,7 +132,7 @@ def new_ticket(request):
     Returns the new ticket as a serialized dict
     """
     ticket = models.Ticket()
-    ticket.new(request.POST['articlepkg_id'], request.POST['ticket_author'], request.POST['title'], request.POST['message'])
+    ticket.new(request.POST['articlepkg_id'], request.POST['ticket_author'], request.POST['title'], request.POST.get('message', None))
     try:
         request.db.add(ticket)
         request.db.commit()
