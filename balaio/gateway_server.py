@@ -132,10 +132,14 @@ def new_ticket(request):
     Returns the new ticket as a serialized dict
     """
     ticket = models.Ticket()
-    if 'submit' in request.params:
-        ticket.new(request.POST)
+    ticket.new(request.POST)
+    try:
         request.db.add(ticket)
         request.db.commit()
+    except:
+        request.db.rollback()
+        raise
+
     return ticket.to_dict()
 
 

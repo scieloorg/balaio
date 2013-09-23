@@ -172,8 +172,8 @@ class Ticket(Base):
                     finished_at=str(self.finished_at) if self.finished_at else None,
                     title=self.title,
                     ticket_author=self.author,
-                    #comments=[['Comment', comment.id] for comment in self.comments])
-                    comments=[comment.to_dict() for comment in self.comments])
+                    comments=[['Comment', comment.id] for comment in self.comments])
+                    #comments=[comment.to_dict() for comment in self.comments])
 
     def __repr__(self):
         return "<Ticket('%s')>" % self.id
