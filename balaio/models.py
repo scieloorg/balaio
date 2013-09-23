@@ -152,12 +152,12 @@ class Ticket(Base):
         self.started_at = datetime.datetime.now()
         self.is_open = True
 
-    def update(self, params):
-        self.is_open = params.get('is_open')
-        if 'message' in params:
+    def update(self, is_open, comment_author='', message=''):
+        self.is_open = is_open
+        if message:
             comment = Comment()
-            comment.message = params.get('message')
-            comment.author = params.get('comment_author')
+            comment.message = message
+            comment.author = comment_author
             self.comments.append(comment)
 
     def to_dict(self):
