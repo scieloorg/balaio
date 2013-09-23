@@ -132,7 +132,9 @@ def update_ticket(request):
     """
     ticket = request.db.query(models.Ticket).get(request.matchdict['id'])
     if ticket:
-        ticket.update(request.PATCH['is_open'], request.PATCH.get('comment_author', None), request.PATCH.get('message', None))
+        ticket.is_open = request.PATCH['is_open']
+        if request.PATCH.get('message', None):
+            ticket.comments.append(models.Comment(author=request.PATCH['comment_author'], message=request.PATCH['message']))
         try:
             request.db.commit()
             return HTTPAccepted()

@@ -115,7 +115,7 @@ class Comment(Base):
     ticket = relationship('Ticket',
                           backref=backref('comments',
                           cascade='all, delete-orphan'))
-    
+
     def __init__(self, *args, **kwargs):
         super(Comment, self).__init__(*args, **kwargs)
         self.date = datetime.datetime.now()
@@ -151,14 +151,6 @@ class Ticket(Base):
         super(Ticket, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
         self.is_open = True
-
-    def update(self, is_open, comment_author='', message=''):
-        self.is_open = is_open
-        if message:
-            comment = Comment()
-            comment.message = message
-            comment.author = comment_author
-            self.comments.append(comment)
 
     def to_dict(self):
         return dict(id=self.id,
