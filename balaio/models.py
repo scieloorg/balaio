@@ -153,15 +153,15 @@ class Ticket(Base):
         self.started_at = datetime.datetime.now()
         self.is_open = True
 
-    def new(self, params):
+    def new(self, articlepkg_id, author, title, message=''):
         self.is_open = True
-        self.articlepkg_id = params.get('articlepkg_id')
-        self.author = params.get('ticket_author')
-        self.title = params.get('title')
-        if params.get('message', None):
+        self.articlepkg_id = articlepkg_id
+        self.author = author
+        self.title = title
+        if message:
             comment = Comment()
-            comment.message = params.get('message', None)
-            comment.author = params.get('ticket_author')
+            comment.message = message
+            comment.author = author
             self.comments.append(comment)
 
     def to_dict(self):
