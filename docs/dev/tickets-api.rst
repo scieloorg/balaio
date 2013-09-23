@@ -43,17 +43,27 @@ Response::
   "objects": [
     {
       "articlepkg_id": 1,
-      "id": "1",
+      "id": 1,
       "finished_at": "2012-07-24T21:59:23.909404",
       "is_open": true,
       "resource_uri": "/api/v1/tickets/1/",
       "started_at": "2012-07-24T21:53:23.909404",
+      "ticket_author": "user.name@scielo.org",
+      "title": "Correção de ...", 
       "comments": [
-        "comments ...",
-        "comments ...",
-        "comments ... ",
-      ],
-      
+        {
+          "comment_author": "user.name@scielo.org",
+          "comment_date": "2012-07-24T21:53:23.909404",
+          "message": 'Corrigir ...',
+          "ticket_id": 1,
+        },
+        {
+          "comment_author": "user.name@scielo.org",
+          "comment_date": "2012-07-24T21:53:23.909404",
+          "message": 'Corrigir ...',
+          "ticket_id": 1,
+        },
+      ]
     }
   ]
 
@@ -85,24 +95,29 @@ Payload::
   
   {
       "articlepkg_id": 1,
-      "is_open": true,
-      "comments": "comments",
-      "started_at": "2012-07-24T21:53:23.909404",
+      "ticket_author": "user.name@scielo.org",
+      "title": "Correção de ...", 
+      "message": 'Corrigir ...',
   }
 
 Response::
   
   {
       "articlepkg_id": 1,
-      "id": "1",
-      "finished_at": null,
+      "id": 1,
       "is_open": true,
       "resource_uri": "/api/v1/tickets/1/",
       "started_at": "2012-07-24T21:53:23.909404",
+      "ticket_author": "user.name@scielo.org",
+      "title": "Correção de ...", 
       "comments": [
-        "comments",
-      ],
-      
+        {
+          "comment_author": "user.name@scielo.org",
+          "comment_date": "2012-07-24T21:53:23.909404",
+          "message": 'Corrigir ...',
+          "ticket_id": 1,
+        },
+      ]
   }
 
 
@@ -133,9 +148,10 @@ Optional Parameters:
 Payload::
 
   {
+      "id": 1,
       "is_open": false,
-      "comments": "comments",
-      "finished_at": "2012-07-24T21:53:23.909404",
+      "comment_author": "user.name@scielo.org",
+      "message": 'Corrigir ...',
   }
 
 Response::

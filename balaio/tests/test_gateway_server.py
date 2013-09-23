@@ -3,7 +3,7 @@ import unittest
 from pyramid import testing
 from balaio import gateway_server
 from balaio.tests.doubles import *
-from pyramid.httpexceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted, HTTPCreated
 
 
 class AttemptsAPITest(unittest.TestCase):
@@ -122,6 +122,7 @@ class TicketAPITest(unittest.TestCase):
         self.req.db = ObjectStub()
         self.req.db.query = QueryStub
         self.req.db.query.model = TicketStub
+        self.req.db.add = lambda doc: None
 
     def test_view_tickets(self):
         expected = {'limit': 20,
@@ -166,6 +167,37 @@ class TicketAPITest(unittest.TestCase):
         self.assertIsInstance(
             gateway_server.ticket(self.req),
             HTTPNotFound
+        )
+
+    def test_new_ticket_no_comments(self):
+        self.req.POST = {
+            'articlepkg_id': 3,
+            'ticket_author': 'ticket.author@scielo.org',
+            'title': 'Ticket ....',
+        }
+
+        self.req.db.commit = lambda: None
+        result = gateway_server.new_ticket(self.req)
+
+        self.assertIsInstance(
+            result,
+            HTTPCreated
+        )
+
+    def test_new_ticket_with_comments(self):
+        self.req.POST = {
+            'articlepkg_id': 3,
+            'message': 'Corrigir ....',
+            'ticket_author': 'ticket.author@scielo.org',
+            'title': 'Ticket ....',
+        }
+
+        self.req.db.commit = lambda: None
+        result = gateway_server.new_ticket(self.req)
+
+        self.assertIsInstance(
+            result,
+            HTTPCreated
         )
 
 
