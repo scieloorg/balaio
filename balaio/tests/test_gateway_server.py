@@ -3,7 +3,7 @@ import unittest
 from pyramid import testing
 from balaio import gateway_server
 from balaio.tests.doubles import *
-from pyramid.httpexceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted, HTTPCreated
 
 
 class AttemptsAPITest(unittest.TestCase):
@@ -170,17 +170,6 @@ class TicketAPITest(unittest.TestCase):
         )
 
     def test_new_ticket_no_comments(self):
-        from datetime import datetime
-        expected = {
-            "articlepkg_id": 3,
-            "id": None,
-            "finished_at": None,
-            'title': 'Ticket ....',
-            "is_open": True,
-            'ticket_author': 'ticket.author@scielo.org',
-            "comments": [],
-        }
-        
         self.req.POST = {
             'articlepkg_id': 3,
             'ticket_author': 'ticket.author@scielo.org',
@@ -189,32 +178,13 @@ class TicketAPITest(unittest.TestCase):
 
         self.req.db.commit = lambda: None
         result = gateway_server.new_ticket(self.req)
-        expected['started_at'] = result['started_at']
 
-        self.assertEqual(
+        self.assertIsInstance(
             result,
-            expected
+            HTTPCreated
         )
 
     def test_new_ticket_with_comments(self):
-        from datetime import datetime
-        expected = {
-            "articlepkg_id": 3,
-            "id": None,
-            "finished_at": None,
-            'title': 'Ticket ....',
-            "is_open": True,
-            'ticket_author': 'ticket.author@scielo.org',
-            "comments": [['Comment', None]],
-            # "comments": [ {
-            #     'comment_date': '', 
-            #     'comment_author': 'ticket.author@scielo.org', 
-            #     'message': 'Corrigir ....', 
-            #     'ticket_id': None,
-            #     'id': None,
-
-            #     }, ],
-        }
         self.req.POST = {
             'articlepkg_id': 3,
             'message': 'Corrigir ....',
@@ -224,14 +194,11 @@ class TicketAPITest(unittest.TestCase):
 
         self.req.db.commit = lambda: None
         result = gateway_server.new_ticket(self.req)
-        expected['started_at'] = result['started_at']
-        expected['comments'][0] = result['comments'][0]
 
-        self.assertEqual(
+        self.assertIsInstance(
             result,
-            expected
+            HTTPCreated
         )
-
 
 
 class QueryFiltersTest(unittest.TestCase):

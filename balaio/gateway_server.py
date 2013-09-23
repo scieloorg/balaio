@@ -1,7 +1,7 @@
 from pyramid.response import Response
 from pyramid.config import Configurator
 from wsgiref.simple_server import make_server
-from pyramid.httpexceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPCreated
 from pyramid.view import notfound_view_config, view_config
 from pyramid.events import NewRequest
 
@@ -131,8 +131,9 @@ def new_ticket(request):
     Creates a ticket with or without comment.
     Returns the new ticket as a serialized dict
     """
-    ticket = models.Ticket()
-    ticket.new(request.POST['articlepkg_id'], request.POST['ticket_author'], request.POST['title'], request.POST.get('message', None))
+    ticket = models.Ticket(articlepkg_id=request.POST['articlepkg_id'], author=request.POST['ticket_author'], title=request.POST['title'])
+    if request.POST.get('message', None):
+        ticket.comments.append(models.Comment(author=request.POST['ticket_author'], message=request.POST['message']))
     try:
         request.db.add(ticket)
         request.db.commit()
@@ -140,7 +141,7 @@ def new_ticket(request):
         request.db.rollback()
         raise
 
-    return ticket.to_dict()
+    return HTTPCreated()
 
 
 if __name__ == '__main__':

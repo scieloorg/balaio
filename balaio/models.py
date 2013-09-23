@@ -153,17 +153,6 @@ class Ticket(Base):
         self.started_at = datetime.datetime.now()
         self.is_open = True
 
-    def new(self, articlepkg_id, author, title, message=''):
-        self.is_open = True
-        self.articlepkg_id = articlepkg_id
-        self.author = author
-        self.title = title
-        if message:
-            comment = Comment()
-            comment.message = message
-            comment.author = author
-            self.comments.append(comment)
-
     def to_dict(self):
         return dict(id=self.id,
                     articlepkg_id=self.articlepkg_id,
