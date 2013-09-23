@@ -180,6 +180,7 @@ class TicketAPITest(unittest.TestCase):
             'ticket_author': 'ticket.author@scielo.org',
             "comments": [],
         }
+        
         self.req.POST = {
             'articlepkg_id': 3,
             'ticket_author': 'ticket.author@scielo.org',
