@@ -160,11 +160,11 @@ Payload::
 
   {
       "is_open": false,
-      "message": "comments",
       "comment_author": "user.name@scielo.org",
+      "message": 'Corrigir ...',
   }
 
-  where **message** and **comment_author** is optional
+  where **message** and **comment_author** are optional
 
 
 Response::
