@@ -134,7 +134,7 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         :returns: result of the validation in this format [status, description]
         """
         attempt, pkg_analyzer, journal_and_issue_data = item
-        j_publisher_name = journal_and_issue_data.get('journal').get('publisher_name', None)
+        j_publisher_name = journal_and_issue_data.get('journal', {}).get('publisher_name', None)
         if j_publisher_name:
             data = pkg_analyzer.xml
             xml_publisher_name = data.findtext('.//journal-meta/publisher/publisher-name')
