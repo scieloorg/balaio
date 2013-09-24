@@ -64,7 +64,7 @@ Response::
             {
               "label": "Checkin",
               "message": "",
-              "status": 1,
+              "status": "ok",
               "date": "2012-07-24T21:53:23.909404",
             },
           ],
@@ -76,25 +76,25 @@ Response::
             {
               "label": "journal",
               "message": "",
-              "status": 1,
+              "status": "ok",
               "date": "2012-07-24T21:53:23.909404",
             },
             {
               "label": "journal",
               "message": "",
-              "status": 2,
+              "status": "error",
               "date": "2012-07-24T21:53:23.909404",
             },
             {
               "label": "front",
               "message": "",
-              "status": 3,
+              "status": "warning",
               "date": "2012-07-24T21:53:23.909404",
             },
             {
               "label": "front",
               "message": "",
-              "status": 1,
+              "status": "ok",
               "date": "2012-07-24T21:53:23.909404",
             },
             {
@@ -106,7 +106,7 @@ Response::
             {
               "label": "references",
               "message": "",
-              "status": 1,
+              "status": "ok",
               "date": "2012-07-24T21:53:23.909404",
             },
           ],
@@ -115,11 +115,6 @@ Response::
     ]
   }
 
-**status**:
-
-* 1 for OK
-* 2 for WARNING
-* 3 for ERROR
 
 
 Get a single attempt
@@ -158,7 +153,7 @@ Response::
         {
           "label": "Checkin",
           "message": "",
-          "status": 1,
+          "status": "ok",
           "date": "2012-07-24T21:53:23.909404",
         },
       ],
@@ -170,37 +165,37 @@ Response::
         {
           "label": "journal",
           "message": "",
-          "status": 1,
+          "status": "ok",
           "date": "2012-07-24T21:53:23.909404",
         },
         {
           "label": "journal",
           "message": "",
-          "status": 2,
+          "status": "error",
           "date": "2012-07-24T21:53:23.909404",
         },
         {
           "label": "front",
           "message": "",
-          "status": 3,
+          "status": "warning",
           "date": "2012-07-24T21:53:23.909404",
         },
         {
           "label": "front",
           "message": "",
-          "status": 1,
+          "status": "ok",
           "date": "2012-07-24T21:53:23.909404",
         },
         {
           "label": "references",
           "message": "",
-          "status": 1,
+          "status": "ok",
           "date": "2012-07-24T21:53:23.909404",
         },
         {
           "label": "references",
           "message": "",
-          "status": 1,
+          "status": "ok",
           "date": "2012-07-24T21:53:23.909404",
         },
       ],
