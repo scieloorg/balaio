@@ -2,7 +2,7 @@ Packages API
 ============
 
 List all packages
---------------------
+-----------------
 
 Request::
 

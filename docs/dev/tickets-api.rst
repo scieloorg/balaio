@@ -12,23 +12,23 @@ Parameters:
 
   **--**
 
-Required Parameters:
-
-  **articlepkg_id**
-
-    *Integer* of the **article package ID** to be used as a filter param.
-
 Optional Parameters:
 
   **callback**
 
     *String* of the callback identifier to be returned when using JSONP.
 
+  **articlepkg_id**
+
+    *Integer* of the **article package ID** to be used as a filter param.
+
   **is_open**
 
     *Boolean* of the **status** to be used as a filter param.
 
-  
+  **ticket_author**
+
+    *String* of the **e-mail** of the user who created the ticket
 
 Response::
 
@@ -128,6 +128,8 @@ Payload::
       "title": "ticket title"
   }
 
+  where **message** is optional
+  
 
 Response::
   
@@ -161,6 +163,9 @@ Payload::
       "message": "comments",
       "comment_author": "user.name@scielo.org",
   }
+
+  where **message** and **comment_author** is optional
+
 
 Response::
   

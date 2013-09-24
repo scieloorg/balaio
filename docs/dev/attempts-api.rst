@@ -40,11 +40,11 @@ Response::
 
   {
     "meta": {
-    "limit": 20,
-    "next": "/api/v1/packages/?limit=20&offset=40",
-    "offset": 20,
-    "previous": "/api/v1/packages/?limit=20&offset=0",
-    "total_count": 100
+      "limit": 20,
+      "next": "/api/v1/packages/?limit=20&offset=40",
+      "offset": 20,
+      "previous": "/api/v1/packages/?limit=20&offset=0",
+      "total_count": 100
     },
     "objects": [
       {
@@ -57,14 +57,70 @@ Response::
         "package_checksum": "12345678901234567890123456789012",
         "resource_uri": "/api/v1/attempts/1/",
         "started_at": "2012-07-24T21:53:23.909404",
-        "validations": [
-          "/api/v1/validations/12345",
-          "/api/v1/validations/12355",
-          "/api/v1/validations/12445",
-        ],
+        "checkin": {
+          "finished_at": "2012-07-24T21:53:23.909404",
+          "start_at": "2012-07-24T21:53:23.909404",
+          "notices": [
+            {
+              "label": "Checkin",
+              "message": "",
+              "status": 1,
+              "date": "2012-07-24T21:53:23.909404",
+            },
+          ],
+        },
+        "validations": {
+          "finished_at": "2012-07-24T21:53:23.909404",
+          "start_at": "2012-07-24T21:53:23.909404",
+          "notices": [
+            {
+              "label": "journal",
+              "message": "",
+              "status": 1,
+              "date": "2012-07-24T21:53:23.909404",
+            },
+            {
+              "label": "journal",
+              "message": "",
+              "status": 2,
+              "date": "2012-07-24T21:53:23.909404",
+            },
+            {
+              "label": "front",
+              "message": "",
+              "status": 3,
+              "date": "2012-07-24T21:53:23.909404",
+            },
+            {
+              "label": "front",
+              "message": "",
+              "status": 1,
+              "date": "2012-07-24T21:53:23.909404",
+            },
+            {
+              "label": "references",
+              "message": "",
+              "status": 1,
+              "date": "2012-07-24T21:53:23.909404",
+            },
+            {
+              "label": "references",
+              "message": "",
+              "status": 1,
+              "date": "2012-07-24T21:53:23.909404",
+            },
+          ],
+        }
       }
     ]
   }
+
+**status**:
+
+* 1 for OK
+* 2 for WARNING
+* 3 for ERROR
+
 
 Get a single attempt
 --------------------
@@ -95,10 +151,58 @@ Response::
     "package_checksum": "12345678901234567890123456789012",
     "resource_uri": "/api/v1/attempts/1/",
     "started_at": "2012-07-24T21:53:23.909404",
-    "validations": [
-      "/api/v1/validations/12345",
-      "/api/v1/validations/12355",
-      "/api/v1/validations/12445",
-    ],
-    
+    "checkin": {
+      "finished_at": "2012-07-24T21:53:23.909404",
+      "start_at": "2012-07-24T21:53:23.909404",
+      "notices": [
+        {
+          "label": "Checkin",
+          "message": "",
+          "status": 1,
+          "date": "2012-07-24T21:53:23.909404",
+        },
+      ],
+    },
+    "validations": {
+      "finished_at": "2012-07-24T21:53:23.909404",
+      "start_at": "2012-07-24T21:53:23.909404",
+      "notices": [
+        {
+          "label": "journal",
+          "message": "",
+          "status": 1,
+          "date": "2012-07-24T21:53:23.909404",
+        },
+        {
+          "label": "journal",
+          "message": "",
+          "status": 2,
+          "date": "2012-07-24T21:53:23.909404",
+        },
+        {
+          "label": "front",
+          "message": "",
+          "status": 3,
+          "date": "2012-07-24T21:53:23.909404",
+        },
+        {
+          "label": "front",
+          "message": "",
+          "status": 1,
+          "date": "2012-07-24T21:53:23.909404",
+        },
+        {
+          "label": "references",
+          "message": "",
+          "status": 1,
+          "date": "2012-07-24T21:53:23.909404",
+        },
+        {
+          "label": "references",
+          "message": "",
+          "status": 1,
+          "date": "2012-07-24T21:53:23.909404",
+        },
+      ],
+    }
   }
