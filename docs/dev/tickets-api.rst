@@ -26,7 +26,7 @@ Optional Parameters:
 
     *Boolean* of the **status** to be used as a filter param.
 
-  **ticket_author**
+  **author**
 
     *String* of the **e-mail** of the user who created the ticket
 
@@ -35,9 +35,9 @@ Response::
   {
     "meta": {
       "limit": 20,
-      "next": "/api/v1/packages/?limit=20&offset=40",
+      "next": "/api/v1/tickets/?limit=20&offset=40",
       "offset": 20,
-      "previous": "/api/v1/packages/?limit=20&offset=0",
+      "previous": "/api/v1/tickets/?limit=20&offset=0",
       "total_count": 100
     },
     "objects": [
@@ -48,12 +48,12 @@ Response::
         "is_open": true,
         "resource_uri": "/api/v1/tickets/1/",
         "started_at": "2012-07-24T21:53:23.909404",
-        "ticket_author": "username@scielo.org",
+        "author": "username@scielo.org",
         "title": "título para o ticket",
         "comments": [
           {
-            "comment_author": "user.name@scielo.org",
-            "comment_date": "2012-07-24T21:53:23.909404",
+            "author": "user.name@scielo.org",
+            "date": "2012-07-24T21:53:23.909404",
             "message": 'Corrigir ...',
           },
         ],
@@ -89,12 +89,12 @@ Response::
     "is_open": true,
     "resource_uri": "/api/v1/tickets/1/",
     "started_at": "2012-07-24T21:53:23.909404",
-    "ticket_author": "username@scielo.org",
+    "author": "username@scielo.org",
     "title": "título para o ticket",
     "comments": [
       {
-        "comment_author": "user.name@scielo.org",
-        "comment_date": "2012-07-24T21:53:23.909404",
+        "author": "user.name@scielo.org",
+        "date": "2012-07-24T21:53:23.909404",
         "message": 'Corrigir ...',
       },
     ],
@@ -124,7 +124,7 @@ Payload::
   {
       "articlepkg_id": 1,
       "message": "comment",
-      "ticket_author": "username@scielo.org",
+      "author": "username@scielo.org",
       "title": "ticket title"
   }
 

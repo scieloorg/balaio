@@ -41,9 +41,9 @@ Response::
   {
     "meta": {
       "limit": 20,
-      "next": "/api/v1/packages/?limit=20&offset=40",
+      "next": "/api/v1/attempts/?limit=20&offset=40",
       "offset": 20,
-      "previous": "/api/v1/packages/?limit=20&offset=0",
+      "previous": "/api/v1/attempts/?limit=20&offset=0",
       "total_count": 100
     },
     "objects": [
