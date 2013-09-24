@@ -232,5 +232,4 @@ class QueryStub(object):
     def get(self, id):
         if not self.found:
             return None
-
         return self.model()

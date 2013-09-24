@@ -123,6 +123,7 @@ class TicketAPITest(unittest.TestCase):
         self.req.db.query = QueryStub
         self.req.db.query.model = TicketStub
         self.req.db.add = lambda doc: None
+        self.req.db.commit = lambda: None
 
     def test_view_tickets(self):
         expected = {'limit': 20,
@@ -184,6 +185,23 @@ class TicketAPITest(unittest.TestCase):
             HTTPCreated
         )
 
+    def test_view_update_ticket_and_not_found_ticket(self):
+        from balaio.models import Ticket
+
+        self.req.db.query.model = Ticket
+        self.req.db.query.found = False
+
+        self.req.db.rollback = lambda: None
+
+        self.req.matchdict = {'id': 1}
+        self.req.PATCH = {
+            'is_open': False,
+        }
+        self.assertIsInstance(
+            gateway_server.update_ticket(self.req),
+            HTTPNotFound
+        )
+
     def test_new_ticket_with_comments(self):
         self.req.POST = {
             'articlepkg_id': 3,
@@ -200,6 +218,40 @@ class TicketAPITest(unittest.TestCase):
             HTTPCreated
         )
 
+    def test_view_update_ticket_no_comment(self):
+        from balaio.models import Ticket
+
+        self.req.db.query.model = Ticket
+        self.req.db.query.found = True
+
+        self.req.db.rollback = lambda: None
+
+        self.req.matchdict = {'id': 1}
+        self.req.PATCH = {
+            'is_open': False,
+        }
+        self.assertIsInstance(
+            gateway_server.update_ticket(self.req),
+            HTTPAccepted
+        )
+
+    def test_view_update_ticket_with_comment(self):
+        from balaio.models import Ticket
+        self.req.db.query.model = Ticket
+        self.req.db.query.found = True
+
+        self.req.db.rollback = lambda: None
+
+        self.req.matchdict = {'id': 1}
+        self.req.PATCH = {
+            'comment_author': 'username',
+            'message': '....',
+            'is_open': True,
+        }
+        self.assertIsInstance(
+            gateway_server.update_ticket(self.req),
+            HTTPAccepted
+        )
 
 class QueryFiltersTest(unittest.TestCase):
 
@@ -219,6 +271,6 @@ class QueryFiltersTest(unittest.TestCase):
         model = ArticlePkgStub
 
         self.assertEqual(
-            expected, 
+            expected,
             gateway_server.get_query_filters(model, request_params)
             )
