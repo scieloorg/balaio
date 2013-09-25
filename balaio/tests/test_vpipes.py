@@ -6,24 +6,6 @@ from balaio import vpipes
 from balaio.tests.doubles import *
 
 
-class PipelineTests(mocker.MockerTestCase):
-
-    def test_configure_wraps_pipe_instantiation(self):
-        class ConfigPipe(vpipes.ConfigMixin, vpipes.Pipe):
-            __requires__ = ['_scieloapi', '_notifier']
-            def transform(self, data):
-                return data
-
-        ppl = vpipes.Pipeline(ConfigPipe)
-        ppl.configure(_scieloapi=ScieloAPIClientStub(),
-                      _notifier=NotifierStub())
-
-        self.assertNotEqual(ConfigPipe, ppl._pipes[0])
-
-        for res in ppl.run([{'foo': 'bar'}]):
-            self.assertEqual({'foo': 'bar'}, res)
-
-
 class ValidationPipeTests(mocker.MockerTestCase):
 
     def _makeOne(self, data, **kwargs):
@@ -32,10 +14,10 @@ class ValidationPipeTests(mocker.MockerTestCase):
         _notifier = kwargs.get('_notifier', NotifierStub())
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
 
-        vpipe = vpipes.ValidationPipe(data)
-        vpipe.configure(_scieloapi=_scieloapi,
-                        _notifier=_notifier,
-                        _sapi_tools=_sapi_tools)
+        vpipe = vpipes.ValidationPipe(scieloapi=_scieloapi,
+                                      notifier=_notifier,
+                                      sapi_tools=_sapi_tools)
+        vpipe.feed(data)
         return vpipe
 
     def test_scieloapi_isnt_called_during_initialization(self):
