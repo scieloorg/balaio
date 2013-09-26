@@ -42,7 +42,10 @@ Optional Parameters:
 
     *String* of the **issue number supplement** to be used as a filter param.
 
+  **issue_year**
 
+     *String* of the **issue year**  to be used as a filter param.
+     
 
 Response::
 
