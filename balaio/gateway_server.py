@@ -1,7 +1,7 @@
 from pyramid.response import Response
 from pyramid.config import Configurator
 from wsgiref.simple_server import make_server
-from pyramid.httpexceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted, HTTPCreated
 from pyramid.view import notfound_view_config, view_config
 from pyramid.events import NewRequest
 
@@ -126,8 +126,48 @@ def list_ticket(request):
             'objects': [ticket.to_dict() for ticket in tickets]}
 
 
-def main():
+@view_config(route_name='new_ticket', request_method='POST', renderer="gtw")
+def new_ticket(request):
+    """
+    Creates a ticket with or without comment.
+    Returns the new ticket as a serialized dict
+    """
+    ticket = models.Ticket(articlepkg_id=request.POST['articlepkg_id'], author=request.POST['ticket_author'], title=request.POST['title'])
+    if request.POST.get('message', None):
+        ticket.comments.append(models.Comment(author=request.POST['ticket_author'], message=request.POST['message']))
+    try:
+        request.db.add(ticket)
+        request.db.commit()
+    except:
+        request.db.rollback()
+        raise
 
+    return HTTPCreated()
+
+
+@view_config(route_name='update_ticket', request_method='PATCH', renderer="gtw")
+def update_ticket(request):
+    """
+    Update a ticket
+    """
+    ticket = request.db.query(models.Ticket).get(request.matchdict['id'])
+    if ticket:
+        ticket.is_open = request.PATCH['is_open']
+        if request.PATCH.get('message', None):
+            ticket.comments.append(models.Comment(author=request.PATCH['comment_author'], message=request.PATCH['message']))
+        try:
+            request.db.commit()
+            return HTTPAccepted()
+        except:
+            request.db.rollback()
+            raise
+    else:
+        return HTTPNotFound()
+
+
+if __name__ == '__main__':
+
+def main()
     def bind_db(event):
         event.request.db = event.request.registry.Session()
 
@@ -143,6 +183,10 @@ def main():
     config_pyrmd.add_route('Attempt',
         '/api/%s/attempts/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Ticket',
+        '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('new_ticket',
+        '/api/%s/tickets/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('update_ticket',
         '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_package',
         '/api/%s/packages/' % config.get('http_server', 'version'))

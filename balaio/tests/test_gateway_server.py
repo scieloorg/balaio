@@ -9,7 +9,7 @@ from balaio import gateway_server
 from balaio.tests.doubles import *
 from sqlalchemy import create_engine
 from balaio.gateway_server import main
-from pyramid.httpexceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPNotFound,HTTPAccepted, HTTPCreated
 
 from balaio import models
 
@@ -191,6 +191,8 @@ class TicketAPITest(unittest.TestCase):
         self.req.db = ObjectStub()
         self.req.db.query = QueryStub
         self.req.db.query.model = TicketStub
+        self.req.db.add = lambda doc: None
+        self.req.db.commit = lambda: None
 
     def test_view_tickets(self):
         expected = {'limit': 20,
@@ -237,6 +239,88 @@ class TicketAPITest(unittest.TestCase):
             HTTPNotFound
         )
 
+    def test_new_ticket_no_comments(self):
+        self.req.POST = {
+            'articlepkg_id': 3,
+            'ticket_author': 'ticket.author@scielo.org',
+            'title': 'Ticket ....',
+        }
+
+        self.req.db.commit = lambda: None
+        result = gateway_server.new_ticket(self.req)
+
+        self.assertIsInstance(
+            result,
+            HTTPCreated
+        )
+
+    def test_view_update_ticket_and_not_found_ticket(self):
+        from balaio.models import Ticket
+
+        self.req.db.query.model = Ticket
+        self.req.db.query.found = False
+
+        self.req.db.rollback = lambda: None
+
+        self.req.matchdict = {'id': 1}
+        self.req.PATCH = {
+            'is_open': False,
+        }
+        self.assertIsInstance(
+            gateway_server.update_ticket(self.req),
+            HTTPNotFound
+        )
+
+    def test_new_ticket_with_comments(self):
+        self.req.POST = {
+            'articlepkg_id': 3,
+            'message': 'Corrigir ....',
+            'ticket_author': 'ticket.author@scielo.org',
+            'title': 'Ticket ....',
+        }
+
+        self.req.db.commit = lambda: None
+        result = gateway_server.new_ticket(self.req)
+
+        self.assertIsInstance(
+            result,
+            HTTPCreated
+        )
+
+    def test_view_update_ticket_no_comment(self):
+        from balaio.models import Ticket
+
+        self.req.db.query.model = Ticket
+        self.req.db.query.found = True
+
+        self.req.db.rollback = lambda: None
+
+        self.req.matchdict = {'id': 1}
+        self.req.PATCH = {
+            'is_open': False,
+        }
+        self.assertIsInstance(
+            gateway_server.update_ticket(self.req),
+            HTTPAccepted
+        )
+
+    def test_view_update_ticket_with_comment(self):
+        from balaio.models import Ticket
+        self.req.db.query.model = Ticket
+        self.req.db.query.found = True
+
+        self.req.db.rollback = lambda: None
+
+        self.req.matchdict = {'id': 1}
+        self.req.PATCH = {
+            'comment_author': 'username',
+            'message': '....',
+            'is_open': True,
+        }
+        self.assertIsInstance(
+            gateway_server.update_ticket(self.req),
+            HTTPAccepted
+        )
 
 class QueryFiltersTest(unittest.TestCase):
 

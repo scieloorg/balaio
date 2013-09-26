@@ -3,6 +3,7 @@ import unittest
 import mocker
 
 from balaio import validator
+from balaio import utils
 from balaio.tests.doubles import *
 
 
@@ -34,12 +35,12 @@ class SetupPipeTests(mocker.MockerTestCase):
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
 
-        vpipe = validator.SetupPipe(data)
-        vpipe.configure(_scieloapi=_scieloapi,
-                        _notifier=_notifier,
-                        _sapi_tools=_sapi_tools,
-                        _pkg_analyzer=_pkg_analyzer,
-                        _issn_validator=_issn_validator)
+        vpipe = validator.SetupPipe(scieloapi=_scieloapi,
+                                    notifier=_notifier,
+                                    sapi_tools=_sapi_tools,
+                                    pkg_analyzer=_pkg_analyzer,
+                                    issn_validator=_issn_validator)
+        vpipe.feed(data)
         return vpipe
 
     def test_transform_returns_right_datastructure(self):
@@ -180,13 +181,12 @@ class SetupPipeTests(mocker.MockerTestCase):
 class ReferenceSourceValidationTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-        vpipe = validator.ReferenceSourceValidationPipe(data)
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', NotifierStub())
 
-        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
-                        _notifier=_notifier)
+        vpipe = validator.ReferenceSourceValidationPipe(_notifier, _pkg_analyzer)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -214,7 +214,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_source(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag source']
@@ -236,7 +236,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_source(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag source B24: missing tag source']
@@ -266,7 +266,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
         expected = [validator.STATUS_ERROR, ' B23: missing content in tag source']
@@ -288,19 +288,18 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
 
 class ReferenceValidationPipeTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-        vpipe = validator.ReferenceValidationPipe(data)
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', NotifierStub())
 
-        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
-                        _notifier=_notifier)
+        vpipe = validator.ReferenceValidationPipe(_notifier, _pkg_analyzer)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -328,7 +327,7 @@ class ReferenceValidationPipeTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_with_missing_tag_ref(self):
         expected = [validator.STATUS_WARNING, 'tag reference missing']
@@ -342,19 +341,19 @@ class ReferenceValidationPipeTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
 
 class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-        vpipe = validator.ReferenceJournalTypeArticleTitleValidationPipe(data)
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', NotifierStub())
 
-        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
-                        _notifier=_notifier)
+        vpipe = validator.ReferenceJournalTypeArticleTitleValidationPipe(_notifier,
+            _pkg_analyzer)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -382,7 +381,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_article_title(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag article-title']
@@ -404,7 +403,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_article_title(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag article-title B24: missing tag article-title']
@@ -434,7 +433,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
         expected = [validator.STATUS_ERROR, ' B23: missing content in tag article-title']
@@ -456,19 +455,18 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
 
 class ReferenceDateValidationTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-        vpipe = validator.ReferenceYearValidationPipe(data)
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', NotifierStub())
 
-        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
-                        _notifier=_notifier)
+        vpipe = validator.ReferenceYearValidationPipe(_notifier, _pkg_analyzer)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -497,7 +495,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_valid_and_well_format_tag_year(self):
         expected = [validator.STATUS_OK, '']
@@ -520,7 +518,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_valid_and_not_well_format_tag_year(self):
         expected = [validator.STATUS_ERROR, ' B23: date format is not good']
@@ -543,7 +541,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_year(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag year']
@@ -564,7 +562,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_year(self):
         expected = [validator.STATUS_ERROR, ' B23: missing tag year B24: missing tag year']
@@ -592,7 +590,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_year_missing_content(self):
         expected = [validator.STATUS_ERROR, ' B23: missing content in tag year']
@@ -615,21 +613,21 @@ class ReferenceDateValidationTests(unittest.TestCase):
         pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
 
         self.assertEquals(
-            vpipe.validate(pkg_analyzer_stub), expected)
+            vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
 
 class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
 
     def _makeOne(self, data, **kwargs):
-        vpipe = validator.JournalAbbreviatedTitleValidationPipe(data)
 
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', NotifierStub())
+        _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
-        vpipe.configure(_pkg_analyzer=_pkg_analyzer,
-                        _notifier=_notifier,
-                        _scieloapi=_scieloapi)
+        vpipe = validator.JournalAbbreviatedTitleValidationPipe(_notifier,
+            _pkg_analyzer, _scieloapi, _normalize_data)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -734,13 +732,11 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
         _notifier = kwargs.get('_notifier', NotifierStub())
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        #_issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
+        _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
-        vpipe = validator.PublisherNameValidationPipe(data)
-        vpipe.configure(_scieloapi=_scieloapi,
-                        _notifier=_notifier,
-                        _sapi_tools=_sapi_tools,
-                        _pkg_analyzer=_pkg_analyzer)
+        vpipe = validator.PublisherNameValidationPipe(_notifier,
+            _scieloapi, _sapi_tools, _pkg_analyzer, _normalize_data)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -836,9 +832,8 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
         _notifier = kwargs.get('_notifier', NotifierStub())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
 
-        vpipe = validator.FundingGroupValidationPipe(data)
-        vpipe.configure(_notifier=_notifier,
-                        _pkg_analyzer=_pkg_analyzer)
+        vpipe = validator.FundingGroupValidationPipe(_notifier, _pkg_analyzer)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -908,13 +903,11 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
         _notifier = kwargs.get('_notifier', NotifierStub())
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        #_issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
+        _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
-        vpipe = validator.NLMJournalTitleValidationPipe(data)
-        vpipe.configure(_scieloapi=_scieloapi,
-                        _notifier=_notifier,
-                        _sapi_tools=_sapi_tools,
-                        _pkg_analyzer=_pkg_analyzer)
+        vpipe = validator.NLMJournalTitleValidationPipe(_notifier,
+            _pkg_analyzer, _scieloapi, _sapi_tools, _normalize_data)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -1009,10 +1002,10 @@ class DOIVAlidationPipeTests(mocker.MockerTestCase):
     def _makeOne(self, data, **kwargs):
         _notifier = kwargs.get('_notifier', NotifierStub())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
-        vpipe = validator.DOIVAlidationPipe(data)
-        vpipe.configure(_notifier=_notifier,
-                        _pkg_analyzer=_pkg_analyzer)
+        vpipe = validator.DOIVAlidationPipe(_notifier, _pkg_analyzer, _normalize_data)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -1095,12 +1088,8 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
-        vpipe = validator.ArticleSectionValidationPipe(data)
-        vpipe.configure(_scieloapi=_scieloapi,
-                        _notifier=_notifier,
-                        _sapi_tools=_sapi_tools,
-                        _pkg_analyzer=_pkg_analyzer,
-                        _normalize_data=_normalize_data)
+        vpipe = validator.ArticleSectionValidationPipe(_notifier, _scieloapi, _sapi_tools, _pkg_analyzer, _normalize_data)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
@@ -1186,12 +1175,11 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
         _notifier = kwargs.get('_notifier', NotifierStub())
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
+        _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
-        vpipe = validator.ArticleMetaPubDateValidationPipe(data)
-        vpipe.configure(_scieloapi=_scieloapi,
-                        _notifier=_notifier,
-                        _sapi_tools=_sapi_tools,
-                        _pkg_analyzer=_pkg_analyzer)
+        vpipe = validator.ArticleMetaPubDateValidationPipe(_notifier,
+            _scieloapi, _sapi_tools, _pkg_analyzer, _normalize_data)
+        vpipe.feed(data)
         return vpipe
 
     def _makePkgAnalyzerWithData(self, data):
