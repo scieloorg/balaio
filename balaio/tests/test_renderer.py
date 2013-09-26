@@ -13,22 +13,108 @@ class TestRenderer(unittest.TestCase):
     def tearDown(self):
         testing.tearDown()
 
+    def test_new_offset_for_previous_20_0(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._new_offset(offset=20, limit=20), 0)
+
+    def test_new_offset_for_previous_0_None(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._new_offset(offset=0, limit=20), None)
+
+    def test_new_offset_for_previous_50_0(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._new_offset(offset=50, limit=50), 0)
+
+    def test_new_offset_for_previous_50_None(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._new_offset(offset=0, limit=50), None)
+
+    def test_new_offset_for_next_0_41_20(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._new_offset(offset=0, limit=20, total_count=41), 20)
+
+    def test_new_offset_for_next_20_41_40(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._new_offset(offset=20, limit=20, total_count=41), 40)
+
+    def test_new_offset_for_next_20_40_None(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._new_offset(offset=20, limit=20, total_count=40), None)
+
+    def test_new_offset_for_next_20_39_None(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._new_offset(offset=20, limit=20, total_count=39), None)
+
+    def test_new_offset_for_next_40_39_None(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._new_offset(offset=40, limit=20, total_count=39), None)
+
+    def test_next_resource_uri(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(
+            renderer._navigation(100, 20, 200),
+            "/api/v1/attempts/?limit=20&offset=120"
+        )
+
+    def test_next_resource_uri_80_90(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(
+            renderer._navigation(80, 20, 90),
+            None
+        )
+
+    def test_previous_resource_uri(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(
+            renderer._navigation(100, 20),
+            "/api/v1/attempts/?limit=20&offset=80"
+        )
+
+    def test_next_resource_uri_is_None(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(
+            renderer._navigation(180, 20, 200),
+            None
+        )
+
+    def test_previous_resource_uri_is_None(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(
+            renderer._navigation(0, 20),
+            None
+        )
+
     def test_add_meta_without_reference_list(self):
         data = {'limit': 20,
                 'offset': 0,
                 'total': 200,
-                'objects': [AttemptStub().to_dict()]}
+                'objects': [AttemptStub().to_dict()]
+                }
 
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
 
+        
         self.assertEqual(renderer.add_meta(data), {
                 'meta':
                     {
-                        'total_count': 200,
                         'limit': 20,
-                        'offset': 0
+                        'offset': 0,
+                        'total_count': 200,
+                        'previous': None,
+                        'next': '/api/v1/attempts/?limit=20&offset=20',
+                        
                     },
                 'objects':
                     [
@@ -63,7 +149,9 @@ class TestRenderer(unittest.TestCase):
                     {
                         'total_count': 200,
                         'limit': 20,
-                        'offset': 0
+                        'offset': 0,
+                        'next': '/api/v1/packages/?limit=20&offset=20',
+                        'previous': None,
                     },
                 'objects':
                     [

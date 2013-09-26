@@ -27,6 +27,25 @@ class GtwMetaFactory(JSONP):
                     value[k] = self.translate_ref(v)
             return value
 
+    def _new_offset(self, offset, limit, total_count=None):
+        if total_count:
+            # next
+            new_offset = offset + limit
+            if new_offset >= total_count:
+                return None
+        else:
+            # previous
+            new_offset = offset - limit
+            if new_offset < 0:
+                return None
+        return new_offset
+
+    def _navigation(self, offset, limit, total_count=None):
+        new_offset = self._new_offset(offset, limit, total_count)
+        if new_offset:
+            return self.request.path + '?limit=' + str(limit) + '&offset=' + str(new_offset)
+        return None
+
     def add_meta(self, value):
         """
         Add information meta on top of the response
@@ -37,7 +56,9 @@ class GtwMetaFactory(JSONP):
             dct_meta['meta'] = {
                 'limit': value['limit'],
                 'offset': value['offset'],
-                'total_count': value['total']
+                'total_count': value['total'],
+                'previous': self._navigation(value['offset'], value['limit']),
+                'next': self._navigation(value['offset'], value['limit'], value['total']),
             }
 
             dct_meta['objects'] = self.add_resource_uri(value['objects'])
