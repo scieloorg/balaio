@@ -140,6 +140,7 @@ Response::
   {
     "articlepkg_id": 1,
     "id": 1,
+    "collection_uri": "/api/v1/collections/1/",
     "finished_at": "2012-07-24T21:59:23.909404",
     "filepath": "/files/ajfajfajfa",
     "is_valid": true,
