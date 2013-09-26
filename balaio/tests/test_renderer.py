@@ -105,13 +105,12 @@ class TestRenderer(unittest.TestCase):
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
 
-        
         self.assertEqual(renderer.add_meta(data), {
                 'meta':
                     {
+                        'total_count': 200,
                         'limit': 20,
                         'offset': 0,
-                        'total_count': 200,
                         'previous': None,
                         'next': '/api/v1/attempts/?limit=20&offset=20',
                         
