@@ -59,7 +59,7 @@ Response::
         "started_at": "2012-07-24T21:53:23.909404",
         "checkin": {
           "finished_at": "2012-07-24T21:53:23.909404",
-          "start_at": "2012-07-24T21:53:23.909404",
+          "started_at": "2012-07-24T21:53:23.909404",
           "notices": [
             {
               "label": "Checkin",
@@ -71,7 +71,7 @@ Response::
         },
         "validations": {
           "finished_at": "2012-07-24T21:53:23.909404",
-          "start_at": "2012-07-24T21:53:23.909404",
+          "started_at": "2012-07-24T21:53:23.909404",
           "notices": [
             {
               "label": "journal",
@@ -100,7 +100,7 @@ Response::
             {
               "label": "references",
               "message": "",
-              "status": 1,
+              "status": "ok",
               "date": "2012-07-24T21:53:23.909404",
             },
             {
@@ -148,7 +148,7 @@ Response::
     "started_at": "2012-07-24T21:53:23.909404",
     "checkin": {
       "finished_at": "2012-07-24T21:53:23.909404",
-      "start_at": "2012-07-24T21:53:23.909404",
+      "started_at": "2012-07-24T21:53:23.909404",
       "notices": [
         {
           "label": "Checkin",
@@ -160,7 +160,7 @@ Response::
     },
     "validations": {
       "finished_at": "2012-07-24T21:53:23.909404",
-      "start_at": "2012-07-24T21:53:23.909404",
+      "started_at": "2012-07-24T21:53:23.909404",
       "notices": [
         {
           "label": "journal",
