@@ -1,9 +1,78 @@
+#coding: utf-8
+import sys, os
 import unittest
+import transaction
+from webtest import TestApp
 
 from pyramid import testing
 from balaio import gateway_server
 from balaio.tests.doubles import *
+from sqlalchemy import create_engine
+from balaio.gateway_server import main
 from pyramid.httpexceptions import HTTPNotFound
+
+from balaio import models
+
+sys.path.append(os.path.dirname(__file__) + '/../')
+
+
+def _initTestingDB(model):
+
+    engine = create_engine('sqlite://')
+    models.Base.metadata.create_all(engine)
+
+    models.Session.configure(bind=engine)
+
+    with transaction.manager:
+        models.Session.add(model)
+
+    return models.Session
+
+
+class PackageFunctionalAPITest(unittest.TestCase):
+
+    def _makeOne(self):
+        article = models.ArticlePkg(id=1,
+                    journal_title='Associa... Brasileira',
+                    article_title='Construction of a recombinant adenovirus...',
+                    journal_pissn='0100-879X',
+                    journal_eissn='0100-879X',
+                    issue_year=1995,
+                    issue_volume='67',
+                    issue_number='8',
+                    issue_suppl_volume=None,
+                    issue_suppl_number=None)
+
+        return article
+
+    def setUp(self):
+        self.session = _initTestingDB(self._makeOne())
+        self.config = testing.setUp()
+
+        app, config = main()
+        self.testapp = TestApp(app)
+
+    def tearDown(self):
+        self.session.remove()
+        testing.tearDown()
+
+    def test_root(self):
+        resp = self.testapp.get('/', status=200)
+        self.assertTrue('Gateway version v1' in resp.body)
+
+    def test_GET_to_available_resource(self):
+        self.testapp.get('/api/v1/packages/', status=200)
+
+    def test_GET_to_unavailable_resource(self):
+        self.testapp.get('/api/v1/pkg/', status=404)
+
+    def test_GET_to_one_package(self):
+        res = self.testapp.get('/api/v1/packages/1/')
+        self.assertEqual(res.body, u'{"article_title": "Construction of a recombinant adenovirus...", "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/1", "id": 1, "issue_number": "8"}')
+
+    def test_GET_to_packages(self):
+        res = self.testapp.get('/api/v1/packages/')
+        self.assertEqual(res.body, u'{"meta": {"total_count": 1, "limit": "20", "offset": 0}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1", "id": 1, "issue_number": "8"}]}')
 
 
 class AttemptsAPITest(unittest.TestCase):
@@ -187,6 +256,6 @@ class QueryFiltersTest(unittest.TestCase):
         model = ArticlePkgStub
 
         self.assertEqual(
-            expected, 
+            expected,
             gateway_server.get_query_filters(model, request_params)
             )

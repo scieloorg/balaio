@@ -39,6 +39,7 @@ def package(request):
     article = request.db.query(models.ArticlePkg).get(request.matchdict['id'])
 
     if article is None:
+
         return HTTPNotFound()
 
     return article.to_dict()
@@ -125,7 +126,7 @@ def list_ticket(request):
             'objects': [ticket.to_dict() for ticket in tickets]}
 
 
-if __name__ == '__main__':
+def main():
 
     def bind_db(event):
         event.request.db = event.request.registry.Session()
@@ -158,8 +159,13 @@ if __name__ == '__main__':
     config_pyrmd.registry.Session.configure(bind=engine)
     config_pyrmd.add_subscriber(bind_db, NewRequest)
 
-    config_pyrmd.scan()
+    config_pyrmd.scan('gateway_server')
 
-    app = config_pyrmd.make_wsgi_app()
+    return (config_pyrmd.make_wsgi_app(), config)
+
+
+if __name__ == '__main__':
+
+    app, config = main()
     server = make_server(config.get('http_server', 'ip'), config.getint('http_server', 'port'), app)
     server.serve_forever()
