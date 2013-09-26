@@ -1,9 +1,14 @@
 =======================
-Balaio Gateway HTTP API
+Balaio Gateway HTTP API 
 =======================
 
+.. attention::
+  
+    this document is currently under development
+
+
 This API is a RESTful API which provides services related to the XML packages, 
-their attemps and the validations reports.
+their attempts and their tickets.
 
 
 **Current version:** API v1
@@ -17,17 +22,5 @@ Available endpoints
 
   packages-api
   attempts-api
-  validations-api
   tickets-api
-
-
-.. note::
-
-  The API uses the ``Accepts`` HTTP headers in order to decide which one is
-  the best format to be used. Options are: ``application/xml``,
-  ``application/json`` and ``application/yaml``.
-
-  If you try these requests in your browser, you will need to use the
-  parameter ``format`` with one of the valid format types (xml, json or yaml).
-
 

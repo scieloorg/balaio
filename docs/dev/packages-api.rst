@@ -2,11 +2,11 @@ Packages API
 ============
 
 List all packages
---------------------
+-----------------
 
 Request::
 
-  GET /api/v1/packages
+  GET /api/v1/packages/
 
 Parameters:
 
@@ -42,42 +42,47 @@ Optional Parameters:
 
     *String* of the **issue number supplement** to be used as a filter param.
 
+  **issue_year**
 
+     *String* of the **issue year**  to be used as a filter param.
+     
 
 Response::
 
   {
-  "meta": {
-    "limit": 20,
-    "next": null,
-    "offset": 0,
-    "previous": null,
-    "total_count": 1
-  },
-  "objects": [
-    {
-      "article_title": "Prevalence and risk factors for smoking among adolescents",
-      "attempts": [
-        "/api/v1/attemps/12345",
-        "/api/v1/attemps/12355",
-        "/api/v1/attemps/12445",
-      ],
-      "id": "1",
-      "issue_number": "1",
-      "issue_volume": "37",
-      "issue_year": 2003,
-      "issue_suplvol": null,
-      "issue_suplnum": null,
-      "journal_eissn": null,
-      "journal_pissn": "0034-8910",
-      "journal_title": "Revista de Saúde Pública",
-      "resource_uri": "/api/v1/packages/1/",
-      "tickets": [
-        "/api/v1/tickets/100",
-        "/api/v1/tickets/140",
-      ],
-    }
-  ]
+    "meta": {
+      "limit": 20,
+      "next": "/api/v1/packages/?limit=20&offset=40",
+      "offset": 20,
+      "previous": "/api/v1/packages/?limit=20&offset=0",
+      "total_count": 100
+    },
+    "objects": [
+      {
+        "article_title": "Prevalence and risk factors for smoking among adolescents",
+        "attempts": [
+          "/api/v1/attemps/12345",
+          "/api/v1/attemps/12355",
+          "/api/v1/attemps/12445",
+        ],
+        "id": 1,
+        "issue_number": "1",
+        "issue_volume": "37",
+        "issue_year": 2003,
+        "issue_suppl_volume": null,
+        "issue_suppl_number": null,
+        "journal_eissn": null,
+        "journal_pissn": "0034-8910",
+        "journal_title": "Revista de Saúde Pública",
+        "resource_uri": "/api/v1/packages/1/",
+        "tickets": [
+          "/api/v1/tickets/100",
+          "/api/v1/tickets/140",
+        ],
+      }
+    ]
+  }
+
 
 Get a single package
 --------------------
@@ -106,12 +111,12 @@ Response::
       "/api/v1/attemps/12355",
       "/api/v1/attemps/12445",
     ],
-    "id": "1",
+    "id": 1,
     "issue_number": "1",
     "issue_volume": "37",
     "issue_year": 2003,
-    "issue_suplvol": null,
-    "issue_suplnum": null,
+    "issue_suppl_volume": null,
+    "issue_suppl_number": null,
     "journal_eissn": null,
     "journal_pissn": "0034-8910",
     "journal_title": "Revista de Saúde Pública",
@@ -119,6 +124,6 @@ Response::
     "tickets": [
         "/api/v1/tickets/100",
         "/api/v1/tickets/140",
-      ],
+    ],
   }
   
