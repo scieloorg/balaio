@@ -165,9 +165,7 @@ def update_ticket(request):
         return HTTPNotFound()
 
 
-if __name__ == '__main__':
-
-def main()
+def main():
     def bind_db(event):
         event.request.db = event.request.registry.Session()
 

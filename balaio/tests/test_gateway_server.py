@@ -68,11 +68,11 @@ class PackageFunctionalAPITest(unittest.TestCase):
 
     def test_GET_to_one_package(self):
         res = self.testapp.get('/api/v1/packages/1/')
-        self.assertEqual(res.body, u'{"article_title": "Construction of a recombinant adenovirus...", "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/1", "id": 1, "issue_number": "8"}')
+        self.assertEqual(res.body, '{"article_title": "Construction of a recombinant adenovirus...", "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}')
 
     def test_GET_to_packages(self):
         res = self.testapp.get('/api/v1/packages/')
-        self.assertEqual(res.body, u'{"meta": {"total_count": 1, "limit": "20", "offset": 0}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1", "id": 1, "issue_number": "8"}]}')
+        self.assertEqual(res.body, '{"meta": {"total_count": 1, "limit": "20", "offset": 0}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}]}')
 
 
 class AttemptsAPITest(unittest.TestCase):
