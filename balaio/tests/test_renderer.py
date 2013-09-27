@@ -13,85 +13,122 @@ class TestRenderer(unittest.TestCase):
     def tearDown(self):
         testing.tearDown()
 
-    def test_new_offset_for_previous_20_0(self):
+    def test_int_None(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._new_offset(offset=20, limit=20), 0)
+        self.assertEqual(renderer._int(None), 0)
 
-    def test_new_offset_for_previous_0_None(self):
+    def test_int(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._new_offset(offset=0, limit=20), None)
+        self.assertEqual(renderer._int(10), 10)
 
-    def test_new_offset_for_previous_50_0(self):
+    def test_int_string_zero_len(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._new_offset(offset=50, limit=50), 0)
+        self.assertEqual(renderer._int(''), 0)
 
-    def test_new_offset_for_previous_50_None(self):
+    def test_int_string(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._new_offset(offset=0, limit=50), None)
+        self.assertEqual(renderer._int('10'), 10)
 
-    def test_new_offset_for_next_0_41_20(self):
+    def test_int_string_negative(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._new_offset(offset=0, limit=20, total_count=41), 20)
+        self.assertEqual(renderer._int('-10'), 0)
 
-    def test_new_offset_for_next_20_41_40(self):
+    def test_int_negative(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._new_offset(offset=20, limit=20, total_count=41), 40)
+        self.assertEqual(renderer._int(-10), 0)
 
-    def test_new_offset_for_next_20_40_None(self):
+    def test_int_string_not_number(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._new_offset(offset=20, limit=20, total_count=40), None)
+        self.assertEqual(renderer._int('bla'), 0)
 
-    def test_new_offset_for_next_20_39_None(self):
+    def test_previous_offset_offset_None_limit_None(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._new_offset(offset=20, limit=20, total_count=39), None)
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=0, limit=None), None)
 
-    def test_new_offset_for_next_40_39_None(self):
+    def test_previous_offset_offset_None_limit_20(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._new_offset(offset=40, limit=20, total_count=39), None)
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=20, limit=None), 0)
 
-    def test_next_resource_uri(self):
+    def test_previous_offset_offset_0_limit_None(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=0, limit=None), None)
+
+    def test_previous_offset_offset_0_limit_20(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=0, limit=20), None)
+
+    def test_previous_offset_offset_20_limit_None(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=20, limit=None), 0)
+
+    def test_previous_offset_offset_20_limit_20(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=20, limit=20), 0)
+
+    def test_next_offset_offset_None_limit_None(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._next_offset(offset=None, limit=None), 20)
+
+    def test_next_offset_offset_None_limit_40(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._next_offset(offset=None, limit=40), 40)
+
+    def test_next_offset_offset_50_limit_50(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._next_offset(offset=50, limit=50), 100)
+
+    def test_resource_uri_no_offset_no_limit(self):
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
         self.assertEqual(
-            renderer._navigation(100, 20, 200),
+            renderer._resource_uri(),
+            "/api/v1/attempts/"
+        )
+
+    def test_resource_uri_offset_limit(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(
+            renderer._resource_uri(120, 20),
             "/api/v1/attempts/?limit=20&offset=120"
         )
 
-    def test_next_resource_uri_80_90(self):
+    def test_resource_uri_no_offset(self):
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
         self.assertEqual(
-            renderer._navigation(80, 20, 90),
-            None
+            renderer._resource_uri(None, 20),
+            "/api/v1/attempts/?limit=20"
         )
 
-    def test_previous_resource_uri(self):
+    def test_resource_uri_no_limit(self):
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
         self.assertEqual(
-            renderer._navigation(100, 20),
-            "/api/v1/attempts/?limit=20&offset=80"
-        )
-
-    def test_next_resource_uri_is_None(self):
-        renderer = GtwMetaFactory()
-        self.req.path = "/api/v1/attempts/"
-        renderer.request = self.req
-        self.assertEqual(
-            renderer._navigation(180, 20, 200),
-            None
-        )
-
-    def test_previous_resource_uri_is_None(self):
-        renderer = GtwMetaFactory()
-        self.req.path = "/api/v1/attempts/"
-        renderer.request = self.req
-        self.assertEqual(
-            renderer._navigation(0, 20),
-            None
+            renderer._resource_uri(0, None),
+            "/api/v1/attempts/?offset=0"
         )
 
     def test_add_meta_without_reference_list(self):

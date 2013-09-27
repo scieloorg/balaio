@@ -27,24 +27,60 @@ class GtwMetaFactory(JSONP):
                     value[k] = self.translate_ref(v)
             return value
 
-    def _new_offset(self, offset, limit, total_count=None):
-        if total_count:
-            # next
-            new_offset = offset + limit
-            if new_offset >= total_count:
-                return None
-        else:
-            # previous
-            new_offset = offset - limit
-            if new_offset < 0:
-                return None
+    def _int(self, value):
+        """
+        Converts value to int and positive value
+
+        :param value: value can be None, String, Negative, ...
+        """
+
+        if not value:
+            return 0
+        if isinstance(value, str):
+            value = int(value) if value.isdigit() else 0
+        if value < 0:
+            return 0
+        return value
+
+    def _next_offset(self, offset, limit):
+        """
+        Calculates the offset for next resource_uri
+
+        :param offset: current offset
+        :param total_count: it limits the next offset
+        :param limit: limit
+        """
+        if not limit:
+            limit = self.request.registry.settings.get('http_server', {}).get('limit', 20)
+        return self._int(offset) + self._int(limit)
+
+    def _prev_offset(self, offset, limit):
+        """
+        Calculates the new offset for previous resource_uri
+
+        :param offset: current offset
+        :param limit: limit
+        """
+        if self._int(offset) == 0:
+            return None
+        if not limit:
+            limit = self.request.registry.settings.get('http_server', {}).get('limit', 20)
+        new_offset = self._int(offset) - self._int(limit)
+        if new_offset < 0:
+            return None
         return new_offset
 
-    def _navigation(self, offset, limit, total_count=None):
-        new_offset = self._new_offset(offset, limit, total_count)
-        if new_offset:
-            return self.request.path + '?limit=' + str(limit) + '&offset=' + str(new_offset)
-        return None
+    def _resource_uri(self, offset=None, limit=None):
+        #return self.request.current_route_path(_query={'limit': str(limit), 'offset': str(offset)})
+        r = self.request.path
+        param = []
+        if limit:
+            param.append('limit=' + str(limit))
+        if offset >= 0:
+            param.append('offset=' + str(offset))
+        if param:
+            r += '?' + '&'.join(param)
+        return r
 
     def add_meta(self, value):
         """
@@ -53,12 +89,14 @@ class GtwMetaFactory(JSONP):
         if 'objects' in value:
             dct_meta = {}
 
+            _prev_offset = self._prev_offset(value['offset'], value['limit'])
+
             dct_meta['meta'] = {
                 'limit': value['limit'],
                 'offset': value['offset'],
                 'total_count': value['total'],
-                'previous': self._navigation(value['offset'], value['limit']),
-                'next': self._navigation(value['offset'], value['limit'], value['total']),
+                'previous': self._resource_uri(_prev_offset, value['limit']) if _prev_offset else None,
+                'next': self._resource_uri(self._next_offset(value['offset'], value['limit']), value['limit']),
             }
 
             dct_meta['objects'] = self.add_resource_uri(value['objects'])
