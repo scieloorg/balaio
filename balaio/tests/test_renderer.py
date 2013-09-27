@@ -95,6 +95,17 @@ class TestRenderer(unittest.TestCase):
         renderer.request = self.req
         self.assertEqual(renderer._next_offset(offset=50, limit=50), 100)
 
+    def test_resource_uri_no_limit_(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        self.config.add_route('Attempts', '/api/v1/attempts/')
+        renderer.request = self.req
+
+        self.assertEqual(
+            renderer._resource_uri(0, 10),
+            "/api/v1/attempts/?limit=10&offset=0"
+        )
+
     def test_resource_uri_no_offset_no_limit(self):
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"

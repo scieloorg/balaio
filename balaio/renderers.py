@@ -1,4 +1,5 @@
 from pyramid.renderers import JSONP
+from pyramid.url import current_route_url
 
 
 class GtwMetaFactory(JSONP):
@@ -69,6 +70,9 @@ class GtwMetaFactory(JSONP):
         if new_offset < 0:
             return None
         return new_offset
+
+    def _resource_uri_(self, offset=None, limit=None):
+        return self.request.current_route_url(_query={'limit': limit, 'offset': offset}, _route_name='')
 
     def _resource_uri(self, offset=None, limit=None):
         #return self.request.current_route_path(_query={'limit': str(limit), 'offset': str(offset)})
