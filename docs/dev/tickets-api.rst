@@ -6,17 +6,11 @@ List all tickets
 
 Request::
 
-  GET /api/v1/tickets
+  GET /api/v1/tickets/
 
 Parameters:
 
   **--**
-
-Required Parameters:
-
-  **articlepkg_id**
-
-    *Integer* of the **article package ID** to be used as a filter param.
 
 Optional Parameters:
 
@@ -24,49 +18,88 @@ Optional Parameters:
 
     *String* of the callback identifier to be returned when using JSONP.
 
+  **articlepkg_id**
+
+    *Integer* of the **article package ID** to be used as a filter param.
+
   **is_open**
 
     *Boolean* of the **status** to be used as a filter param.
 
-  
+  **author**
+
+    *String* of the **e-mail** of the user who created the ticket
 
 Response::
 
   {
-  "meta": {
-    "limit": 20,
-    "next": null,
-    "offset": 0,
-    "previous": null,
-    "total_count": 1
-  },
-  "objects": [
-    {
-      "articlepkg_id": 1,
-      "id": 1,
-      "finished_at": "2012-07-24T21:59:23.909404",
-      "is_open": true,
-      "resource_uri": "/api/v1/tickets/1/",
-      "started_at": "2012-07-24T21:53:23.909404",
-      "ticket_author": "user.name@scielo.org",
-      "title": "Correção de ...", 
-      "comments": [
-        {
-          "comment_author": "user.name@scielo.org",
-          "comment_date": "2012-07-24T21:53:23.909404",
-          "message": 'Corrigir ...',
-          "ticket_id": 1,
-        },
-        {
-          "comment_author": "user.name@scielo.org",
-          "comment_date": "2012-07-24T21:53:23.909404",
-          "message": 'Corrigir ...',
-          "ticket_id": 1,
-        },
-      ]
-    }
-  ]
+    "meta": {
+      "limit": 20,
+      "next": "/api/v1/tickets/?limit=20&offset=40",
+      "offset": 20,
+      "previous": "/api/v1/tickets/?limit=20&offset=0",
+      "total_count": 100
+    },
+    "objects": [
+      {
+        "articlepkg_id": 1,
+        "id": 1,
+        "finished_at": "2012-07-24T21:59:23.909404",
+        "is_open": true,
+        "resource_uri": "/api/v1/tickets/1/",
+        "started_at": "2012-07-24T21:53:23.909404",
+        "author": "username@scielo.org",
+        "title": "título para o ticket",
+        "comments": [
+          {
+            "author": "user.name@scielo.org",
+            "date": "2012-07-24T21:53:23.909404",
+            "message": 'Corrigir ...',
+          },
+        ],
+      }
+    ]
+  }
 
+
+Get a single ticket
+-------------------
+
+Request::
+
+  GET /api/v1/tickets/:id/
+
+Parameters:
+
+  **--**
+
+Optional Parameters:
+
+  **callback**
+
+    *String* of the callback identifier to be returned when using JSONP.
+
+
+Response::
+
+  {
+    "articlepkg_id": 1,
+    "id": 1,
+    "finished_at": "2012-07-24T21:59:23.909404",
+    "is_open": true,
+    "resource_uri": "/api/v1/tickets/1/",
+    "started_at": "2012-07-24T21:53:23.909404",
+    "author": "username@scielo.org",
+    "title": "título para o ticket",
+    "comments": [
+      {
+        "author": "user.name@scielo.org",
+        "date": "2012-07-24T21:53:23.909404",
+        "message": 'Corrigir ...',
+      },
+    ],
+  }
+  
 
 Open a ticket
 -------------
@@ -79,11 +112,6 @@ Parameters:
 
   **--**
 
-Required Parameters:
-
-  **articlepkg_id**
-
-    *Integer* of the **article package ID** to be used as a filter param.
 
 Optional Parameters:
 
@@ -95,30 +123,19 @@ Payload::
   
   {
       "articlepkg_id": 1,
-      "ticket_author": "user.name@scielo.org",
-      "title": "Correção de ...", 
-      "message": 'Corrigir ...',
+      "message": "comment",
+      "author": "username@scielo.org",
+      "title": "ticket title"
   }
+
+  where **message** is optional
+  
 
 Response::
   
-  {
-      "articlepkg_id": 1,
-      "id": 1,
-      "is_open": true,
-      "resource_uri": "/api/v1/tickets/1/",
-      "started_at": "2012-07-24T21:53:23.909404",
-      "ticket_author": "user.name@scielo.org",
-      "title": "Correção de ...", 
-      "comments": [
-        {
-          "comment_author": "user.name@scielo.org",
-          "comment_date": "2012-07-24T21:53:23.909404",
-          "message": 'Corrigir ...',
-          "ticket_id": 1,
-        },
-      ]
-  }
+  HTTP STATUS CODE
+
+  201 Created
 
 
 Update a ticket
@@ -132,12 +149,6 @@ Parameters:
 
   **--**
 
-Required Parameters:
-
-  **ticket_id**
-
-    *Integer* of the **ticket  ID** to be used as a filter param.
-
 
 Optional Parameters:
 
@@ -148,11 +159,13 @@ Optional Parameters:
 Payload::
 
   {
-      "id": 1,
       "is_open": false,
       "comment_author": "user.name@scielo.org",
       "message": 'Corrigir ...',
   }
+
+  where **message** and **comment_author** are optional
+
 
 Response::
   
