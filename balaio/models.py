@@ -17,11 +17,18 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
 
+from sqlalchemy.orm import (
+    scoped_session,
+    sessionmaker,
+    )
 
-Session = sessionmaker(expire_on_commit=False)
+from zope.sqlalchemy import ZopeTransactionExtension
+
+Session = scoped_session(
+    sessionmaker(expire_on_commit=False, extension=ZopeTransactionExtension()))
+
 Base = declarative_base()
 
 

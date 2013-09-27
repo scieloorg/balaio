@@ -5,3 +5,6 @@ enum34
 git+git://github.com/gustavofonseca/plumber.git#egg=plumber
 git+git://github.com/scieloorg/scieloapi.py.git#egg=scieloapi
 pyramid
+WebTest
+transaction
+zope.sqlalchemy
