@@ -176,22 +176,31 @@ if __name__ == '__main__':
     config_pyrmd = Configurator(settings=dict(config.items()))
     config_pyrmd.add_route('index', '/')
 
+    # get
     config_pyrmd.add_route('ArticlePkg',
         '/api/%s/packages/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Attempt',
         '/api/%s/attempts/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Ticket',
         '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('new_ticket',
-        '/api/%s/tickets/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('update_ticket',
-        '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('Comment',
+        '/api/%s/comments/{id}/' % config.get('http_server', 'version'))
+
+    # lists
     config_pyrmd.add_route('list_package',
         '/api/%s/packages/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_ticket',
         '/api/%s/tickets/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_attempts',
         '/api/%s/attempts/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('list_comment',
+        '/api/%s/commentst/' % config.get('http_server', 'version'))
+
+    # tickets new and update
+    config_pyrmd.add_route('new_ticket',
+        '/api/%s/tickets/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('update_ticket',
+        '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
 
 
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')

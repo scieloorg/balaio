@@ -81,66 +81,37 @@ class TestRenderer(unittest.TestCase):
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
-        self.assertEqual(renderer._next_offset(offset=None, limit=None), 20)
+        self.assertEqual(renderer._next_offset(offset=None, limit=None, total=100), 20)
 
     def test_next_offset_offset_None_limit_40(self):
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
-        self.assertEqual(renderer._next_offset(offset=None, limit=40), 40)
+        self.assertEqual(renderer._next_offset(offset=None, limit=40, total=100), 40)
 
     def test_next_offset_offset_50_limit_50(self):
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
-        self.assertEqual(renderer._next_offset(offset=50, limit=50), 100)
+        self.assertEqual(renderer._next_offset(offset=50, limit=50, total=101), 100)
 
-    def test_resource_uri_no_limit_(self):
-        renderer = GtwMetaFactory()
-        self.req.path = "/api/v1/attempts/"
-        self.config.add_route('Attempts', '/api/v1/attempts/')
-        renderer.request = self.req
-
-        self.assertEqual(
-            renderer._resource_uri(0, 10),
-            "/api/v1/attempts/?limit=10&offset=0"
-        )
-
-    def test_resource_uri_no_offset_no_limit(self):
+    def test_next_offset_offset_20_limit_20_total_39(self):
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
-        self.assertEqual(
-            renderer._resource_uri(),
-            "/api/v1/attempts/"
-        )
+        self.assertEqual(renderer._next_offset(offset=20, limit=20, total=39), None)
 
-    def test_resource_uri_offset_limit(self):
+    def test_next_offset_offset_20_limit_20_total_40(self):
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
-        self.assertEqual(
-            renderer._resource_uri(120, 20),
-            "/api/v1/attempts/?limit=20&offset=120"
-        )
+        self.assertEqual(renderer._next_offset(offset=20, limit=20, total=40), 40)
 
-    def test_resource_uri_no_offset(self):
+    def test_next_offset_offset_20_limit_20_total_41(self):
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
-        self.assertEqual(
-            renderer._resource_uri(None, 20),
-            "/api/v1/attempts/?limit=20"
-        )
-
-    def test_resource_uri_no_limit(self):
-        renderer = GtwMetaFactory()
-        self.req.path = "/api/v1/attempts/"
-        renderer.request = self.req
-        self.assertEqual(
-            renderer._resource_uri(0, None),
-            "/api/v1/attempts/?offset=0"
-        )
+        self.assertEqual(renderer._next_offset(offset=20, limit=20, total=41), 40)
 
     def test_add_meta_without_reference_list(self):
         data = {'limit': 20,
@@ -148,9 +119,10 @@ class TestRenderer(unittest.TestCase):
                 'total': 200,
                 'objects': [AttemptStub().to_dict()]
                 }
+        self.req.path = "/api/v1/attempts/"
+        self.config.add_route('list_attempt', '/api/v1/attempts/')
 
         renderer = GtwMetaFactory()
-        self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
 
         self.assertEqual(renderer.add_meta(data), {
@@ -187,6 +159,8 @@ class TestRenderer(unittest.TestCase):
 
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/packages/"
+        self.config.add_route('list_package', '/api/v1/packages/')
+        self.config.add_route('list_attempt', '/api/v1/attempts/')
         self.config.add_route('Attempt', '/api/v1/attempts/{id}/')
 
         renderer.request = self.req
