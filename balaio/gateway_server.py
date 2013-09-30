@@ -58,6 +58,7 @@ def list_package(request):
 
     return {'limit': limit,
             'offset': offset,
+            'filters': filters,
             'total': request.db.query(func.count(models.ArticlePkg.id)).scalar(),
             'objects': [article.to_dict() for article in articles]}
 
@@ -89,6 +90,7 @@ def attempts(request):
 
     return {'limit': limit,
             'offset': offset,
+            'filters': filters,
             'total': request.db.query(func.count(models.Attempt.id)).scalar(),
             'objects': [attempt.to_dict() for attempt in attempts]}
 
@@ -121,6 +123,7 @@ def list_ticket(request):
 
     return {'limit': limit,
             'offset': offset,
+            'filters': filters,
             'total': request.db.query(func.count(models.Ticket.id)).scalar(),
             'objects': [ticket.to_dict() for ticket in tickets]}
 
