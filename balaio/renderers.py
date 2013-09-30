@@ -27,20 +27,17 @@ class GtwMetaFactory(JSONP):
                     value[k] = self.translate_ref(v)
             return value
 
-    def _int(self, value):
+    def _positive_int(self, value):
         """
-        Converts value to int and positive value
+        Converts value to positive int value
 
         :param value: value can be None, String, Negative, ...
         """
-
-        if not value:
-            return 0
         if isinstance(value, str):
             value = int(value) if value.isdigit() else 0
-        if value < 0:
-            return 0
-        return int(value)
+        if isinstance(value, int):
+            return value if value >= 0 else 0
+        return 0
 
     def _next_offset(self, offset, limit, total):
         """
@@ -52,7 +49,7 @@ class GtwMetaFactory(JSONP):
         """
         if not limit:
             limit = self.request.registry.settings.get('http_server', {}).get('limit', 20)
-        next = self._int(offset) + self._int(limit)
+        next = self._positive_int(offset) + self._positive_int(limit)
         if next > total:
             return None
         return next
@@ -64,12 +61,12 @@ class GtwMetaFactory(JSONP):
         :param offset: current offset
         :param limit: limit
         """
-        if self._int(offset) == 0:
+        if self._positive_int(offset) == 0:
             return None
         if not limit:
             limit = int(self.request.registry.settings.get('http_server', {}).get('limit', 20))
 
-        new_offset = self._int(offset) - self._int(limit)
+        new_offset = self._positive_int(offset) - self._positive_int(limit)
         if new_offset < 0:
             return None
         return new_offset
@@ -108,7 +105,7 @@ class GtwMetaFactory(JSONP):
             prev_offset = self._prev_offset(value['offset'], value['limit'])
             next_offset = self._next_offset(value['offset'], value['limit'], value['total'])
             dct_meta['meta'] = {
-                'limit': self._int(value['limit']),
+                'limit': self._positive_int(value['limit']),
                 'offset': value['offset'],
                 'total_count': value['total'],
                 'previous': self._resource_uri(prev_offset, value['limit'], value.get('filters', {})) if prev_offset else None,
