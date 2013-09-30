@@ -59,7 +59,7 @@ def list_package(request):
     return {'limit': limit,
             'offset': offset,
             'filters': filters,
-            'total': request.db.query(func.count(models.ArticlePkg.id)).scalar(),
+            'total': request.db.query(func.count(models.ArticlePkg.id)).filter_by(**filters).scalar(),
             'objects': [article.to_dict() for article in articles]}
 
 
@@ -91,7 +91,7 @@ def attempts(request):
     return {'limit': limit,
             'offset': offset,
             'filters': filters,
-            'total': request.db.query(func.count(models.Attempt.id)).scalar(),
+            'total': request.db.query(func.count(models.Attempt.id)).filter_by(**filters).scalar(),
             'objects': [attempt.to_dict() for attempt in attempts]}
 
 
@@ -124,7 +124,7 @@ def list_ticket(request):
     return {'limit': limit,
             'offset': offset,
             'filters': filters,
-            'total': request.db.query(func.count(models.Ticket.id)).scalar(),
+            'total': request.db.query(func.count(models.Ticket.id)).filter_by(**filters).scalar(),
             'objects': [ticket.to_dict() for ticket in tickets]}
 
 
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     config_pyrmd.add_route('list_attempts',
         '/api/%s/attempts/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_comment',
-        '/api/%s/commentst/' % config.get('http_server', 'version'))
+        '/api/%s/comments/' % config.get('http_server', 'version'))
 
     # tickets new and update
     config_pyrmd.add_route('new_ticket',

@@ -74,25 +74,26 @@ class GtwMetaFactory(JSONP):
             return None
         return new_offset
 
-    def _query(self, offset=None, limit=None):
+    def _query(self, offset=None, limit=None, filters={}):
         #return self.request.current_route_path(_query={'limit': str(limit), 'offset': str(offset)})
-        query = {}
+        query = filters
         if limit:
             query['limit'] = limit
         if offset >= 0:
             query['offset'] = offset
         return query
 
-    def __resource_uri(self, offset=None, limit=None):
+    def __resource_uri(self, offset=None, limit=None, filters={}):
         # da erro nos testes
-        return self.request.current_route_path(_query=self._query(offset, limit))
+        return self.request.current_route_path(_query=self._query(offset, limit, filters))
 
-    def _resource_uri(self, offset=None, limit=None):
-        params = []
+    def _resource_uri(self, offset=None, limit=None, filters={}):
+        params = [k + '=' + v for k, v in filters.items()]
         if limit:
             params.append('limit=' + str(limit))
         if offset >= 0:
             params.append('offset=' + str(offset))
+
         if params:
             return self.request.path + '?' + '&'.join(params)
         return self.request.path
@@ -110,8 +111,8 @@ class GtwMetaFactory(JSONP):
                 'limit': self._int(value['limit']),
                 'offset': value['offset'],
                 'total_count': value['total'],
-                'previous': self._resource_uri(prev_offset, value['limit']) if prev_offset else None,
-                'next': self._resource_uri(next_offset, value['limit']) if next_offset else None,
+                'previous': self._resource_uri(prev_offset, value['limit'], value.get('filters', {})) if prev_offset else None,
+                'next': self._resource_uri(next_offset, value['limit'], value.get('filters', {})) if next_offset else None,
             }
 
             dct_meta['objects'] = self.add_resource_uri(value['objects'])

@@ -155,6 +155,7 @@ class TestRenderer(unittest.TestCase):
         data = {'limit': 20,
                 'offset': 0,
                 'total': 200,
+                'filters': {'journal_pissn': '0100-879X'},
                 'objects': [ArticlePkgStub().to_dict()]}
 
         renderer = GtwMetaFactory()
@@ -171,7 +172,7 @@ class TestRenderer(unittest.TestCase):
                         'total_count': 200,
                         'limit': 20,
                         'offset': 0,
-                        'next': '/api/v1/packages/?limit=20&offset=20',
+                        'next': '/api/v1/packages/?journal_pissn=0100-879X&limit=20&offset=20',
                         'previous': None,
                     },
                 'objects':
