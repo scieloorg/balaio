@@ -3,53 +3,43 @@ from pyramid.renderers import JSONP
 
 class GtwMetaFactory(JSONP):
 
-    def translate_ref(self, ref):
+    def add_resource_uri(self, obj):
         """
-        Translates the url of the resource list
+        Add the URL to all resources of an object
         """
-        return [self.request.route_path(obj_type, id=obj_id) for obj_type, obj_id in ref]
+        obj['resource_uri'] = self.request.path + '%s/' % str(obj['id'])
+        if 'related_resources' in obj:
+            for label, route_name, id_list in obj['related_resources']:
+                obj[label] = [self.request.route_path(route_name, id=str(item_id)) for item_id in id_list]
+            del obj['related_resources']
+        return obj
 
-    def add_resource_uri(self, value):
+    def format_response(self, data):
         """
-        Add the URL of the resource to the own object
-        """
-        if isinstance(value, (list, tuple)):
-            for obj in value:
-                obj['resource_uri'] = self.request.path + '%s/' % str(obj['id'])
-                for k, v in obj.items():
-                    if isinstance(v, list):
-                        obj[k] = self.translate_ref(v)
-            return value
-        else:
-            value['resource_uri'] = self.request.path
-            for k, v in value.items():
-                if isinstance(v, list):
-                    value[k] = self.translate_ref(v)
-            return value
+        Format response
+        To a single document, add resource_uri to the object
+        To a set of documents, add meta and add resource_uri to all objects
 
-    def add_meta(self, value):
+        :param data: query result
         """
-        Add information meta on top of the response
-        """
-        if 'objects' in value:
+        if 'objects' in data:
             dct_meta = {}
 
             dct_meta['meta'] = {
-                'limit': value['limit'],
-                'offset': value['offset'],
-                'total_count': value['total']
+                'limit': data['limit'],
+                'offset': data['offset'],
+                'total_count': data['total']
             }
-
-            dct_meta['objects'] = self.add_resource_uri(value['objects'])
+            dct_meta['objects'] = [self.add_resource_uri(obj) for obj in data['objects']]
 
             return dct_meta
         else:
-            return self.add_resource_uri(value)
+            return self.add_resource_uri(data)
 
     def tamper(self, render):
         def wrapper(value, system):
             self.request = system.get('request')
-            return render(self.add_meta(value), system)
+            return render(self.format_response(value), system)
         return wrapper
 
     def __call__(self, info):
