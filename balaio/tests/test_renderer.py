@@ -15,31 +15,31 @@ class TestRenderer(unittest.TestCase):
 
     def test_int_None(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._positive_int(None), 0)
+        self.assertEqual(renderer._N(None), 0)
 
     def test_int(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._positive_int(10), 10)
+        self.assertEqual(renderer._N(10), 10)
 
     def test_int_string_zero_len(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._positive_int(''), 0)
+        self.assertEqual(renderer._N(''), 0)
 
     def test_int_string(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._positive_int('10'), 10)
+        self.assertEqual(renderer._N('10'), 10)
 
     def test_int_string_negative(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._positive_int('-10'), 0)
+        self.assertEqual(renderer._N('-10'), 0)
 
     def test_int_negative(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._positive_int(-10), 0)
+        self.assertEqual(renderer._N(-10), 0)
 
     def test_int_string_not_number(self):
         renderer = GtwMetaFactory()
-        self.assertEqual(renderer._positive_int('bla'), 0)
+        self.assertEqual(renderer._N('bla'), 0)
 
     def test_previous_offset_offset_None_limit_None(self):
         renderer = GtwMetaFactory()
