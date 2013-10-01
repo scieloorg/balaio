@@ -62,7 +62,10 @@ class Attempt(Base):
                     finished_at=str(self.finished_at) if self.finished_at else None,
                     collection_uri=self.collection_uri,
                     filepath=self.filepath,
-                    is_valid=self.is_valid)
+                    is_valid=self.is_valid,
+                    checkin=next(_checkpoint.to_dict() for _checkpoint in self.checkpoint.point == Point.checkin),
+                    validations=next(_checkpoint.to_dict() for _checkpoint in self.checkpoint.point == Point.validation),
+                    )
 
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
@@ -211,6 +214,13 @@ class Notice(Base):
     def status(self, st):
         self._status = st.value
 
+    def to_dict(self):
+        return dict(label=self.label,
+                    message=self.message,
+                    status=self.status,
+                    date=self.when
+                    )
+
 
 class Checkpoint(Base):
     __tablename__ = 'checkpoint'
@@ -278,3 +288,8 @@ class Checkpoint(Base):
     def point(cls):
         return cls._point
 
+    def to_dict(self):
+        return dict(started_at=self.started_at,
+                    finished_at=self.ended_at,
+                    notices=[notice.to_dict() for notice in self.messages] 
+                )
