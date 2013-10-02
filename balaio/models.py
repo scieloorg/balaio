@@ -97,7 +97,6 @@ class ArticlePkg(Base):
                     issue_number=self.issue_number,
                     issue_suppl_volume=self.issue_suppl_volume,
                     issue_suppl_number=self.issue_suppl_number,
-                    #attempts=[['Attempt', attempt.id] for attempt in self.attempts]
                     related_resources=[('attempts', 'Attempt', [attempt.id for attempt in self.attempts]),
                                        ('tickets', 'Ticket', [ticket.id for ticket in self.tickets]),
                             ]
@@ -166,7 +165,6 @@ class Ticket(Base):
                     finished_at=str(self.finished_at) if self.finished_at else None,
                     title=self.title,
                     author=self.author,
-                    #comments=[['Comment', comment.id] for comment in self.comments])
                     comments=[comment.to_dict() for comment in self.comments])
 
     def __repr__(self):
