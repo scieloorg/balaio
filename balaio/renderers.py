@@ -37,7 +37,7 @@ class GtwMetaFactory(JSONP):
             dct_meta['meta'] = {
                 'limit': value['limit'],
                 'offset': value['offset'],
-                'total_count': value['total']
+                'total': value['total']
             }
 
             dct_meta['objects'] = self.add_resource_uri(value['objects'])

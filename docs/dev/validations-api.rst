@@ -51,7 +51,7 @@ Response::
     "next": null,
     "offset": 0,
     "previous": null,
-    "total_count": 1
+    "total": 1
   },
   "objects": [
     {
