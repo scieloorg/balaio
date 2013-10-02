@@ -2,6 +2,7 @@
 import datetime
 
 import enum
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -63,8 +64,8 @@ class Attempt(Base):
                     collection_uri=self.collection_uri,
                     filepath=self.filepath,
                     is_valid=self.is_valid,
-                    checkin=next(_checkpoint.to_dict() for _checkpoint in self.checkpoint.point == Point.checkin),
-                    validations=next(_checkpoint.to_dict() for _checkpoint in self.checkpoint.point == Point.validation),
+                    checkin=next(_checkpoint.to_dict() for _checkpoint in self.checkpoint if _checkpoint.point == Point.checkin),
+                    validations=next(_checkpoint.to_dict() for _checkpoint in self.checkpoint if _checkpoint.point == Point.validation),
                     )
 
     def __repr__(self):
@@ -217,8 +218,8 @@ class Notice(Base):
     def to_dict(self):
         return dict(label=self.label,
                     message=self.message,
-                    status=self.status,
-                    date=self.when
+                    status=str(self.status).replace('Status.', ''),
+                    date=str(self.when)
                     )
 
 
@@ -233,7 +234,8 @@ class Checkpoint(Base):
                             order_by='Notice.when',
                             backref=backref('checkpoint'))
     attempt = relationship('Attempt',
-                           backref=backref('checkpoint'))
+                            backref=backref('checkpoint'))
+                           #backref=backref('checkpoint'))
 
     def __init__(self, point):
         """
@@ -289,7 +291,8 @@ class Checkpoint(Base):
         return cls._point
 
     def to_dict(self):
-        return dict(started_at=self.started_at,
-                    finished_at=self.ended_at,
-                    notices=[notice.to_dict() for notice in self.messages] 
-                )
+        return dict(started_at=str(self.started_at),
+                    finished_at=str(self.ended_at),
+                    notices=[n.to_dict() for n in self.messages] 
+                        )
+
