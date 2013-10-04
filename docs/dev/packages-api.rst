@@ -55,7 +55,7 @@ Response::
       "next": "/api/v1/packages/?limit=20&offset=40",
       "offset": 20,
       "previous": "/api/v1/packages/?limit=20&offset=0",
-      "total_count": 100
+      "total": 100
     },
     "objects": [
       {

@@ -26,7 +26,7 @@ class TestRenderer(unittest.TestCase):
         self.assertEqual(renderer.add_meta(data), {
                 'meta':
                     {
-                        'total_count': 200,
+                        'total': 200,
                         'limit': 20,
                         'offset': 0
                     },
@@ -61,7 +61,7 @@ class TestRenderer(unittest.TestCase):
         self.assertEqual(renderer.add_meta(data), {
                 'meta':
                     {
-                        'total_count': 200,
+                        'total': 200,
                         'limit': 20,
                         'offset': 0
                     },
