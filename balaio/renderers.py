@@ -92,7 +92,7 @@ class GtwMetaFactory(JSONP):
             dct_meta['meta'] = {
                 'limit': self._N(value['limit']),
                 'offset': value['offset'],
-                'total_count': value['total'],
+                'total': value['total'],
                 'previous': self._resource_uri(value.get('filters', {}), prev_offset, value['limit']) if prev_offset else None,
                 'next': self._resource_uri(value.get('filters', {}), next_offset, value['limit']) if next_offset else None,
             }

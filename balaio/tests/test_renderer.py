@@ -128,7 +128,7 @@ class TestRenderer(unittest.TestCase):
         self.assertEqual(renderer.add_meta(data), {
                 'meta':
                     {
-                        'total_count': 200,
+                        'total': 200,
                         'limit': 20,
                         'offset': 0,
                         'previous': None,
@@ -169,7 +169,7 @@ class TestRenderer(unittest.TestCase):
         self.assertEqual(renderer.add_meta(data), {
                 'meta':
                     {
-                        'total_count': 200,
+                        'total': 200,
                         'limit': 20,
                         'offset': 0,
                         'next': '/api/v1/packages/?journal_pissn=0100-879X&limit=20&offset=20',
