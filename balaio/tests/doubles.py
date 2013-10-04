@@ -227,6 +227,7 @@ class QueryStub(object):
     def filter_by(self, **kwargs):
         o = ObjectStub()
         o.limit = self.limit
+        o.scalar = self.scalar
         return o
 
     def get(self, id):

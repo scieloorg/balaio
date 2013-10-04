@@ -13,14 +13,116 @@ class TestRenderer(unittest.TestCase):
     def tearDown(self):
         testing.tearDown()
 
+    def test_int_None(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._N(None), 0)
+
+    def test_int(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._N(10), 10)
+
+    def test_int_string_zero_len(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._N(''), 0)
+
+    def test_int_string(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._N('10'), 10)
+
+    def test_int_string_negative(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._N('-10'), 0)
+
+    def test_int_negative(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._N(-10), 0)
+
+    def test_int_string_not_number(self):
+        renderer = GtwMetaFactory()
+        self.assertEqual(renderer._N('bla'), 0)
+
+    def test_previous_offset_offset_None_limit_None(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=0, limit=None), None)
+
+    def test_previous_offset_offset_None_limit_20(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=20, limit=None), 0)
+
+    def test_previous_offset_offset_0_limit_None(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=0, limit=None), None)
+
+    def test_previous_offset_offset_0_limit_20(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=0, limit=20), None)
+
+    def test_previous_offset_offset_20_limit_None(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=20, limit=None), 0)
+
+    def test_previous_offset_offset_20_limit_20(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._prev_offset(offset=20, limit=20), 0)
+
+    def test_next_offset_offset_None_limit_None(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._next_offset(offset=None, limit=None, total=100), 20)
+
+    def test_next_offset_offset_None_limit_40(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._next_offset(offset=None, limit=40, total=100), 40)
+
+    def test_next_offset_offset_50_limit_50(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._next_offset(offset=50, limit=50, total=101), 100)
+
+    def test_next_offset_offset_20_limit_20_total_39(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._next_offset(offset=20, limit=20, total=39), None)
+
+    def test_next_offset_offset_20_limit_20_total_40(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._next_offset(offset=20, limit=20, total=40), 40)
+
+    def test_next_offset_offset_20_limit_20_total_41(self):
+        renderer = GtwMetaFactory()
+        self.req.path = "/api/v1/attempts/"
+        renderer.request = self.req
+        self.assertEqual(renderer._next_offset(offset=20, limit=20, total=41), 40)
+
     def test_add_meta_without_reference_list(self):
         data = {'limit': 20,
                 'offset': 0,
                 'total': 200,
-                'objects': [AttemptStub().to_dict()]}
+                'objects': [AttemptStub().to_dict()]
+                }
+        self.req.path = "/api/v1/attempts/"
+        self.config.add_route('list_attempt', '/api/v1/attempts/')
 
         renderer = GtwMetaFactory()
-        self.req.path = "/api/v1/attempts/"
         renderer.request = self.req
 
         self.assertEqual(renderer.add_meta(data), {
@@ -28,7 +130,10 @@ class TestRenderer(unittest.TestCase):
                     {
                         'total': 200,
                         'limit': 20,
-                        'offset': 0
+                        'offset': 0,
+                        'previous': None,
+                        'next': '/api/v1/attempts/?limit=20&offset=20',
+                        
                     },
                 'objects':
                     [
@@ -50,10 +155,13 @@ class TestRenderer(unittest.TestCase):
         data = {'limit': 20,
                 'offset': 0,
                 'total': 200,
+                'filters': {'journal_pissn': '0100-879X'},
                 'objects': [ArticlePkgStub().to_dict()]}
 
         renderer = GtwMetaFactory()
         self.req.path = "/api/v1/packages/"
+        self.config.add_route('list_package', '/api/v1/packages/')
+        self.config.add_route('list_attempt', '/api/v1/attempts/')
         self.config.add_route('Attempt', '/api/v1/attempts/{id}/')
 
         renderer.request = self.req
@@ -63,7 +171,9 @@ class TestRenderer(unittest.TestCase):
                     {
                         'total': 200,
                         'limit': 20,
-                        'offset': 0
+                        'offset': 0,
+                        'next': '/api/v1/packages/?journal_pissn=0100-879X&limit=20&offset=20',
+                        'previous': None,
                     },
                 'objects':
                     [
