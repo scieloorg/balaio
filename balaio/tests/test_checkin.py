@@ -3,8 +3,9 @@ from tempfile import NamedTemporaryFile
 from xml.etree.ElementTree import ElementTree
 
 import mocker
+import unittest
 
-from balaio import checkin
+from balaio import checkin, models
 
 
 class SPSMixinTests(mocker.MockerTestCase):
@@ -233,7 +234,7 @@ class XrayTests(mocker.MockerTestCase):
         self.assertRaises(StopIteration, lambda: fps.next())
 
 
-class PackageAnalyserTests(mocker.MockerTestCase):
+class PackageAnalyzerTests(mocker.MockerTestCase):
 
     def _make_test_archive(self, arch_data):
         fp = NamedTemporaryFile()
@@ -284,3 +285,29 @@ class PackageAnalyserTests(mocker.MockerTestCase):
             in_context_perm = oct(stat.S_IMODE(os.stat(arch.name).st_mode))
             for forbidden_val in ['3', '6', '7']:
                 self.assertNotEqual(in_context_perm[1], forbidden_val)
+
+
+class CheckinTests(unittest.TestCase):
+
+    def setUp(self):
+        from sqlalchemy import create_engine
+
+        engine = create_engine('sqlite:///:memory:', echo=False)
+
+        Session = models.Session
+        Session.configure(bind=engine)
+        session = Session()
+
+        models.Base.metadata.create_all(engine)
+        models.create_engine_from_config = lambda config: engine
+
+    def test_get_attempt_ok(self):
+        self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
+            models.Attempt)
+
+    def test_get_attempt_failure(self):
+        self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
+            models.Attempt)
+        self.assertRaises(ValueError, checkin.get_attempt, 'samples/0042-9686-bwho-91-08-545.zip')
+
+    

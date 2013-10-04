@@ -204,7 +204,7 @@ def get_attempt(package):
     """
     config = utils.Configuration.from_env()
 
-    logger.info('Analysing package: %s' % package)
+    logger.info('Analyzing package: %s' % package)
 
     with PackageAnalyzer(package) as pkg:
         try:
@@ -239,12 +239,15 @@ def get_attempt(package):
                                                  articlepkg=article_pkg,
                                                  filepath=package)
                         session.add(attempt)
+                        session.commit()
+                        logging.debug('Created %s' % attempt)
+
                     except IntegrityError:
                         logging.debug('The package had already been analyzed')
                         raise ValueError('The package had already been analyzed')
 
-                    logging.debug('Created %s' % attempt)
-                    session.commit()
+                    # logging.debug('Created %s' % attempt)
+                    # session.commit()
                 except:
                     logging.error('The transaction was aborted due to an exception')
                     session.rollback()
