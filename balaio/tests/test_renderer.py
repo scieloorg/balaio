@@ -22,7 +22,27 @@ class TestRenderer(unittest.TestCase):
         self.req.path = "/api/v1/attempts/1/"
         renderer.request = self.req
 
-        self.assertEqual(renderer.format_response(data), expected)
+        self.assertEqual(renderer.add_meta(data), {
+                'meta':
+                    {
+                        'total': 200,
+                        'limit': 20,
+                        'offset': 0
+                    },
+                'objects':
+                    [
+                        {
+                            'collection_uri': '/api/v1/collection/xxx/',
+                            'filepath': '/tmp/foo/bar.zip',
+                            'finished_at': None,
+                            'articlepkg_id': 1,
+                            'is_valid': True,
+                            'started_at': '2013-09-18 14:11:04.129956',
+                            'id': 1,
+                            'package_checksum': 'ol9j27n3f52kne7hbn',
+                            'resource_uri': '/api/v1/attempts/1/'
+                        }
+                       ]})
 
     def test_format_response_for_a_list_of_objects(self):
 
@@ -41,7 +61,7 @@ class TestRenderer(unittest.TestCase):
         self.assertEqual(renderer.format_response(data), {
                 'meta':
                     {
-                        'total_count': 200,
+                        'total': 200,
                         'limit': 20,
                         'offset': 0
                     },
