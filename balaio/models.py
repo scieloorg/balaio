@@ -2,6 +2,7 @@
 import datetime
 
 import enum
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -62,14 +63,17 @@ class Attempt(Base):
         self.is_valid = True
 
     def to_dict(self):
-        return dict(id=self.id,
-                    package_checksum=self.package_checksum,
-                    articlepkg_id=self.articlepkg_id,
-                    started_at=str(self.started_at),
-                    finished_at=str(self.finished_at) if self.finished_at else None,
-                    collection_uri=self.collection_uri,
-                    filepath=self.filepath,
-                    is_valid=self.is_valid)
+        checkpoints = {cp.point.name: cp.to_dict() for cp in self.checkpoint if cp.point is not Point.checkout}
+        return checkpoints.update(dict(id=self.id,
+                                        package_checksum=self.package_checksum,
+                                        articlepkg_id=self.articlepkg_id,
+                                        started_at=str(self.started_at),
+                                        finished_at=str(self.finished_at) if self.finished_at else None,
+                                        collection_uri=self.collection_uri,
+                                        filepath=self.filepath,
+                                        is_valid=self.is_valid,
+                                    )
+                                )
 
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
@@ -100,7 +104,9 @@ class ArticlePkg(Base):
                     issue_number=self.issue_number,
                     issue_suppl_volume=self.issue_suppl_volume,
                     issue_suppl_number=self.issue_suppl_number,
-                    attempts=[['Attempt', attempt.id] for attempt in self.attempts]
+                    related_resources=[('attempts', 'Attempt', [attempt.id for attempt in self.attempts]),
+                                       ('tickets', 'Ticket', [ticket.id for ticket in self.tickets]),
+                            ]
                     )
 
     def __repr__(self):
@@ -128,11 +134,9 @@ class Comment(Base):
         self.date = datetime.datetime.now()
 
     def to_dict(self):
-        return dict(id=self.id,
-                    message=self.message,
-                    ticket_id=self.ticket_id,
-                    comment_author=self.author,
-                    comment_date=str(self.date))
+        return dict(message=self.message,
+                    author=self.author,
+                    date=str(self.date))
 
     def __repr__(self):
         return "<Comment('%s')>" % self.id
@@ -167,9 +171,8 @@ class Ticket(Base):
                     started_at=str(self.started_at),
                     finished_at=str(self.finished_at) if self.finished_at else None,
                     title=self.title,
-                    ticket_author=self.author,
-                    comments=[['Comment', comment.id] for comment in self.comments])
-                    #comments=[comment.to_dict() for comment in self.comments])
+                    author=self.author,
+                    comments=[comment.to_dict() for comment in self.comments])
 
     def __repr__(self):
         return "<Ticket('%s')>" % self.id
@@ -216,6 +219,13 @@ class Notice(Base):
     @status.setter
     def status(self, st):
         self._status = st.value
+
+    def to_dict(self):
+        return dict(label=self.label,
+                    message=self.message,
+                    status=self.status.name,
+                    date=str(self.when)
+                    )
 
 
 class Checkpoint(Base):
@@ -283,4 +293,10 @@ class Checkpoint(Base):
     @point.expression
     def point(cls):
         return cls._point
+
+    def to_dict(self):
+        return dict(started_at=str(self.started_at),
+                    finished_at=str(self.ended_at),
+                    notices=[n.to_dict() for n in self.messages] 
+                        )
 
