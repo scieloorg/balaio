@@ -263,6 +263,6 @@ def get_attempt(package):
                 raise ValueError('the package is not valid: %s' % errors)
 
         except IOError as e:
-            logger.error('The package %s had been deleted during analisys' % package)
-            raise ValueError('The package %s had been deleted during analisys' % package)
+            logger.error('The package %s had been deleted during analysis' % package)
+            raise ValueError('The package %s had been deleted during analysis' % package)
 
