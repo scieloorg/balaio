@@ -9,7 +9,7 @@ class GtwMetaFactory(JSONP):
         """
         return [self.request.route_path(obj_type, id=obj_id) for obj_type, obj_id in ref]
 
-    def add_resource_uri(self, value):
+    def add_current_resource_path(self, value):
         """
         Add the URL of the resource to the own object
         """
@@ -71,7 +71,7 @@ class GtwMetaFactory(JSONP):
             return None
         return new_offset
 
-    def _resource_uri(self, filters, offset=None, limit=None):
+    def _current_resource_path(self, filters, offset=None, limit=None):
         """
         Returns the current resource path excluding filters containing ``None`` as value.
 
@@ -96,15 +96,15 @@ class GtwMetaFactory(JSONP):
                 'limit': self._N(value['limit']),
                 'offset': value['offset'],
                 'total': value['total'],
-                'previous': self._resource_uri(value.get('filters', {}), prev_offset, value['limit']) if prev_offset else None,
-                'next': self._resource_uri(value.get('filters', {}), next_offset, value['limit']) if next_offset else None,
+                'previous': self._current_resource_path(value.get('filters', {}), prev_offset, value['limit']) if prev_offset else None,
+                'next': self._current_resource_path(value.get('filters', {}), next_offset, value['limit']) if next_offset else None,
             }
 
-            dct_meta['objects'] = self.add_resource_uri(value['objects'])
+            dct_meta['objects'] = self.add_current_resource_path(value['objects'])
 
             return dct_meta
         else:
-            return self.add_resource_uri(value)
+            return self.add_current_resource_path(value)
 
     def tamper(self, render):
         def wrapper(value, system):
