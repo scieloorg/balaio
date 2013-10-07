@@ -18,10 +18,11 @@ class AttemptsAPITest(unittest.TestCase):
     def test_view_attempts(self):
         expected = {'limit': 20,
                     'offset': 0,
+                    'filters': {'articlepkg_id': 1},
                     'total': 200,
                     'objects': [AttemptStub().to_dict(), AttemptStub().to_dict()]}
 
-        self.req.params = {'limit': 20, 'offset': 0}
+        self.req.params = {'limit': 20, 'offset': 0, 'articlepkg_id': 1}
         self.req.db.query.found = True
 
         self.assertEqual(
@@ -31,10 +32,11 @@ class AttemptsAPITest(unittest.TestCase):
     def test_view_attempts_no_result(self):
         expected = {'limit': 20,
                     'offset': 0,
+                    'filters': {'articlepkg_id': 1},
                     'total': 200,
                     'objects': []}
 
-        self.req.params = {'limit': 20, 'offset': 0}
+        self.req.params = {'limit': 20, 'offset': 0, 'articlepkg_id': 1}
         self.req.db.query.found = False
 
         self.assertEqual(
@@ -72,10 +74,11 @@ class ArticlePkgAPITest(unittest.TestCase):
     def test_view_packages(self):
         expected = {'limit': 20,
                     'offset': 0,
+                    'filters': {'journal_title': 'Journal of ...'},
                     'total': 200,
                     'objects': [ArticlePkgStub().to_dict(), ArticlePkgStub().to_dict()]}
 
-        self.req.params = {'limit': 20, 'offset': 0}
+        self.req.params = {'limit': 20, 'offset': 0, 'journal_title': 'Journal of ...'}
         self.req.db.query.found = True
 
         self.assertEqual(
@@ -85,9 +88,10 @@ class ArticlePkgAPITest(unittest.TestCase):
     def test_view_packages_no_result(self):
         expected = {'limit': 20,
                     'offset': 0,
+                    'filters': {'journal_title': 'Journal of ...'},
                     'total': 200,
                     'objects': []}
-        self.req.params = {'limit': 20, 'offset': 0}
+        self.req.params = {'limit': 20, 'offset': 0, 'journal_title': 'Journal of ...'}
         self.req.db.query.found = False
 
         self.assertEqual(
@@ -128,10 +132,11 @@ class TicketAPITest(unittest.TestCase):
     def test_view_tickets(self):
         expected = {'limit': 20,
                     'offset': 0,
+                    'filters': {'articlepkg_id': 1},
                     'total': 200,
                     'objects': [TicketStub().to_dict(), TicketStub().to_dict()]}
 
-        self.req.params = {'limit': 20, 'offset': 0}
+        self.req.params = {'limit': 20, 'offset': 0, 'articlepkg_id': 1}
         self.req.db.query.found = True
 
         self.assertEqual(
@@ -141,10 +146,11 @@ class TicketAPITest(unittest.TestCase):
     def test_view_tickets_no_result(self):
         expected = {'limit': 20,
                     'offset': 0,
+                    'filters': {'articlepkg_id': 1},
                     'total': 200,
                     'objects': []}
 
-        self.req.params = {'limit': 20, 'offset': 0}
+        self.req.params = {'limit': 20, 'offset': 0, 'articlepkg_id': 1}
         self.req.db.query.found = False
 
         self.assertEqual(
@@ -273,4 +279,4 @@ class QueryFiltersTest(unittest.TestCase):
         self.assertEqual(
             expected,
             gateway_server.get_query_filters(model, request_params)
-            )
+        )

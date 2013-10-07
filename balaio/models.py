@@ -216,7 +216,7 @@ class Notice(Base):
     def to_dict(self):
         return dict(label=self.label,
                     message=self.message,
-                    status=str(self.status).replace('Status.', ''),
+                    status=self.status.name,
                     date=str(self.when)
                     )
 
@@ -232,8 +232,7 @@ class Checkpoint(Base):
                             order_by='Notice.when',
                             backref=backref('checkpoint'))
     attempt = relationship('Attempt',
-                            backref=backref('checkpoint'))
-
+                           backref=backref('checkpoint'))
 
     def __init__(self, point):
         """
