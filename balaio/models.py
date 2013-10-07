@@ -33,6 +33,13 @@ def create_engine_from_config(config):
                          echo=config.getboolean('app', 'debug'))
 
 
+def init_database(engine):
+    """
+    Creates the database structure for the application.
+    """
+    Base.metadata.create_all(engine)
+
+
 class Attempt(Base):
     __tablename__ = 'attempt'
 
