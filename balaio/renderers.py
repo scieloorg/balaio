@@ -72,13 +72,16 @@ class GtwMetaFactory(JSONP):
         return new_offset
 
     def _resource_uri(self, filters, offset=None, limit=None):
-        # a linha abaixo da erro nos testes
-        #return self.request.current_route_path(_query=self._query(filters, offset, limit))
-        import urllib
+        """
+        Returns the current resource path excluding filters containing ``None`` as value.
+
+        :param filters: a dict to be returned as querystring params.
+        :param offset: (optional) an int. Default is ``None``.
+        :param limit: (optional) an int. Default is ``None``.
+        """
         filters.update({'offset': offset})
         filters.update({'limit': limit})
-        q = urllib.urlencode({k: v for k, v in filters.items() if v})
-        return self.request.path + '?' + q if q else self.request.path
+        return self.request.current_route_path(_query={k: v for k, v in filters.items() if v})
 
     def add_meta(self, value):
         """

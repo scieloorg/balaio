@@ -124,6 +124,7 @@ class TestRenderer(unittest.TestCase):
 
         renderer = GtwMetaFactory()
         renderer.request = self.req
+        renderer._resource_uri = lambda *args, **kwargs: None
 
         self.assertEqual(renderer.add_meta(data), {
                 'meta':
@@ -132,8 +133,8 @@ class TestRenderer(unittest.TestCase):
                         'limit': 20,
                         'offset': 0,
                         'previous': None,
-                        'next': '/api/v1/attempts/?limit=20&offset=20',
-                        
+                        'next': None,
+
                     },
                 'objects':
                     [
@@ -165,6 +166,7 @@ class TestRenderer(unittest.TestCase):
         self.config.add_route('Attempt', '/api/v1/attempts/{id}/')
 
         renderer.request = self.req
+        renderer._resource_uri = lambda *args, **kwargs: None
 
         self.assertEqual(renderer.add_meta(data), {
                 'meta':
@@ -172,7 +174,7 @@ class TestRenderer(unittest.TestCase):
                         'total': 200,
                         'limit': 20,
                         'offset': 0,
-                        'next': '/api/v1/packages/?journal_pissn=0100-879X&limit=20&offset=20',
+                        'next': None,
                         'previous': None,
                     },
                 'objects':
@@ -260,3 +262,19 @@ class TestRenderer(unittest.TestCase):
 
         self.assertEqual(renderer.translate_ref(data), ['/api/v1/attempts/1/',
             '/api/v1/attempts/2/', '/api/v1/attempts/3/'])
+
+    def test_resource_uri(self):
+        from pyramid.interfaces import IRoutesMapper
+        route = DummyRoute('/1/2/3')
+        mapper = DummyRoutesMapper(route=route)
+        self.req.matched_route = route
+        self.req.matchdict = {}
+        self.req.script_name = '/script_name'
+        self.req.registry.registerUtility(mapper, IRoutesMapper)
+
+        renderer = GtwMetaFactory()
+        renderer.request = self.req
+        result = renderer._resource_uri({'foo': 'bar'}, limit=15, offset=50)
+
+        self.assertEqual(result, '/script_name/1/2/3?foo=bar&limit=15&offset=50')
+
