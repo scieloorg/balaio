@@ -107,7 +107,7 @@ def ticket(request):
     return ticket.to_dict()
 
 
-@view_config(route_name='list_ticket', request_method='GET', renderer="gtw")
+@view_config(route_name='ticket', request_method='GET', renderer="gtw")
 def list_ticket(request):
     """
     Return a dict content the total param and the objects list
@@ -125,7 +125,7 @@ def list_ticket(request):
             'objects': [ticket.to_dict() for ticket in tickets]}
 
 
-@view_config(route_name='new_ticket', request_method='POST', renderer="gtw")
+@view_config(route_name='ticket', request_method='POST', renderer="gtw")
 def new_ticket(request):
     """
     Creates a ticket with or without comment.
@@ -176,23 +176,18 @@ if __name__ == '__main__':
     config_pyrmd = Configurator(settings=dict(config.items()))
     config_pyrmd.add_route('index', '/')
 
-    config_pyrmd.add_route('ArticlePkg',
-        '/api/%s/packages/{id}/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('Attempt',
-        '/api/%s/attempts/{id}/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('Ticket',
-        '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('new_ticket',
-        '/api/%s/tickets/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('update_ticket',
-        '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('list_package',
-        '/api/%s/packages/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('list_ticket',
-        '/api/%s/tickets/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('list_attempts',
-        '/api/%s/attempts/' % config.get('http_server', 'version'))
+    version = config.get('http_server', 'version')
 
+    config_pyrmd.add_route('ArticlePkg', '/api/%s/packages/{id}/' % version)
+    config_pyrmd.add_route('Attempt', '/api/%s/attempts/{id}/' % version)
+    config_pyrmd.add_route('Ticket', '/api/%s/tickets/{id}/' % version)
+
+    config_pyrmd.add_route('ticket', '/api/%s/tickets/' % version)
+
+    config_pyrmd.add_route('update_ticket', '/api/%s/tickets/{id}/' % version)
+
+    config_pyrmd.add_route('list_package', '/api/%s/packages/' % version)
+    config_pyrmd.add_route('list_attempts', '/api/%s/attempts/' % version)
 
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 
