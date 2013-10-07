@@ -109,7 +109,7 @@ def ticket(request):
     return ticket.to_dict()
 
 
-@view_config(route_name='list_ticket', request_method='GET', renderer="gtw")
+@view_config(route_name='ticket', request_method='GET', renderer="gtw")
 def list_ticket(request):
     """
     Return a dict content the total param and the objects list
@@ -128,7 +128,7 @@ def list_ticket(request):
             'objects': [ticket.to_dict() for ticket in tickets]}
 
 
-@view_config(route_name='new_ticket', request_method='POST', renderer="gtw")
+@view_config(route_name='ticket', request_method='POST', renderer="gtw")
 def new_ticket(request):
     """
     Creates a ticket with or without comment.
@@ -192,15 +192,13 @@ if __name__ == '__main__':
     # lists
     config_pyrmd.add_route('list_package',
         '/api/%s/packages/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('list_ticket',
-        '/api/%s/tickets/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_attempts',
         '/api/%s/attempts/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_comment',
         '/api/%s/comments/' % config.get('http_server', 'version'))
 
     # tickets new and update
-    config_pyrmd.add_route('new_ticket',
+    config_pyrmd.add_route('ticket',
         '/api/%s/tickets/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('update_ticket',
         '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
