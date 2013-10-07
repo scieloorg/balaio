@@ -227,9 +227,37 @@ class QueryStub(object):
     def filter_by(self, **kwargs):
         o = ObjectStub()
         o.limit = self.limit
+        o.scalar = self.scalar
         return o
 
     def get(self, id):
         if not self.found:
             return None
         return self.model()
+
+
+class DummyRoute:
+    """
+    Copied from pyramid.tests.test_url.DummyRoute
+    """
+    pregenerator = None
+    name = 'route'
+    def __init__(self, result='/1/2/3'):
+        self.result = result
+
+    def generate(self, kw):
+        self.kw = kw
+        return self.result
+
+
+class DummyRoutesMapper:
+    """
+    Copied from pyramid.tests.test_url.DummyRoutesMapper
+    """
+    raise_exc = None
+    def __init__(self, route=None, raise_exc=False):
+        self.route = route
+
+    def get_route(self, route_name):
+        return self.route
+
