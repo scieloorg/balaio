@@ -194,8 +194,6 @@ if __name__ == '__main__':
         '/api/%s/packages/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('list_attempts',
         '/api/%s/attempts/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('list_comment',
-        '/api/%s/comments/' % config.get('http_server', 'version'))
 
     # tickets new and update
     config_pyrmd.add_route('ticket',
