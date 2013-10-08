@@ -71,6 +71,13 @@ class PackageAnalyzerStub(object):
         `_xml_string` needs to be patched.
         """
         self._xml_string = None
+        self.checksum = '5a74db5db860f2f8e3c6a5c64acdbf04'
+        self._filepath = '/tmp/bla.zip'
+        self.meta = {
+            'journal_eissn': '1234-1234',
+            'journal_pissn': '1234-4321',
+            'article_title': 'foo',
+        }
 
     @property
     def xml(self):
@@ -79,6 +86,9 @@ class PackageAnalyzerStub(object):
 
     def lock_package(self):
         return None
+
+    def is_valid_package(self):
+        return True
 
 
 def get_ScieloAPIToolbeltStubModule():

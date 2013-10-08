@@ -337,7 +337,7 @@ class CheckinTests(unittest.TestCase):
         article2.journal_title = 'REV'
         self.session.add(article2)
         self.session.commit()
-        
+
         self.assertRaises(ValueError, checkin.get_attempt, 'samples/0042-9686-bwho-91-08-545.zip')
 
     def test_get_attempt_invalid_package_missing_xml(self):
@@ -359,3 +359,4 @@ class CheckinTests(unittest.TestCase):
         The package is missing
         """
         self.assertRaises(ValueError, checkin.get_attempt, 'package.zip')
+
