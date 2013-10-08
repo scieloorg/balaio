@@ -28,13 +28,7 @@ class ValidationPipe(Pipe):
 
         result_status, result_description = self.validate(item)
 
-        message = {
-            'stage': self._stage_,
-            'status': result_status,
-            'description': result_description,
-        }
-
-        self._notifier.validation_event(message)
+        self._notifier.tell(result_description, result_status, label=self._stage_)
 
         return item
 

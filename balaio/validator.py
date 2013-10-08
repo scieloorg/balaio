@@ -10,6 +10,7 @@ import scieloapi
 import vpipes
 import utils
 import checkin
+import notifier
 import scieloapitoolbelt
 import models
 
@@ -29,7 +30,6 @@ class SetupPipe(vpipes.Pipe):
         self._sapi_tools = sapi_tools
         self._pkg_analyzer = pkg_analyzer
         self._issn_validator = issn_validator
-
 
     def _fetch_journal_data(self, criteria):
         """
@@ -66,6 +66,9 @@ class SetupPipe(vpipes.Pipe):
         :returns: a tuple (Attempt, PackageAnalyzer, journal_and_issue_data)
         """
         logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
+
+        self.attempt_notifier = self._notifier(attempt)
+        self.attempt_notifier.start()
 
         pkg_analyzer = self._pkg_analyzer(attempt.filepath)
         pkg_analyzer.lock_package()
@@ -119,6 +122,9 @@ class TearDownPipe(vpipes.Pipe):
     def transform(self, item):
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
         attempt, pkg_analyzer, journal_and_issue_data = item
+
+        self.attempt_notifier = self._notifier(attempt)
+        self.attempt_notifier.end()
 
         pkg_analyzer.restore_perms()
 
@@ -589,7 +595,10 @@ if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
                                  config.get('manager', 'api_key'))
-    notifier_dep = None
+
+    ValidationNotifier = notifier.validation_notifier_factory(config)
+
+    notifier_dep = ValidationNotifier
 
     ppl = vpipes.Pipeline(
         SetupPipe(notifier_dep, scieloapi, scieloapitoolbelt,

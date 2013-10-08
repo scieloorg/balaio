@@ -4,7 +4,7 @@ import mocker
 
 from balaio import vpipes
 from balaio.tests.doubles import *
-
+from balaio import models
 
 class ValidationPipeTests(mocker.MockerTestCase):
 
@@ -49,7 +49,7 @@ class ValidationPipeTests(mocker.MockerTestCase):
         mock_self._stage_
         self.mocker.result('bar')
 
-        mock_self._notifier.validation_event(mocker.ANY)
+        mock_self._notifier.tell('foo', models.Status.ok, 'bar')
         self.mocker.result(None)
 
         self.mocker.replay()
