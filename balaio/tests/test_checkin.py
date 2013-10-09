@@ -338,21 +338,23 @@ class CheckinTests(unittest.TestCase):
         self.session.add(article2)
         self.session.commit()
 
-        self.assertRaises(ValueError, checkin.get_attempt, 'samples/0042-9686-bwho-91-08-545.zip')
+        attempt = checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip')
+        self.assertIsInstance(attempt, models.Attempt)
 
     def test_get_attempt_invalid_package_missing_xml(self):
         """
         There are more than one article registered with same article title
         """
         pkg = self._make_test_archive([('texto.txt', b'bla bla')])
-        self.assertRaises(AttributeError, checkin.get_attempt, pkg.name)
+        self.assertRaises(ValueError, checkin.get_attempt, pkg.name)
 
     def test_get_attempt_invalid_package_missing_issn(self):
         """
         Package is invalid because there is no ISSN
         """
         pkg = self._make_test_archive([('texto.xml', b'<root/>')])
-        self.assertRaises(ValueError, checkin.get_attempt, pkg.name)
+        attempt = checkin.get_attempt(pkg.name)
+        self.assertIsInstance(attempt, models.Attempt)
 
     def test_get_attempt_inexisting_package(self):
         """

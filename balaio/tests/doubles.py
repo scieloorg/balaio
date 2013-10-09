@@ -72,7 +72,7 @@ class PackageAnalyzerStub(object):
         """
         self._xml_string = None
         self.checksum = '5a74db5db860f2f8e3c6a5c64acdbf04'
-        self._filepath = '/tmp/bla.zip'
+        self._filename = '/tmp/bla.zip'
         self.meta = {
             'journal_eissn': '1234-1234',
             'journal_pissn': '1234-4321',

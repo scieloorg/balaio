@@ -5,6 +5,7 @@ import zipfile
 import itertools
 import xml.etree.ElementTree as etree
 import logging
+import sys
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.exc import IntegrityError
@@ -222,17 +223,14 @@ def get_attempt(package):
             session.add(attempt)
 
             try:
-                # SAVEPOINT
-                session.begin_nested()
                 article_pkg = models.ArticlePkg.get_or_create_from_package(pkg, session)
                 if article_pkg not in session:
                     session.add(article_pkg)
-
-                attempt.articlepkg = article_pkg
             except:
-                logging.error('The transaction was aborted due to an exception')
-                session.rollback()
-                raise
+                attempt.is_valid = False
+                logging.error('Failed to load an ArticlePkg. The Attempt was invalidated.')
+            else:
+                attempt.articlepkg = article_pkg
 
             session.commit()
         except IOError:
@@ -240,10 +238,18 @@ def get_attempt(package):
             logger.error('The package %s had been deleted during analysis' % package)
             raise ValueError('The package %s had been deleted during analysis' % package)
         except:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            import traceback
+
             session.rollback()
-            logger.error('Unexpected error! The package analysis for %s was aborted.' % package)
+            logger.error('Unexpected error! The package analysis for %s was aborted. Traceback: %s' % (
+                package, traceback.print_tb(exc_traceback)))
             raise ValueError('Unexpected error! The package analysis for %s was aborted.' % package)
         finally:
             logging.debug('Closing the transactional session scope')
             session.close()
+
+    return attempt
+
+
 

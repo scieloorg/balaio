@@ -93,7 +93,7 @@ class Attempt(Base):
         """
         attempt = Attempt(package_checksum=package.checksum,
                           is_valid=False,
-                          filepath=package._filepath)
+                          filepath=package._filename)
 
         meta = package.meta
 
