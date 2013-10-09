@@ -16,7 +16,7 @@ from balaio import models
 sys.path.append(os.path.dirname(__file__) + '/../')
 
 
-def _initTestingDB(model):
+def _initTestingDB(obj_list):
 
     engine = create_engine('sqlite://')
     models.Base.metadata.create_all(engine)
@@ -24,15 +24,15 @@ def _initTestingDB(model):
     models.ScopedSession.configure(bind=engine)
 
     with transaction.manager:
-        models.ScopedSession.add(model)
+            models.ScopedSession.add_all(obj_list)
 
     return models.ScopedSession
 
 
 class PackageFunctionalAPITest(unittest.TestCase):
 
-    def _makeOne(self):
-        article = models.ArticlePkg(id=1,
+    def _makeOne(self, id=1):
+        article = models.ArticlePkg(id=id,
                     journal_title='Associa... Brasileira',
                     article_title='Construction of a recombinant adenovirus...',
                     journal_pissn='0100-879X',
@@ -42,11 +42,13 @@ class PackageFunctionalAPITest(unittest.TestCase):
                     issue_number='8',
                     issue_suppl_volume=None,
                     issue_suppl_number=None)
-
         return article
 
+    def _makeList(self):
+        return [self._makeOne(), self._makeOne(id=2), self._makeOne(id=3)]
+
     def setUp(self):
-        self.session = _initTestingDB(self._makeOne())
+        self.session = _initTestingDB(self._makeList())
         self.config = testing.setUp()
 
         app, config = main()
@@ -68,11 +70,43 @@ class PackageFunctionalAPITest(unittest.TestCase):
 
     def test_GET_to_one_package(self):
         res = self.testapp.get('/api/v1/packages/1/')
-        self.assertEqual(res.body, '{"article_title": "Construction of a recombinant adenovirus...", "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}')
+
+        self.assertEqual(res.body, '{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/1/", "id": 1, "issue_number": "8"}')
 
     def test_GET_to_packages(self):
         res = self.testapp.get('/api/v1/packages/')
-        self.assertEqual(res.body, '{"meta": {"total_count": 1, "limit": "20", "offset": 0}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}]}')
+
+        self.assertEqual(res.body, '{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": 0}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/2/", "id": 2, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/3/", "id": 3, "issue_number": "8"}]}')
+
+    def test_GET_to_packages_with_param_limit(self):
+        res = self.testapp.get('/api/v1/packages/?limit=82')
+
+        self.assertEqual(res.body, '{"meta": {"previous": null, "next": null, "total": 3, "limit": 82, "offset": 0}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/2/", "id": 2, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/3/", "id": 3, "issue_number": "8"}]}')
+
+    def test_GET_to_packages_with_param_offset(self):
+        res = self.testapp.get('/api/v1/packages/?offset=1')
+
+        self.assertEqual(res.body, '{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/2/", "id": 2, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/3/", "id": 3, "issue_number": "8"}]}')
+
+    def test_GET_to_packages_with_param_offset_and_limit(self):
+        res = self.testapp.get('/api/v1/packages/?offset=4&limit=78')
+
+        self.assertEqual(res.body, '{"meta": {"previous": null, "next": null, "total": 3, "limit": 78, "offset": "4"}, "objects": []}')
+
+    def test_GET_to_packages_with_param_low_limit(self):
+        res = self.testapp.get('/api/v1/packages/?limit=2')
+
+        self.assertEqual(res.body, '{"meta": {"previous": null, "next": "/api/v1/packages/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/2/", "id": 2, "issue_number": "8"}]}')
+
+    def test_GET_to_packages_with_param_low_offset_and_limit(self):
+        res = self.testapp.get('/api/v1/packages/?limit=2&offset=1')
+
+        self.assertEqual(res.body, '{"meta": {"previous": null, "next": "/api/v1/packages/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/2/", "id": 2, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/3/", "id": 3, "issue_number": "8"}]}')
+
+    def test_GET_to_packages_with_param_low_limit_and_offset(self):
+        res = self.testapp.get('/api/v1/packages/?limit=1&offset=2')
+
+        self.assertEqual(res.body, '{"meta": {"previous": "/api/v1/packages/?limit=1&offset=1", "next": "/api/v1/packages/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/3/", "id": 3, "issue_number": "8"}]}')
 
 
 class AttemptsAPITest(unittest.TestCase):
