@@ -11,7 +11,7 @@ class ValidationPipeTests(mocker.MockerTestCase):
     def _makeOne(self, data, **kwargs):
         from balaio import vpipes
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda args: NotifierStub)
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
 
         vpipe = vpipes.ValidationPipe(scieloapi=_scieloapi,
@@ -41,22 +41,27 @@ class ValidationPipeTests(mocker.MockerTestCase):
         """
         Asserts that methods expected to be defined by the subclasses are being called.
         """
+        vpipes.ValidationPipe._notifier = NotifierStub()
         mock_self = self.mocker.mock(vpipes.ValidationPipe)
 
-        mock_self.validate(['attempt', 'pkg_analyzer', {}])
-        self.mocker.result(['ok', 'foo'])
+        item = [AttemptStub(), ArticlePkgStub(), {}]
+
+        mock_self.validate(item)
+        self.mocker.result([models.Status.ok, 'foo'])
 
         mock_self._stage_
         self.mocker.result('bar')
 
-        mock_self._notifier.tell('foo', models.Status.ok, 'bar')
-        self.mocker.result(None)
+        #mock_self._notifier.validation_event(mocker.ANY)
+        # self.mocker.result(None)
+        mock_self._notifier(item[0])
+        self.mocker.result(NotifierStub())
 
         self.mocker.replay()
 
         self.assertEqual(
-            vpipes.ValidationPipe.transform(mock_self, ['attempt', 'pkg_analyzer', {}]),
-            ['attempt', 'pkg_analyzer', {}])
+            vpipes.ValidationPipe.transform(mock_self, item),
+            item)
 
     def test_validate_raises_NotImplementedError(self):
         vpipe = self._makeOne([{'name': 'foo'}])

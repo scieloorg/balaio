@@ -61,7 +61,13 @@ class NotifierStub(object):
     def __init__(self, *args, **kwargs):
         pass
 
+    def start(self):
+        pass
+
     def tell(self, *args, **kwargs):
+        pass
+
+    def end(self):
         pass
 
 

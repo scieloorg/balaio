@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class ValidationPipe(Pipe):
+
     """
     Specialized Pipe which validates the data and notifies the result.
     """
@@ -22,22 +23,22 @@ class ValidationPipe(Pipe):
         Performs a transformation to one `item` of data iterator.
 
         `item` is a tuple comprised of instances of models.Attempt, a
-        checkin.PackageAnalyzer, a dict of journal data and a dict of issue data
+        checkin.PackageAnalyzer, a dict of journal and issue data.
         """
         logger.debug('%s started processing %s' % (self.__class__.__name__, item[0]))
 
         result_status, result_description = self.validate(item)
 
-        self._notifier.tell(result_description, result_status, label=self._stage_)
+        self._notifier(item[0]).tell(result_description, result_status, label=self._stage_)
 
         return item
 
-    def validate(self, package):
+    def validate(self, item):
         """
-        Performs the validation of `package`.
+        Performs the validation of `item`.
 
-        `package` is a checkin.PackageAnalyzer instance,
-        representing the article package under validation.
+        `item` is a tuple comprised of instances of models.Attempt, a
+        checkin.PackageAnalyzer, a dict of journal and issue data.
         """
         raise NotImplementedError()
 
