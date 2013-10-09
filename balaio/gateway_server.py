@@ -59,7 +59,8 @@ def list_package(request):
 
     return {'limit': limit,
             'offset': offset,
-            'total': request.db.query(func.count(models.ArticlePkg.id)).scalar(),
+            'filters': filters,
+            'total': request.db.query(func.count(models.ArticlePkg.id)).filter_by(**filters).scalar(),
             'objects': [article.to_dict() for article in articles]}
 
 
@@ -90,7 +91,8 @@ def attempts(request):
 
     return {'limit': limit,
             'offset': offset,
-            'total': request.db.query(func.count(models.Attempt.id)).scalar(),
+            'filters': filters,
+            'total': request.db.query(func.count(models.Attempt.id)).filter_by(**filters).scalar(),
             'objects': [attempt.to_dict() for attempt in attempts]}
 
 
@@ -108,7 +110,7 @@ def ticket(request):
     return ticket.to_dict()
 
 
-@view_config(route_name='list_ticket', request_method='GET', renderer="gtw")
+@view_config(route_name='ticket', request_method='GET', renderer="gtw")
 def list_ticket(request):
     """
     Return a dict content the total param and the objects list
@@ -122,11 +124,12 @@ def list_ticket(request):
 
     return {'limit': limit,
             'offset': offset,
-            'total': request.db.query(func.count(models.Ticket.id)).scalar(),
+            'filters': filters,
+            'total': request.db.query(func.count(models.Ticket.id)).filter_by(**filters).scalar(),
             'objects': [ticket.to_dict() for ticket in tickets]}
 
 
-@view_config(route_name='new_ticket', request_method='POST', renderer="gtw")
+@view_config(route_name='ticket', request_method='POST', renderer="gtw")
 def new_ticket(request):
     """
     Creates a ticket with or without comment.
@@ -176,22 +179,27 @@ def main():
     config_pyrmd = Configurator(settings=dict(config.items()))
     config_pyrmd.add_route('index', '/')
 
+    # get
     config_pyrmd.add_route('ArticlePkg',
         '/api/%s/packages/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Attempt',
         '/api/%s/attempts/{id}/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('Ticket',
         '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('new_ticket',
+    config_pyrmd.add_route('Comment',
+        '/api/%s/comments/{id}/' % config.get('http_server', 'version'))
+
+    # lists
+    config_pyrmd.add_route('list_package',
+        '/api/%s/packages/' % config.get('http_server', 'version'))
+    config_pyrmd.add_route('list_attempts',
+        '/api/%s/attempts/' % config.get('http_server', 'version'))
+
+    # tickets new and update
+    config_pyrmd.add_route('ticket',
         '/api/%s/tickets/' % config.get('http_server', 'version'))
     config_pyrmd.add_route('update_ticket',
         '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('list_package',
-        '/api/%s/packages/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('list_ticket',
-        '/api/%s/tickets/' % config.get('http_server', 'version'))
-    config_pyrmd.add_route('list_attempts',
-        '/api/%s/attempts/' % config.get('http_server', 'version'))
 
 
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')

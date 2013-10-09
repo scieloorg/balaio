@@ -120,7 +120,9 @@ class ArticlePkgStub(object):
                     issue_number=self.issue_number,
                     issue_suppl_volume=self.issue_suppl_volume,
                     issue_suppl_number=self.issue_suppl_number,
-                    attempts=[['Attempt', AttemptStub().id]]
+                    related_resources=[('attempts', 'Attempt', [1, 2]),
+                                        ('tickets', 'Ticket', [11, 12]),
+                        ]
                     )
 
 
@@ -163,7 +165,11 @@ class AttemptStub(object):
                     finished_at=self.finished_at,
                     collection_uri=self.collection_uri,
                     filepath=self.filepath,
-                    is_valid=self.is_valid)
+                    is_valid=self.is_valid,
+                    comments=[{'author': 'Author', 'date': '2013-09-18 14:11:04.129956', 'message': 'Message'},
+                    {'author': 'Author', 'date': '2013-09-18 14:11:04.129956', 'message': 'Message'},
+                    {'author': 'Author', 'date': '2013-09-18 14:11:04.129956', 'message': 'Message'}]
+                    )
 
 
 class CommentStub(object):
@@ -172,8 +178,10 @@ class CommentStub(object):
         self.message = 'Erro no stage xxx'
 
     def to_dict(self):
-        return dict(id=self.id,
-                    message=self.message)
+        return dict(author='author',
+                    message=self.message,
+                    date='2013-09-18 14:11:04.129956'
+                    )
 
 
 class TicketStub(object):
@@ -227,9 +235,37 @@ class QueryStub(object):
     def filter_by(self, **kwargs):
         o = ObjectStub()
         o.limit = self.limit
+        o.scalar = self.scalar
         return o
 
     def get(self, id):
         if not self.found:
             return None
         return self.model()
+
+
+class DummyRoute:
+    """
+    Copied from pyramid.tests.test_url.DummyRoute
+    """
+    pregenerator = None
+    name = 'route'
+    def __init__(self, result='/1/2/3'):
+        self.result = result
+
+    def generate(self, kw):
+        self.kw = kw
+        return self.result
+
+
+class DummyRoutesMapper:
+    """
+    Copied from pyramid.tests.test_url.DummyRoutesMapper
+    """
+    raise_exc = None
+    def __init__(self, route=None, raise_exc=False):
+        self.route = route
+
+    def get_route(self, route_name):
+        return self.route
+

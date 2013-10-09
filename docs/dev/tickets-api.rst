@@ -38,7 +38,7 @@ Response::
       "next": "/api/v1/tickets/?limit=20&offset=40",
       "offset": 20,
       "previous": "/api/v1/tickets/?limit=20&offset=0",
-      "total_count": 100
+      "total": 100
     },
     "objects": [
       {
@@ -89,15 +89,22 @@ Response::
     "is_open": true,
     "resource_uri": "/api/v1/tickets/1/",
     "started_at": "2012-07-24T21:53:23.909404",
-    "author": "username@scielo.org",
-    "title": "título para o ticket",
+    "ticket_author": "username@scielo.org",
+    "title": "Correção de ...",
     "comments": [
-      {
-        "author": "user.name@scielo.org",
-        "date": "2012-07-24T21:53:23.909404",
-        "message": 'Corrigir ...',
-      },
-    ],
+        {
+          "comment_author": "user.name@scielo.org",
+          "comment_date": "2012-07-24T21:53:23.909404",
+          "message": 'Corrigir ...',
+          "ticket_id": 1,
+        },
+        {
+          "comment_author": "user.name@scielo.org",
+          "comment_date": "2012-07-24T21:53:23.909404",
+          "message": 'Corrigir ...',
+          "ticket_id": 1,
+        },
+      ]
   }
   
 

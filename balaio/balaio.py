@@ -104,12 +104,10 @@ if __name__ == '__main__':
     if args.syncdb:
         logger.info('The database infrastructure will be created')
         config = utils.Configuration.from_env()
-
-        logger.debug('Creating a sqlalchemy.engine using %s' % args.configfile)
         engine = models.create_engine_from_config(config)
+        models.init_database(engine)
 
-        models.Base.metadata.create_all(engine)
-        logger.info('Done. All databases had been created')
+        print 'Done. All databases had been created'
         sys.exit(0)
 
     try:
