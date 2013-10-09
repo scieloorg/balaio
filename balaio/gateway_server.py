@@ -197,7 +197,7 @@ def main():
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 
     #DB session bound to each request
-    config_pyrmd.registry.Session = models.Session
+    config_pyrmd.registry.Session = models.ScopedSession
     config_pyrmd.registry.Session.configure(bind=engine)
     config_pyrmd.add_subscriber(bind_db, NewRequest)
 

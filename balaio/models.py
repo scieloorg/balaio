@@ -26,8 +26,11 @@ from sqlalchemy.orm import (
 
 from zope.sqlalchemy import ZopeTransactionExtension
 
-Session = scoped_session(
+#Use scoped_session only to web app
+ScopedSession = scoped_session(
     sessionmaker(expire_on_commit=False, extension=ZopeTransactionExtension()))
+
+Session = sessionmaker(expire_on_commit=False)
 
 Base = declarative_base()
 

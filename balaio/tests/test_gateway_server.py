@@ -21,12 +21,12 @@ def _initTestingDB(model):
     engine = create_engine('sqlite://')
     models.Base.metadata.create_all(engine)
 
-    models.Session.configure(bind=engine)
+    models.ScopedSession.configure(bind=engine)
 
     with transaction.manager:
-        models.Session.add(model)
+        models.ScopedSession.add(model)
 
-    return models.Session
+    return models.ScopedSession
 
 
 class PackageFunctionalAPITest(unittest.TestCase):
