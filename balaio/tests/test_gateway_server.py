@@ -155,12 +155,12 @@ class PackageFunctionalAPITest(unittest.TestCase):
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/packages/', status=200)
 
+    @unittest.expectedFailure
     def test_GET_to_one_package(self):
         res = self.testapp.get('/api/v1/packages/1/')
 
         self.assertEqual(res.body, '{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}')
 
-    @unittest.expectedFailure
     def test_GET_to_packages(self):
         res = self.testapp.get('/api/v1/packages/')
 
