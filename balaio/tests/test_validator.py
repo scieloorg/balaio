@@ -2,24 +2,10 @@
 import unittest
 import mocker
 
+from balaio import models
 from balaio import validator
 from balaio import utils
 from balaio.tests.doubles import *
-
-
-#
-# Module level constants
-#
-class ConstantsTests(unittest.TestCase):
-
-    def test_STATUS_OK_value(self):
-        self.assertEqual(validator.STATUS_OK, 'ok')
-
-    def test_STATUS_WARNING_value(self):
-        self.assertEqual(validator.STATUS_WARNING, 'warning')
-
-    def test_STATUS_ERROR_value(self):
-        self.assertEqual(validator.STATUS_ERROR, 'error')
 
 
 #
@@ -30,7 +16,7 @@ class SetupPipeTests(mocker.MockerTestCase):
     def _makeOne(self, data, **kwargs):
         from balaio import utils
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda args: NotifierStub)
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
@@ -54,7 +40,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         scieloapi.issues.filter = lambda print_issn=None, eletronic_issn=None, volume=None, number=None, suppl_volume=None, suppl_number=None, limit=None: [{}]
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi)
-
+        vpipe._notifier = lambda args: NotifierStub()
         result = vpipe.transform(AttemptStub())
 
         self.assertIsInstance(result, tuple)
@@ -175,6 +161,8 @@ class SetupPipeTests(mocker.MockerTestCase):
         vpipe._issn_validator = mock_issn_validator
         #vpipe._fetch_journal_data = mock_fetch_journal_data
         vpipe._fetch_journal_and_issue_data = mock_fetch_journal_and_issue_data
+        vpipe._notifier = lambda args: NotifierStub()
+
         result = vpipe.transform(stub_attempt)
 
 
@@ -183,7 +171,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
     def _makeOne(self, data, **kwargs):
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
 
         vpipe = validator.ReferenceSourceValidationPipe(_notifier, _pkg_analyzer)
         vpipe.feed(data)
@@ -195,7 +183,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         return pkg_analyzer_stub
 
     def test_reference_list_with_valid_tag_source(self):
-        expected = [validator.STATUS_OK, '']
+        expected = [models.Status.ok, '']
         data = '''
             <root>
               <ref-list>
@@ -217,7 +205,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_source(self):
-        expected = [validator.STATUS_ERROR, ' B23: missing tag source']
+        expected = [models.Status.error, ' B23: missing tag source']
         data = '''
             <root>
               <ref-list>
@@ -239,7 +227,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_source(self):
-        expected = [validator.STATUS_ERROR, ' B23: missing tag source B24: missing tag source']
+        expected = [models.Status.error, ' B23: missing tag source B24: missing tag source']
         data = '''
             <root>
               <ref-list>
@@ -269,7 +257,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
-        expected = [validator.STATUS_ERROR, ' B23: missing content in tag source']
+        expected = [models.Status.error, ' B23: missing content in tag source']
         data = '''
             <root>
               <ref-list>
@@ -296,7 +284,7 @@ class ReferenceValidationPipeTests(unittest.TestCase):
     def _makeOne(self, data, **kwargs):
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
 
         vpipe = validator.ReferenceValidationPipe(_notifier, _pkg_analyzer)
         vpipe.feed(data)
@@ -308,7 +296,7 @@ class ReferenceValidationPipeTests(unittest.TestCase):
         return pkg_analyzer_stub
 
     def test_reference_with_valid_tag_ref(self):
-        expected = [validator.STATUS_OK, '']
+        expected = [models.Status.ok, '']
         data = '''
             <root>
               <ref-list>
@@ -330,7 +318,7 @@ class ReferenceValidationPipeTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_with_missing_tag_ref(self):
-        expected = [validator.STATUS_WARNING, 'tag reference missing']
+        expected = [models.Status.warning, 'tag reference missing']
         data = '''
             <root>
               <ref-list>
@@ -349,7 +337,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
     def _makeOne(self, data, **kwargs):
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
 
         vpipe = validator.ReferenceJournalTypeArticleTitleValidationPipe(_notifier,
             _pkg_analyzer)
@@ -362,7 +350,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
         return pkg_analyzer_stub
 
     def test_reference_list_with_valid_tag_article_title(self):
-        expected = [validator.STATUS_OK, '']
+        expected = [models.Status.ok, '']
         data = '''
             <root>
               <ref-list>
@@ -384,7 +372,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_article_title(self):
-        expected = [validator.STATUS_ERROR, ' B23: missing tag article-title']
+        expected = [models.Status.error, ' B23: missing tag article-title']
         data = '''
             <root>
               <ref-list>
@@ -406,7 +394,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_article_title(self):
-        expected = [validator.STATUS_ERROR, ' B23: missing tag article-title B24: missing tag article-title']
+        expected = [models.Status.error, ' B23: missing tag article-title B24: missing tag article-title']
         data = '''
             <root>
               <ref-list>
@@ -436,7 +424,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
-        expected = [validator.STATUS_ERROR, ' B23: missing content in tag article-title']
+        expected = [models.Status.error, ' B23: missing content in tag article-title']
         data = '''
             <root>
               <ref-list>
@@ -463,7 +451,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
     def _makeOne(self, data, **kwargs):
 
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
 
         vpipe = validator.ReferenceYearValidationPipe(_notifier, _pkg_analyzer)
         vpipe.feed(data)
@@ -475,7 +463,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
         return pkg_analyzer_stub
 
     def test_reference_list_with_valid_tag_year(self):
-        expected = [validator.STATUS_OK, '']
+        expected = [models.Status.ok, '']
         data = '''
             <root>
               <ref-list>
@@ -498,7 +486,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_valid_and_well_format_tag_year(self):
-        expected = [validator.STATUS_OK, '']
+        expected = [models.Status.ok, '']
         data = '''
             <root>
               <ref-list>
@@ -521,7 +509,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_valid_and_not_well_format_tag_year(self):
-        expected = [validator.STATUS_ERROR, ' B23: date format is not good']
+        expected = [models.Status.error, ' B23: date format is not good']
         data = '''
             <root>
               <ref-list>
@@ -544,7 +532,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_year(self):
-        expected = [validator.STATUS_ERROR, ' B23: missing tag year']
+        expected = [models.Status.error, ' B23: missing tag year']
         data = '''
             <root>
               <ref-list>
@@ -565,7 +553,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_year(self):
-        expected = [validator.STATUS_ERROR, ' B23: missing tag year B24: missing tag year']
+        expected = [models.Status.error, ' B23: missing tag year B24: missing tag year']
         data = '''
             <root>
               <ref-list>
@@ -593,7 +581,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_year_missing_content(self):
-        expected = [validator.STATUS_ERROR, ' B23: missing content in tag year']
+        expected = [models.Status.error, ' B23: missing content in tag year']
         data = '''
             <root>
               <ref-list>
@@ -622,7 +610,7 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
 
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
         vpipe = validator.JournalAbbreviatedTitleValidationPipe(_notifier,
@@ -636,7 +624,7 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
         return pkg_analyzer_stub
 
     def test_valid_abbreviated_title(self):
-        expected = [validator.STATUS_OK, '']
+        expected = [models.Status.ok, '']
         xml = '''
             <front><journal-meta><abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Acad. Bras. Ciênc.]]></abbrev-journal-title></journal-meta></front>'''
 
@@ -662,7 +650,7 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_invalid_abbreviated_title(self):
-        expected = [validator.STATUS_ERROR, 'the abbreviated title in xml is defferent from the abbreviated title in the source']
+        expected = [models.Status.error, 'the abbreviated title in xml is defferent from the abbreviated title in the source']
         xml = '''
             <front><journal-meta><abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Academia Bras. Ciênc.]]></abbrev-journal-title></journal-meta></front>'''
 
@@ -689,7 +677,7 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_if_exists_abbreviated_title_tag_on_source(self):
-        expected = [validator.STATUS_ERROR, 'missing abbreviated title in source']
+        expected = [models.Status.error, 'missing abbreviated title in source']
         xml = '''
             <front><journal-meta><abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Academia Bras. Ciênc.]]></abbrev-journal-title></journal-meta></front>'''
 
@@ -706,7 +694,7 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_if_exists_abbreviated_title_tag_on_xml(self):
-        expected = [validator.STATUS_ERROR, 'missing abbreviated title in xml']
+        expected = [models.Status.error, 'missing abbreviated title in xml']
         xml = '''
             <front><journal-meta></journal-meta></front>'''
 
@@ -729,7 +717,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
     def _makeOne(self, data, **kwargs):
         from balaio import utils
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
@@ -745,7 +733,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
         return pkg_analyzer_stub
 
     def test_publisher_name_matched(self):
-        expected = [validator.STATUS_OK, '']
+        expected = [models.Status.ok, '']
         xml = '<root><journal-meta><publisher><publisher-name>publicador                  da revista brasileira de ....</publisher-name></publisher></journal-meta></root>'
 
         stub_attempt = AttemptStub()
@@ -770,7 +758,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_publisher_name_unmatched(self):
-        expected = [validator.STATUS_ERROR, 'publicador da revista brasileira de .... [journal]\npublicador abcdefgh [article]']
+        expected = [models.Status.error, 'publicador da revista brasileira de .... [journal]\npublicador abcdefgh [article]']
         xml = '<root><journal-meta><publisher><publisher-name>publicador abcdefgh</publisher-name></publisher></journal-meta></root>'
 
         stub_attempt = AttemptStub()
@@ -795,7 +783,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_publisher_name_is_missing_in_journal(self):
-        expected = [validator.STATUS_ERROR, 'Missing publisher_name in journal']
+        expected = [models.Status.error, 'Missing publisher_name in journal']
         xml = '<root><journal-meta><publisher><publisher-name>publicador abcdefgh</publisher-name></publisher></journal-meta></root>'
 
         stub_attempt = AttemptStub()
@@ -811,7 +799,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_publisher_name_is_missing_in_article(self):
-        expected = [validator.STATUS_ERROR, 'Missing publisher-name in article']
+        expected = [models.Status.error, 'Missing publisher-name in article']
         xml = '<root></root>'
 
         stub_attempt = AttemptStub()
@@ -829,7 +817,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 class FundingGroupValidationPipeTests(mocker.MockerTestCase):
 
     def _makeOne(self, data, **kwargs):
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
 
         vpipe = validator.FundingGroupValidationPipe(_notifier, _pkg_analyzer)
@@ -842,7 +830,7 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
         return pkg_analyzer_stub
 
     def test_no_funding_group_and_no_ack(self):
-        expected = [validator.STATUS_WARNING, 'no funding-group and no ack']
+        expected = [models.Status.warning, 'no funding-group and no ack']
         xml = '<root></root>'
 
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
@@ -854,7 +842,7 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_no_funding_group_and_ack_has_no_number(self):
-        expected = [validator.STATUS_OK, '<ack>acknowle<sub />dgements</ack>']
+        expected = [models.Status.ok, '<ack>acknowle<sub />dgements</ack>']
         xml = '<root><ack>acknowle<sub/>dgements</ack></root>'
 
         stub_attempt = AttemptStub()
@@ -867,7 +855,7 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_no_funding_group_and_ack_has_number(self):
-        expected = [validator.STATUS_WARNING, '<ack>acknowledgements<p>1234</p></ack> looks to have contract number. If so, it must be identified using funding-group']
+        expected = [models.Status.warning, '<ack>acknowledgements<p>1234</p></ack> looks to have contract number. If so, it must be identified using funding-group']
         xml = '<root><ack>acknowledgements<p>1234</p></ack></root>'
 
         stub_attempt = AttemptStub()
@@ -880,7 +868,7 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_funding_group(self):
-        expected = [validator.STATUS_OK, '<funding-group>funding data</funding-group>']
+        expected = [models.Status.ok, '<funding-group>funding data</funding-group>']
         xml = '<root><ack>acknowledgements<funding-group>funding data</funding-group></ack></root>'
 
         stub_attempt = AttemptStub()
@@ -900,7 +888,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
     def _makeOne(self, data, **kwargs):
         from balaio import utils
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
@@ -916,7 +904,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
         return pkg_analyzer_stub
 
     def test_nlm_journal_title_matched(self):
-        expected = [validator.STATUS_OK, 'NLM Journal title']
+        expected = [models.Status.ok, 'NLM Journal title']
         xml = '<root><journal-meta><journal-id journal-id-type="nlm-ta">NLM Journal title</journal-id></journal-meta></root>'
 
         stub_attempt = AttemptStub()
@@ -941,7 +929,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_nlm_journal_title_unmatched(self):
-        expected = [validator.STATUS_ERROR, 'NLM Journal Title .... [journal]\nANY Journal Title [article]']
+        expected = [models.Status.error, 'NLM Journal Title .... [journal]\nANY Journal Title [article]']
         xml = '<root><journal-meta><journal-id journal-id-type="nlm-ta">ANY Journal Title</journal-id></journal-meta></root>'
 
         stub_attempt = AttemptStub()
@@ -967,7 +955,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_nlm_journal_title_is_missing_in_journal(self):
-        expected = [validator.STATUS_OK, 'journal has no NLM journal title']
+        expected = [models.Status.ok, 'journal has no NLM journal title']
         xml = '<root><journal-meta><journal-id journal-id-type="nlm-ta">ANY Journal Title</journal-id></journal-meta></root>'
 
         stub_attempt = AttemptStub()
@@ -982,7 +970,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_nlm_journal_title_is_missing_in_article(self):
-        expected = [validator.STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
+        expected = [models.Status.error, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
         xml = '<root></root>'
 
         stub_attempt = AttemptStub()
@@ -1000,7 +988,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
 class DOIVAlidationPipeTests(mocker.MockerTestCase):
 
     def _makeOne(self, data, **kwargs):
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
@@ -1014,7 +1002,7 @@ class DOIVAlidationPipeTests(mocker.MockerTestCase):
         return pkg_analyzer_stub
 
     def test_valid_and_matched_DOI(self):
-        expected = [validator.STATUS_OK, '']
+        expected = [models.Status.ok, '']
         xml = '<root><article-id pub-id-type="doi">10.1590/S0001-37652013000100008</article-id></root>'
 
         stub_attempt = AttemptStub()
@@ -1037,7 +1025,7 @@ class DOIVAlidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_invalid_but_matched_DOI(self):
-        expected = [validator.STATUS_WARNING, 'DOI is not valid']
+        expected = [models.Status.warning, 'DOI is not valid']
         xml = '<root><article-id pub-id-type="doi">10.1590/S0001-37652013000100002</article-id></root>'
 
         stub_attempt = AttemptStub()
@@ -1060,7 +1048,7 @@ class DOIVAlidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_missing_DOI(self):
-        expected = [validator.STATUS_WARNING, 'missing DOI in xml']
+        expected = [models.Status.warning, 'missing DOI in xml']
         xml = '<root></root>'
 
         stub_attempt = AttemptStub()
@@ -1083,7 +1071,7 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
     def _makeOne(self, data, **kwargs):
         from balaio import utils
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
@@ -1110,7 +1098,7 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
         return {u'sections': [dict_item1, dict_item2], u'label': '1(1)'}
 
     def test_article_section_matched(self):
-        expected = [validator.STATUS_OK, 'Original Articles']
+        expected = [models.Status.ok, 'Original Articles']
         #article-categories/subj-group[@subj-group-type=”heading”]
         xml = '<root><article-meta><article-categories><subj-group subj-group-type="heading"><subject>Original Articles</subject></subj-group></article-categories></article-meta></root>'
 
@@ -1131,7 +1119,7 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_article_section_is_not_registered(self):
-        expected = [validator.STATUS_ERROR, 'Articles is not registered as section in 1(1)']
+        expected = [models.Status.error, 'Articles is not registered as section in 1(1)']
         xml = '<root><article-meta><article-categories><subj-group subj-group-type="heading"><subject>Articles</subject></subj-group></article-categories></article-meta></root>'
 
         stub_attempt = AttemptStub()
@@ -1152,7 +1140,7 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_article_section_is_missing_in_article(self):
-        expected = [validator.STATUS_WARNING, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]/subject']
+        expected = [models.Status.warning, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]/subject']
         xml = '<root></root>'
 
         stub_attempt = AttemptStub()
@@ -1172,7 +1160,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
     def _makeOne(self, data, **kwargs):
         from balaio import utils
         _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
-        _notifier = kwargs.get('_notifier', NotifierStub())
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
@@ -1193,7 +1181,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
                 'publication_year': year}
 
     def test_article_pubdate_matched(self):
-        expected = [validator.STATUS_OK, 'year: 1999\nstart: 9\nend: 0']
+        expected = [models.Status.ok, 'year: 1999\nstart: 9\nend: 0']
         #article-categories/subj-group[@subj-group-type=”heading”]
         xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>09</month><year>1999</year></pub-date></article-meta></root>'
 
@@ -1207,7 +1195,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_article_pubdate_matched_month_is_name(self):
-        expected = [validator.STATUS_OK, 'year: 1999\nstart: 9\nend: 0']
+        expected = [models.Status.ok, 'year: 1999\nstart: 9\nend: 0']
         #article-categories/subj-group[@subj-group-type=”heading”]
         xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>Sep</month><year>1999</year></pub-date></article-meta></root>'
 
@@ -1221,7 +1209,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_article_pubdate_matched_month_range(self):
-        expected = [validator.STATUS_OK, 'year: 1999\nstart: 1\nend: 3']
+        expected = [models.Status.ok, 'year: 1999\nstart: 1\nend: 3']
         #article-categories/subj-group[@subj-group-type=”heading”]
         xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><season>Jan-Mar</season><year>1999</year></pub-date></article-meta></root>'
 
@@ -1235,7 +1223,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_article_multiple_pubdate_matched(self):
-        expected = [validator.STATUS_OK, 'year: 1999\nstart: 9\nend: 0']
+        expected = [models.Status.ok, 'year: 1999\nstart: 9\nend: 0']
         #article-categories/subj-group[@subj-group-type=”heading”]
         xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><month>11</month><year>1999</year></pub-date>        <pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>09</month><year>1999</year></pub-date></article-meta></root>'
         stub_attempt = AttemptStub()
@@ -1248,7 +1236,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_article_multiple_pubdate_matched_month_is_name(self):
-        expected = [validator.STATUS_OK, 'year: 1999\nstart: 9\nend: 0']
+        expected = [models.Status.ok, 'year: 1999\nstart: 9\nend: 0']
         #article-categories/subj-group[@subj-group-type=”heading”]
         xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><month>11</month><year>1999</year></pub-date><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>Sep</month><year>1999</year></pub-date></article-meta></root>'
 
@@ -1262,7 +1250,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_article_multiple_pubdate_matched_month_range(self):
-        expected = [validator.STATUS_OK, 'year: 1999\nstart: 9\nend: 0']
+        expected = [models.Status.ok, 'year: 1999\nstart: 9\nend: 0']
         xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>Sep</month><year>1999</year></pub-date><pub-date pub-type="pub" iso-8601-date="1999-03-27"><month>Oct</month><year>1999</year></pub-date></article-meta></root>'
 
         stub_attempt = AttemptStub()
@@ -1275,7 +1263,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_article_pubdate_unmatched(self):
-        expected = [validator.STATUS_ERROR, 'Unmatched publication date.\nIn article:\nyear: 1999\nstart: 8\nend: 0\nIn   issue: \n' + 'year: 1999\nstart: 9\nend: 0\n']
+        expected = [models.Status.error, 'Unmatched publication date.\nIn article:\nyear: 1999\nstart: 8\nend: 0\nIn   issue: \n' + 'year: 1999\nstart: 9\nend: 0\n']
         xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>08</month><year>1999</year></pub-date></article-meta></root>'
 
         stub_attempt = AttemptStub()
@@ -1288,7 +1276,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_article_multiple_pubdate_unmatched_month_range(self):
-        expected = [validator.STATUS_ERROR, 'Unmatched publication date.\nIn article:\nyear: 2000\nstart: 9\nend: 0\nyear: 1999\nstart: 11\nend: 0\nIn   issue: \n' + 'year: 1999\nstart: 9\nend: 0\n']
+        expected = [models.Status.error, 'Unmatched publication date.\nIn article:\nyear: 2000\nstart: 9\nend: 0\nyear: 1999\nstart: 11\nend: 0\nIn   issue: \n' + 'year: 1999\nstart: 9\nend: 0\n']
         xml = '<root><article-meta><pub-date pub-type="pub" iso-8601-date="1999-03-27"><day>27</day><month>Sep</month><year>2000</year></pub-date><pub-date pub-type="pub" iso-8601-date="1999-03-27"><month>Nov</month><year>1999</year></pub-date></article-meta></root>'
 
         stub_attempt = AttemptStub()
