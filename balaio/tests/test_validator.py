@@ -40,7 +40,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         scieloapi.issues.filter = lambda print_issn=None, eletronic_issn=None, volume=None, number=None, suppl_volume=None, suppl_number=None, limit=None: [{}]
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi)
-
+        vpipe._notifier = lambda args: NotifierStub()
         result = vpipe.transform(AttemptStub())
 
         self.assertIsInstance(result, tuple)
@@ -161,6 +161,8 @@ class SetupPipeTests(mocker.MockerTestCase):
         vpipe._issn_validator = mock_issn_validator
         #vpipe._fetch_journal_data = mock_fetch_journal_data
         vpipe._fetch_journal_and_issue_data = mock_fetch_journal_and_issue_data
+        vpipe._notifier = lambda args: NotifierStub()
+
         result = vpipe.transform(stub_attempt)
 
 

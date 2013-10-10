@@ -63,8 +63,7 @@ class SetupPipe(vpipes.Pipe):
         """
         logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
 
-        self.attempt_notifier = self._notifier(attempt)
-        self.attempt_notifier.start = lambda: None
+        self._notifier(attempt).start()
 
         pkg_analyzer = self._pkg_analyzer(attempt.filepath)
         pkg_analyzer.lock_package()
@@ -119,8 +118,7 @@ class TearDownPipe(vpipes.Pipe):
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
         attempt, pkg_analyzer, journal_and_issue_data = item
 
-        self.attempt_notifier = self._notifier(attempt)
-        self.attempt_notifier.end()
+        self._notifier(attempt).end()
 
         pkg_analyzer.restore_perms()
 
