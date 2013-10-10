@@ -590,9 +590,7 @@ if __name__ == '__main__':
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
                                  config.get('manager', 'api_key'))
 
-    ValidationNotifier = notifier.validation_notifier_factory(config)
-
-    notifier_dep = ValidationNotifier
+    notifier_dep = notifier.validation_notifier_factory(config)
 
     ppl = vpipes.Pipeline(
         SetupPipe(notifier_dep, scieloapi, scieloapitoolbelt,
