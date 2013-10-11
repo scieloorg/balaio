@@ -10,15 +10,12 @@ import scieloapi
 import vpipes
 import utils
 import checkin
+import notifier
 import scieloapitoolbelt
 import models
 
 
 logger = logging.getLogger('balaio.validator')
-
-STATUS_OK = 'ok'
-STATUS_WARNING = 'warning'
-STATUS_ERROR = 'error'
 
 
 class SetupPipe(vpipes.Pipe):
@@ -29,7 +26,6 @@ class SetupPipe(vpipes.Pipe):
         self._sapi_tools = sapi_tools
         self._pkg_analyzer = pkg_analyzer
         self._issn_validator = issn_validator
-
 
     def _fetch_journal_data(self, criteria):
         """
@@ -66,6 +62,8 @@ class SetupPipe(vpipes.Pipe):
         :returns: a tuple (Attempt, PackageAnalyzer, journal_and_issue_data)
         """
         logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
+
+        self._notifier(attempt).start()
 
         pkg_analyzer = self._pkg_analyzer(attempt.filepath)
         pkg_analyzer.lock_package()
@@ -120,6 +118,8 @@ class TearDownPipe(vpipes.Pipe):
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
         attempt, pkg_analyzer, journal_and_issue_data = item
 
+        self._notifier(attempt).end()
+
         pkg_analyzer.restore_perms()
 
         if attempt.is_valid:
@@ -158,13 +158,13 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
 
             if xml_publisher_name:
                 if self._normalize_data(xml_publisher_name) == self._normalize_data(j_publisher_name):
-                    r = [STATUS_OK, '']
+                    r = [models.Status.ok, '']
                 else:
-                    r = [STATUS_ERROR, j_publisher_name + ' [journal]\n' + xml_publisher_name + ' [article]']
+                    r = [models.Status.error, j_publisher_name + ' [journal]\n' + xml_publisher_name + ' [article]']
             else:
-                r = [STATUS_ERROR, 'Missing publisher-name in article']
+                r = [models.Status.error, 'Missing publisher-name in article']
         else:
-            r = [STATUS_ERROR, 'Missing publisher_name in journal']
+            r = [models.Status.error, 'Missing publisher_name in journal']
         return r
 
 
@@ -187,9 +187,9 @@ class ReferenceValidationPipe(vpipes.ValidationPipe):
         refs = pkg_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
-            return [STATUS_OK, '']
+            return [models.Status.ok, '']
         else:
-            return [STATUS_WARNING, 'tag reference missing']
+            return [models.Status.warning, 'tag reference missing']
 
 
 class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
@@ -227,7 +227,7 @@ class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
             for ref_id, msg in lst_errors:
                 msg_error += ' %s: %s' % (ref_id, msg)
 
-        return [STATUS_ERROR, msg_error] if lst_errors else [STATUS_OK, '']
+        return [models.Status.error, msg_error] if lst_errors else [models.Status.ok, '']
 
 
 class ReferenceYearValidationPipe(vpipes.ValidationPipe):
@@ -270,7 +270,7 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
             for ref_id, msg in lst_errors:
                 msg_error += ' %s: %s' % (ref_id, msg)
 
-        return [STATUS_ERROR, msg_error] if lst_errors else [STATUS_OK, '']
+        return [models.Status.error, msg_error] if lst_errors else [models.Status.ok, '']
 
 
 class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
@@ -307,7 +307,7 @@ class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
             for ref_id, msg in lst_errors:
                 msg_error += ' %s: %s' % (ref_id, msg)
 
-        return [STATUS_ERROR, msg_error] if lst_errors else [STATUS_OK, '']
+        return [models.Status.error, msg_error] if lst_errors else [models.Status.ok, '']
 
 
 class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
@@ -332,13 +332,13 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
             abbrev_title_xml = pkg_analyzer.xml.find('.//journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
             if abbrev_title_xml is not None:
                 if self._normalize_data(abbrev_title) == self._normalize_data(abbrev_title_xml.text):
-                    return [STATUS_OK, '']
+                    return [models.Status.ok, '']
                 else:
-                    return [STATUS_ERROR, 'the abbreviated title in xml is defferent from the abbreviated title in the source']
+                    return [models.Status.error, 'the abbreviated title in xml is defferent from the abbreviated title in the source']
             else:
-                return [STATUS_ERROR, 'missing abbreviated title in xml']
+                return [models.Status.error, 'missing abbreviated title in xml']
         else:
-            return [STATUS_ERROR, 'missing abbreviated title in source']
+            return [models.Status.error, 'missing abbreviated title in source']
 
 
 class FundingGroupValidationPipe(vpipes.ValidationPipe):
@@ -358,10 +358,10 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
         Validate funding-group according to the following rules
 
         :param item: a tuple of (Attempt, PackageAnalyzer, journal_data)
-        :returns: [STATUS_WARNING, ack content], if no founding-group, but Acknowledgments (ack) has number
-        :returns: [STATUS_OK, founding-group content], if founding-group is present
-        :returns: [STATUS_OK, ack content], if no founding-group, but Acknowledgments has no numbers
-        :returns: [STATUS_WARNING, 'no funding-group and no ack'], if founding-group and Acknowledgments (ack) are absents
+        :returns: [models.Status.warning, ack content], if no founding-group, but Acknowledgments (ack) has number
+        :returns: [models.Status.ok, founding-group content], if founding-group is present
+        :returns: [models.Status.ok, ack content], if no founding-group, but Acknowledgments has no numbers
+        :returns: [models.Status.warning, 'no funding-group and no ack'], if founding-group and Acknowledgments (ack) are absents
         """
         def _contains_number(text):
             """
@@ -378,8 +378,8 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
 
         funding_nodes = xml_tree.findall('.//funding-group')
 
-        status, description = [STATUS_OK, etree.tostring(funding_nodes[0])] if funding_nodes != [] else [STATUS_WARNING, 'no funding-group']
-        if status == STATUS_WARNING:
+        status, description = [models.Status.ok, etree.tostring(funding_nodes[0])] if funding_nodes != [] else [models.Status.warning, 'no funding-group']
+        if status == models.Status.warning:
             ack_node = xml_tree.findall('.//ack')
             ack_text = etree.tostring(ack_node[0]) if ack_node != [] else ''
 
@@ -389,7 +389,7 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
                 description = ack_text + ' looks to have contract number. If so, it must be identified using funding-group'
             else:
                 description = ack_text
-                status = STATUS_OK
+                status = models.Status.ok
 
         return [status, description]
 
@@ -412,26 +412,26 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
         Validate NLM journal title
 
         :param item: a tuple of (Attempt, PackageAnalyzer, journal_data)
-        :returns: [STATUS_OK, nlm-journal-title], if nlm-journal-title in article and in journal match
-        :returns: [STATUS_OK, ''], if journal has no nlm-journal-title
-        :returns: [STATUS_ERROR, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
+        :returns: [models.Status.ok, nlm-journal-title], if nlm-journal-title in article and in journal match
+        :returns: [models.Status.ok, ''], if journal has no nlm-journal-title
+        :returns: [models.Status.error, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
         """
         attempt, pkg_analyzer, journal_and_issue_data = item
 
         j_nlm_title = journal_and_issue_data.get('journal').get('medline_title', '')
         if j_nlm_title == '':
-            status, description = [STATUS_OK, 'journal has no NLM journal title']
+            status, description = [models.Status.ok, 'journal has no NLM journal title']
         else:
             xml_tree = pkg_analyzer.xml
             xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
 
             if xml_nlm_title:
                 if self._normalize_data(xml_nlm_title) == self._normalize_data(j_nlm_title):
-                    status, description = [STATUS_OK, xml_nlm_title]
+                    status, description = [models.Status.ok, xml_nlm_title]
                 else:
-                    status, description = [STATUS_ERROR, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
+                    status, description = [models.Status.error, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
             else:
-                status, description = [STATUS_ERROR, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
+                status, description = [models.Status.error, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
         return [status, description]
 
 
@@ -455,11 +455,11 @@ class DOIVAlidationPipe(vpipes.ValidationPipe):
 
         if doi_xml is not None:
             if self._doi_validator(doi_xml.text):
-                return [STATUS_OK, '']
+                return [models.Status.ok, '']
             else:
-                return [STATUS_WARNING, 'DOI is not valid']
+                return [models.Status.warning, 'DOI is not valid']
         else:
-            return [STATUS_WARNING, 'missing DOI in xml']
+            return [models.Status.warning, 'missing DOI in xml']
 
 
 class ArticleSectionValidationPipe(vpipes.ValidationPipe):
@@ -491,11 +491,11 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
 
         if xml_section:
             if self._is_a_registered_section_title(issue_data['sections'], xml_section):
-                r = [STATUS_OK, xml_section]
+                r = [models.Status.ok, xml_section]
             else:
-                r = [STATUS_ERROR, xml_section + ' is not registered as section in ' + issue_data.get('label')]
+                r = [models.Status.error, xml_section + ' is not registered as section in ' + issue_data.get('label')]
         else:
-            r = [STATUS_WARNING, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]/subject']
+            r = [models.Status.warning, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]/subject']
         return r
 
     def _is_a_registered_section_title(self, sections, section_title):
@@ -572,13 +572,13 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
 
         if matched:
             year, start, end = matched
-            r = [STATUS_OK, 'year: {0}\nstart: {1}\nend: {2}'.format(year, start, end)]
+            r = [models.Status.ok, 'year: {0}\nstart: {1}\nend: {2}'.format(year, start, end)]
         else:
             description = ''
             for year, start, end in unmatcheds:
                 description += 'year: {0}\nstart: {1}\nend: {2}'.format(year, start, end) + '\n'
 
-            r = [STATUS_ERROR, 'Unmatched publication date.\nIn article:\n' + description + 'In   issue: \n' + 'year: {0}\nstart: {1}\nend: {2}'.format(issue_publication_year, issue_publication_start_month, issue_publication_end_month) + '\n']
+            r = [models.Status.error, 'Unmatched publication date.\nIn article:\n' + description + 'In   issue: \n' + 'year: {0}\nstart: {1}\nend: {2}'.format(issue_publication_year, issue_publication_start_month, issue_publication_end_month) + '\n']
         return r
 
 
@@ -589,7 +589,8 @@ if __name__ == '__main__':
     messages = utils.recv_messages(sys.stdin, utils.make_digest)
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
                                  config.get('manager', 'api_key'))
-    notifier_dep = None
+
+    notifier_dep = notifier.validation_notifier_factory(config)
 
     ppl = vpipes.Pipeline(
         SetupPipe(notifier_dep, scieloapi, scieloapitoolbelt,
