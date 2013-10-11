@@ -199,9 +199,6 @@ def main():
     # tickets new and update
     config_pyrmd.add_route('ticket',
         '/api/%s/tickets/' % config.get('http_server', 'version'))
-    # config_pyrmd.add_route('update_ticket',
-    #     '/api/%s/tickets/{id}/' % config.get('http_server', 'version'))
-
 
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 

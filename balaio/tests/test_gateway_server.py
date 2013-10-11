@@ -17,17 +17,18 @@ from balaio import models
 sys.path.append(os.path.dirname(__file__) + '/../')
 
 
-def _initTestingDB(obj_list):
+def _init_test_DB():
 
     engine = create_engine('sqlite://')
     models.Base.metadata.create_all(engine)
 
     models.ScopedSession.configure(bind=engine)
 
+
+def _load_fixtures(obj_list):
+
     with transaction.manager:
             models.ScopedSession.add_all(obj_list)
-
-    return models.ScopedSession
 
 
 class FunctionalAPITest(unittest.TestCase):
@@ -53,6 +54,20 @@ class FunctionalAPITest(unittest.TestCase):
 
 class TicketFunctionalAPITest(unittest.TestCase):
 
+    def setUp(self):
+        _init_test_DB()
+        _load_fixtures(self._makeList())
+
+        self.session = models.ScopedSession
+        self.config = testing.setUp()
+
+        app, config = main()
+        self.testapp = TestApp(app)
+
+    def tearDown(self):
+        self.session.remove()
+        testing.tearDown()
+
     def _makeOne(self, id=1):
         import datetime
         ticket = models.Ticket(id=id,
@@ -62,22 +77,12 @@ class TicketFunctionalAPITest(unittest.TestCase):
                     title="Erro no pacote xxx",
                     author="Aberlado Barbosa")
 
+        ticket.started_at = datetime.datetime(2013, 10, 9, 16, 44, 29, 865787)
+
         return ticket
 
     def _makeList(self):
-        return [self._makeOne(), self._makeOne(id=2), self._makeOne(id=3)]
-
-    def setUp(self):
-
-        self.session = _initTestingDB(self._makeList())
-        self.config = testing.setUp()
-
-        app, config = main()
-        self.testapp = TestApp(app)
-
-    def tearDown(self):
-        self.session.remove()
-        testing.tearDown()
+        return [self._makeOne(), self._makeOne(2), self._makeOne(3)]
 
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/tickets/', status=200)
@@ -173,6 +178,20 @@ class TicketFunctionalAPITest(unittest.TestCase):
 
 class PackageFunctionalAPITest(unittest.TestCase):
 
+    def setUp(self):
+        _init_test_DB()
+        _load_fixtures(self._makeList())
+
+        self.session = models.ScopedSession
+        self.config = testing.setUp()
+
+        app, config = main()
+        self.testapp = TestApp(app)
+
+    def tearDown(self):
+        self.session.remove()
+        testing.tearDown()
+
     def _makeOne(self, id=1):
         article = models.ArticlePkg(id=id,
                     journal_title='Associa... Brasileira',
@@ -187,18 +206,7 @@ class PackageFunctionalAPITest(unittest.TestCase):
         return article
 
     def _makeList(self):
-        return [self._makeOne(), self._makeOne(id=2), self._makeOne(id=3)]
-
-    def setUp(self):
-        self.session = _initTestingDB(self._makeList())
-        self.config = testing.setUp()
-
-        app, config = main()
-        self.testapp = TestApp(app)
-
-    def tearDown(self):
-        self.session.remove()
-        testing.tearDown()
+        return [self._makeOne(), self._makeOne(2), self._makeOne(3)]
 
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/packages/', status=200)

@@ -171,8 +171,7 @@ class Ticket(Base):
 
     def __init__(self, *args, **kwargs):
         super(Ticket, self).__init__(*args, **kwargs)
-        if not kwargs.pop('started_at', None):
-            self.started_at = datetime.datetime.now()
+        self.started_at = datetime.datetime.now()
         self.is_open = True
 
     def to_dict(self):
