@@ -18,11 +18,21 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
 
+from sqlalchemy.orm import (
+    scoped_session,
+    sessionmaker,
+    )
+
+from zope.sqlalchemy import ZopeTransactionExtension
+
+#Use scoped_session only to web app
+ScopedSession = scoped_session(
+    sessionmaker(expire_on_commit=False, extension=ZopeTransactionExtension()))
 
 Session = sessionmaker(expire_on_commit=False)
+
 Base = declarative_base()
 
 
@@ -297,6 +307,6 @@ class Checkpoint(Base):
     def to_dict(self):
         return dict(started_at=str(self.started_at),
                     finished_at=str(self.ended_at),
-                    notices=[n.to_dict() for n in self.messages] 
+                    notices=[n.to_dict() for n in self.messages]
                         )
 
