@@ -219,7 +219,7 @@ def get_attempt(package):
 
             session = Session()
 
-            attempt = models.Attempt.get_from_package(pkg, session)
+            attempt = models.Attempt.get_from_package(pkg)
             session.add(attempt)
 
             try:

@@ -84,12 +84,11 @@ class Attempt(Base):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
 
     @classmethod
-    def get_from_package(cls, package, session):
+    def get_from_package(cls, package):
         """
         Get an Attempt for a package.
 
         :param package: instance of :class:`checkin.ArticlePackage`.
-        :param session: sqlalchemy db session
         """
         attempt = Attempt(package_checksum=package.checksum,
                           is_valid=False,
