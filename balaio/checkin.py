@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 
 import models
 import utils
+import excepts
 
 
 __all__ = ['PackageAnalyzer', 'get_attempt']
@@ -199,11 +200,22 @@ class PackageAnalyzer(SPSMixin, Xray):
 
 def get_attempt(package):
     """
-    Always returns a brand new models.Attempt instance, bound to
-    the expected models.ArticlePkg instance.
-    - Verify if exist at least one ISSN.
+    Returns a brand new models.Attempt instance, bound to a models.ArticlePkg
+    instance.
 
-    :param package: filesystem path to a package
+    A package is valid when it has at least one valid xml file, according to
+    SPS or rSPS xsd, and one pdf file.
+
+    Case 1: Package is valid and has all needed metadata:
+            A :class:`models.Attempt` is returned, bound to a :class:`models.ArticlePkg`.
+    Case 2: Package is valid and doesn't have all needed metadata:
+            A :class:`models.Attempt` is returned, with :attr:`models.ArticlePkg.is_valid==False`.
+    Case 3: Package is invalid
+            A :class:`models.Attempt` is returned, with :attr:`models.ArticlePkg.is_valid==False`.
+    Case 4: Package is duplicated
+            raises :class:`excepts.DuplicatedPackage`.
+
+    :param package: filesystem path to package
     """
     config = utils.Configuration.from_env()
 
@@ -237,6 +249,10 @@ def get_attempt(package):
             session.rollback()
             logger.error('The package %s had been deleted during analysis' % package)
             raise ValueError('The package %s had been deleted during analysis' % package)
+        except IntegrityError:
+            session.rollback()
+            logger.error('The package already exists. Aborting.')
+            raise excepts.DuplicatedPackage('The package %s already exists. Aborting.' % package)
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             import traceback
