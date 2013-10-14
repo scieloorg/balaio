@@ -235,7 +235,6 @@ def get_attempt(package):
             attempt = models.Attempt.get_from_package(pkg)
             session.add(attempt)
 
-            savepoint = transaction.savepoint()
             try:
                 article_pkg = models.ArticlePkg.get_or_create_from_package(pkg, session)
                 if article_pkg not in session:
@@ -243,10 +242,8 @@ def get_attempt(package):
 
                 attempt.articlepkg = article_pkg
             except:
-                savepoint.rollback()
-
                 attempt.is_valid = False
-                logging.error('Failed to load an ArticlePkg. The Attempt was invalidated.')
+                logging.error('Failed to load an ArticlePkg for %s.' % package)
 
             transaction.commit()
             return attempt

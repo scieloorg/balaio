@@ -4,6 +4,7 @@ from xml.etree.ElementTree import ElementTree
 
 import mocker
 import unittest
+import transaction
 
 from balaio import checkin, models
 
@@ -331,12 +332,12 @@ class CheckinTests(unittest.TestCase):
         pkg = checkin.PackageAnalyzer('samples/0042-9686-bwho-91-08-545.zip')
         article = models.ArticlePkg(**pkg.meta)
         self.session.add(article)
-        self.session.commit()
+        transaction.commit()
 
         article2 = models.ArticlePkg(**pkg.meta)
         article2.journal_title = 'REV'
         self.session.add(article2)
-        self.session.commit()
+        transaction.commit()
 
         attempt = checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip')
         self.assertIsInstance(attempt, models.Attempt)
