@@ -5,12 +5,13 @@ import Queue
 import logging
 import sys
 
-import checkin
 import zipfile
 import pyinotify
 
 import utils
+import checkin
 import models
+import excepts
 
 
 logger = logging.getLogger('balaio.monitor')
@@ -38,6 +39,7 @@ class Monitor(object):
 
             try:
                 attempt = checkin.get_attempt(filepath)
+
             except ValueError as e:
                 try:
                     utils.mark_as_failed(filepath)
@@ -45,6 +47,13 @@ class Monitor(object):
                     logger.debug('The file is gone before marked as failed. %s' % e)
 
                 logger.debug('Failed during checkin: %s: %s' % (filepath, e))
+
+            except excepts.DuplicatedPackage as e:
+                try:
+                    utils.mark_as_duplicated(filepath)
+                except OSError as e:
+                    logger.debug('The file is gone before marked as duplicated. %s' % e)
+
             else:
                 utils.send_message(sys.stdout, attempt, utils.make_digest)
                 logging.debug('Message sent for %s: %s, %s' % (filepath,
@@ -73,10 +82,13 @@ class EventHandler(pyinotify.ProcessEvent):
 
     def _do_the_job(self, event):
         """
-        Performs work for all except to ``_failed_`` file.
+        Add the package in a processing queue.
+
+        All filenames prefixed with `_` are identified as special packages
+        and are ignored by the system.
         """
         filepath = event.pathname
-        if not os.path.basename(filepath).startswith('_failed_'):
+        if not os.path.basename(filepath).startswith('_'):
             if not zipfile.is_zipfile(filepath):
                 logger.info('Invalid zipfile: %s' % filepath)
                 return None

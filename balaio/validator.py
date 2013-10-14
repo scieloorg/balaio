@@ -53,6 +53,7 @@ class SetupPipe(vpipes.Pipe):
             limit=1, **criteria)
         return self._scieloapi.fetch_relations(self._sapi_tools.get_one(found_journal_issues))
 
+    @vpipes.precondition(vpipes.attempt_is_valid)
     def transform(self, attempt):
         """
         Adds some data that will be needed during validation
@@ -114,6 +115,7 @@ class TearDownPipe(vpipes.Pipe):
         self._sapi_tools = sapi_tools
         self._pkg_analyzer = pkg_analyzer
 
+    @vpipes.precondition(vpipes.attempt_is_valid)
     def transform(self, item):
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
         attempt, pkg_analyzer, journal_and_issue_data = item
@@ -122,11 +124,7 @@ class TearDownPipe(vpipes.Pipe):
 
         pkg_analyzer.restore_perms()
 
-        if attempt.is_valid:
-            logger.info('Finished validating %s' % attempt)
-        else:
-            utils.mark_as_failed(attempt.filepath)
-            logger.info('%s is invalid. Finished.' % attempt)
+        logger.info('Finished validating %s' % attempt)
 
 
 class PublisherNameValidationPipe(vpipes.ValidationPipe):

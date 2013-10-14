@@ -1,9 +1,18 @@
 import unittest
 from datetime import datetime
 
+import mocker
 import enum
 
-from balaio.models import Point, Checkpoint, Status, Notice
+from balaio.models import (
+    Point,
+    Checkpoint,
+    Status,
+    Notice,
+    Attempt,
+    ArticlePkg,
+)
+from . import doubles
 
 
 class CheckpointTests(unittest.TestCase):
@@ -123,4 +132,59 @@ class StatusTests(unittest.TestCase):
         self.assertIn('ok', names)
         self.assertIn('warning', names)
         self.assertIn('error', names)
+
+
+class AttemptTests(mocker.MockerTestCase):
+
+    def test_get_from_package(self):
+        mock_session = self.mocker.mock()
+        self.mocker.replay()
+        pkg_analyzer = doubles.PackageAnalyzerStub()
+
+        attempt = Attempt.get_from_package(pkg_analyzer)
+
+        self.assertIsInstance(attempt, Attempt)
+
+    def test_get_from_package_not_valid_for_missing_meta(self):
+        mock_session = self.mocker.mock()
+        self.mocker.replay()
+        pkg_analyzer = doubles.PackageAnalyzerStub()
+        pkg_analyzer.meta = {'journal_eissn': None, 'journal_pissn': None}
+
+        attempt = Attempt.get_from_package(pkg_analyzer)
+
+        self.assertFalse(attempt.is_valid)
+
+    def test_get_from_package_not_valid_if_invalid(self):
+        mock_session = self.mocker.mock()
+        self.mocker.replay()
+        pkg_analyzer = doubles.PackageAnalyzerStub()
+        pkg_analyzer.meta = {'journal_eissn': '1234-1234', 'journal_pissn': '4321-1234'}
+        pkg_analyzer.is_valid_package = lambda *args, **kwargs: False
+
+        attempt = Attempt.get_from_package(pkg_analyzer)
+
+        self.assertFalse(attempt.is_valid)
+
+
+class ArticlePkgTests(mocker.MockerTestCase):
+
+    def test_get_or_create_from_package(self):
+        mock_session = self.mocker.mock()
+
+        mock_session.query(ArticlePkg)
+        self.mocker.result(mock_session)
+
+        mock_session.filter_by(article_title=mocker.ANY)
+        self.mocker.result(mock_session)
+
+        mock_session.one()
+        self.mocker.result(ArticlePkg())
+
+        self.mocker.replay()
+
+        pkg_analyzer = doubles.PackageAnalyzerStub()
+        article_pkg = ArticlePkg.get_or_create_from_package(pkg_analyzer, mock_session)
+
+        self.assertIsInstance(article_pkg, ArticlePkg)
 

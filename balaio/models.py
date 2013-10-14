@@ -4,6 +4,7 @@ import datetime
 import enum
 
 from sqlalchemy import (
+    create_engine,
     Column,
     Integer,
     ForeignKey,
@@ -15,24 +16,19 @@ from sqlalchemy import (
 from sqlalchemy.orm import (
     relationship,
     backref,
+    scoped_session,
+    sessionmaker,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import create_engine
-
-from sqlalchemy.orm import (
-    scoped_session,
-    sessionmaker,
-    )
-
 from zope.sqlalchemy import ZopeTransactionExtension
+
 
 #Use scoped_session only to web app
 ScopedSession = scoped_session(
     sessionmaker(expire_on_commit=False, extension=ZopeTransactionExtension()))
 
-Session = sessionmaker(expire_on_commit=False)
-
+Session = sessionmaker(expire_on_commit=False, extension=ZopeTransactionExtension())
 Base = declarative_base()
 
 
@@ -56,7 +52,7 @@ class Attempt(Base):
 
     id = Column(Integer, primary_key=True)
     package_checksum = Column(String(length=32), unique=True)
-    articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
+    articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'), nullable=True)
     started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)
     collection_uri = Column(String)
@@ -87,6 +83,24 @@ class Attempt(Base):
 
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
+
+    @classmethod
+    def get_from_package(cls, package):
+        """
+        Get an Attempt for a package.
+
+        :param package: instance of :class:`checkin.ArticlePackage`.
+        """
+        attempt = Attempt(package_checksum=package.checksum,
+                          is_valid=False,
+                          filepath=package._filename)
+
+        meta = package.meta
+
+        if package.is_valid_package() and (meta['journal_eissn'] or meta['journal_pissn']):
+            attempt.is_valid = True
+
+        return attempt
 
 
 class ArticlePkg(Base):
@@ -121,6 +135,30 @@ class ArticlePkg(Base):
 
     def __repr__(self):
         return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
+
+    @classmethod
+    def get_or_create_from_package(cls, package, session):
+        """
+        Get or create an ArticlePkg for a package.
+
+        :param package: instance of :class:`checkin.ArticlePackage`.
+        :param session: sqlalchemy db session
+        """
+        meta = package.meta
+
+        try:
+            article_pkg = session.query(ArticlePkg).filter_by(article_title=meta['article_title']).one()
+        except MultipleResultsFound as e:
+            logging.error('Multiple results trying to get a models.ArticlePkg for article_title=%s. %s' % (
+                meta['article_title'], e))
+
+            raise ValueError('Multiple ArticlePkg for the given criteria')
+        except NoResultFound as e:
+            logging.debug('Creating a new models.ArticlePkg')
+
+            article_pkg = ArticlePkg(**meta)
+
+        return article_pkg
 
 
 class Comment(Base):
