@@ -4,6 +4,7 @@ import datetime
 import enum
 
 from sqlalchemy import (
+    create_engine,
     Column,
     Integer,
     ForeignKey,
@@ -15,15 +16,17 @@ from sqlalchemy import (
 from sqlalchemy.orm import (
     relationship,
     backref,
+    scoped_session,
+    sessionmaker,
 )
-from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import sessionmaker
-
 from zope.sqlalchemy import ZopeTransactionExtension
 
+
+#Use scoped_session only to web app
+ScopedSession = scoped_session(
+    sessionmaker(expire_on_commit=False, extension=ZopeTransactionExtension()))
 
 Session = sessionmaker(expire_on_commit=False, extension=ZopeTransactionExtension())
 Base = declarative_base()
@@ -45,10 +48,6 @@ def init_database(engine):
 
 
 class Attempt(Base):
-    """
-    Represents a package detected by the monitor, that can be valid or not.
-    If valid, it is bound to an ArticlePkg.
-    """
     __tablename__ = 'attempt'
 
     id = Column(Integer, primary_key=True)
@@ -67,7 +66,7 @@ class Attempt(Base):
     def __init__(self, *args, **kwargs):
         super(Attempt, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
-        self.is_valid = kwargs.get('is_valid', True)
+        self.is_valid = True
 
     def to_dict(self):
         checkpoints = {cp.point.name: cp.to_dict() for cp in self.checkpoint if cp.point is not Point.checkout}
