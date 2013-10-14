@@ -9,6 +9,7 @@ import sys
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.exc import IntegrityError
+import transaction
 
 import models
 import utils
@@ -234,47 +235,45 @@ def get_attempt(package):
             attempt = models.Attempt.get_from_package(pkg)
             session.add(attempt)
 
+            savepoint = transaction.savepoint()
             try:
                 article_pkg = models.ArticlePkg.get_or_create_from_package(pkg, session)
                 if article_pkg not in session:
                     session.add(article_pkg)
+
+                attempt.articlepkg = article_pkg
             except:
+                savepoint.rollback()
+
                 attempt.is_valid = False
                 logging.error('Failed to load an ArticlePkg. The Attempt was invalidated.')
-            else:
-                attempt.articlepkg = article_pkg
 
-            session.commit()
+            transaction.commit()
+            return attempt
 
         except IOError:
-            session.rollback()
+            transaction.abort()
             logger.error('The package %s had been deleted during analysis' % package)
             raise ValueError('The package %s had been deleted during analysis' % package)
 
         except IntegrityError:
-            session.rollback()
+            transaction.abort()
             logger.error('The package already exists. Aborting.')
             raise excepts.DuplicatedPackage('The package %s already exists. Aborting.' % package)
 
         except:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
             import traceback
 
-            session.rollback()
+            transaction.abort()
 
-            logger.error('----------------')
             logger.error('Unexpected error! The package analysis for %s was aborted. Traceback: %s' % (
-                package, traceback.print_tb(exc_traceback)))
-            logger.error('print_exc: %s' % traceback.print_exc())
-            logger.error('----------------')
-
+                package, traceback.print_exc()))
             raise ValueError('Unexpected error! The package analysis for %s was aborted.' % package)
 
         finally:
             logging.debug('Closing the transactional session scope')
             session.close()
 
-    return attempt
 
 
 

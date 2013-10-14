@@ -22,8 +22,10 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
+from zope.sqlalchemy import ZopeTransactionExtension
 
-Session = sessionmaker(expire_on_commit=False)
+
+Session = sessionmaker(expire_on_commit=False, extension=ZopeTransactionExtension())
 Base = declarative_base()
 
 
