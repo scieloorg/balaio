@@ -5,12 +5,13 @@ import Queue
 import logging
 import sys
 
-import checkin
 import zipfile
 import pyinotify
 
 import utils
+import checkin
 import models
+import excepts
 
 
 logger = logging.getLogger('balaio.monitor')
@@ -38,7 +39,7 @@ class Monitor(object):
 
             try:
                 attempt = checkin.get_attempt(filepath)
-            except ValueError as e:
+            except (ValueError, excepts.DuplicatedPackage) as e:
                 try:
                     utils.mark_as_failed(filepath)
                 except OSError as e:

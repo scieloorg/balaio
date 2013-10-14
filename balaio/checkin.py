@@ -245,22 +245,31 @@ def get_attempt(package):
                 attempt.articlepkg = article_pkg
 
             session.commit()
+
         except IOError:
             session.rollback()
             logger.error('The package %s had been deleted during analysis' % package)
             raise ValueError('The package %s had been deleted during analysis' % package)
+
         except IntegrityError:
             session.rollback()
             logger.error('The package already exists. Aborting.')
             raise excepts.DuplicatedPackage('The package %s already exists. Aborting.' % package)
+
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             import traceback
 
             session.rollback()
+
+            logger.error('----------------')
             logger.error('Unexpected error! The package analysis for %s was aborted. Traceback: %s' % (
                 package, traceback.print_tb(exc_traceback)))
+            logger.error('print_exc: %s' % traceback.print_exc())
+            logger.error('----------------')
+
             raise ValueError('Unexpected error! The package analysis for %s was aborted.' % package)
+
         finally:
             logging.debug('Closing the transactional session scope')
             session.close()

@@ -141,7 +141,7 @@ class AttemptTests(mocker.MockerTestCase):
         self.mocker.replay()
         pkg_analyzer = doubles.PackageAnalyzerStub()
 
-        attempt = Attempt.get_from_package(pkg_analyzer, mock_session)
+        attempt = Attempt.get_from_package(pkg_analyzer)
 
         self.assertIsInstance(attempt, Attempt)
 
@@ -151,7 +151,7 @@ class AttemptTests(mocker.MockerTestCase):
         pkg_analyzer = doubles.PackageAnalyzerStub()
         pkg_analyzer.meta = {'journal_eissn': None, 'journal_pissn': None}
 
-        attempt = Attempt.get_from_package(pkg_analyzer, mock_session)
+        attempt = Attempt.get_from_package(pkg_analyzer)
 
         self.assertFalse(attempt.is_valid)
 
@@ -162,7 +162,7 @@ class AttemptTests(mocker.MockerTestCase):
         pkg_analyzer.meta = {'journal_eissn': '1234-1234', 'journal_pissn': '4321-1234'}
         pkg_analyzer.is_valid_package = lambda *args, **kwargs: False
 
-        attempt = Attempt.get_from_package(pkg_analyzer, mock_session)
+        attempt = Attempt.get_from_package(pkg_analyzer)
 
         self.assertFalse(attempt.is_valid)
 
