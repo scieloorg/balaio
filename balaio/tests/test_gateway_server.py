@@ -90,7 +90,6 @@ class AttemptFunctionalAPITest(unittest.TestCase):
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/attempts/', status=200)
 
-    @unittest.expectedFailure
     def test_GET_to_one_attempt(self):
         res = self.testapp.get('/api/v1/attempts/1/')
 
@@ -167,7 +166,6 @@ class TicketFunctionalAPITest(unittest.TestCase):
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/tickets/', status=200)
 
-    @unittest.expectedFailure
     def test_GET_to_one_ticket(self):
         res = self.testapp.get('/api/v1/tickets/1/')
 
@@ -291,7 +289,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/packages/', status=200)
 
-    @unittest.expectedFailure
     def test_GET_to_one_package(self):
         res = self.testapp.get('/api/v1/packages/1/')
 
