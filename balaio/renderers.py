@@ -3,11 +3,15 @@ from pyramid.renderers import JSONP
 
 class GtwMetaFactory(JSONP):
 
-    def add_resource_uri(self, obj):
+    def add_resource_uri(self, obj, single=False):
         """
         Add the URL to all resources of an object
         """
-        obj['resource_uri'] = self.request.path + '%s/' % str(obj['id'])
+        if not single:
+            obj['resource_uri'] = self.request.path + '%s/' % str(obj['id'])
+        else:
+            obj['resource_uri'] = self.request.path
+
         if 'related_resources' in obj:
             for label, route_name, id_list in obj['related_resources']:
                 obj[label] = [self.request.route_path(route_name, id=str(item_id)) for item_id in id_list]
@@ -92,7 +96,7 @@ class GtwMetaFactory(JSONP):
             dct_meta['objects'] = [self.add_resource_uri(obj) for obj in data['objects']]
             return dct_meta
         else:
-            return self.add_resource_uri(data)
+            return self.add_resource_uri(data, True)
 
     def tamper(self, render):
         def wrapper(value, system):
