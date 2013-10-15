@@ -6,8 +6,11 @@ import mocker
 import unittest
 import transaction
 
-from balaio import checkin, models
-
+from balaio import checkin
+from balaio import models
+from balaio import utils
+from balaio.tests import doubles
+from balaio import excepts
 
 class SPSMixinTests(mocker.MockerTestCase):
 
@@ -291,19 +294,14 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
 class CheckinTests(unittest.TestCase):
 
     def setUp(self):
-        self._bkp = utils.Configuration
-        utils.Configuration = doubles.ConfigStub
-
         config = utils.Configuration.from_env()
-        engine = models.create_engine_from_config(config)
-        
-        models.Base.metadata.create_all(engine)
-        Session = models.Session
-        Session.configure(bind=engine)
-        self.session = Session()
 
-    def tearDown(self):
-        utils.Configuration = self._bkp
+        engine = models.create_engine_from_config(config)
+        models.init_database(engine)
+
+        # Session = models.Session
+        # Session.configure(bind=engine)
+        # self.session = Session()
 
     def _make_test_archive(self, arch_data):
         fp = NamedTemporaryFile()
@@ -313,20 +311,22 @@ class CheckinTests(unittest.TestCase):
 
         return fp
 
-    # def test_get_attempt_ok(self):
-    #     """
-    #     Attempt generates fine
-    #     """
-    #     self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
-    #         models.Attempt)
+    def test_get_attempt_ok(self):
+        """
+        Attempt generates fine
+        """
+        a = checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip')
+        self.assertIsInstance(a,
+            models.Attempt)
+        self.assertEqual(a.articlepkg.article_title, 'x')
 
     # def test_get_attempt_failure(self):
     #     """
     #     Attempt is already registered
     #     """
     #     self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
-    #         models.Attempt)
-    #     self.assertRaises(ValueError, checkin.get_attempt, 'samples/0042-9686-bwho-91-08-545.zip')
+    #                           models.Attempt)
+    #     self.assertRaises(excepts.DuplicatedPackage, checkin.get_attempt, 'samples/0042-9686-bwho-91-08-545.zip')
 
     # def test_get_attempt_article_title_is_already_registered(self):
     #     """

@@ -35,7 +35,7 @@ class SPSMixin(object):
         if len(xmls) == 1:
             return xmls[0]
         else:
-            raise AttributeError('there is not a single xml file')
+            raise AttributeError('there is not a single xml file' + str(len(xmls)))
 
     @property
     def meta(self):
@@ -50,11 +50,10 @@ class SPSMixin(object):
                      "issue_number": ".//article-meta/issue",
                      "supplement": ".//article-meta/supplement",
                      }
-
         for node_k, node_v in xml_nodes.items():
             node = self.xml.find(node_v)
             dct_mta[node_k] = getattr(node, 'text', None)
-
+            
         ign, dct_mta['issue_suppl_volume'], dct_mta['issue_number'], dct_mta['issue_suppl_number'] = utils.issue_identification(dct_mta['issue_volume'], dct_mta['issue_number'], dct_mta['supplement'])
         del dct_mta['supplement']
         return dct_mta
@@ -231,21 +230,23 @@ def get_attempt(package):
             logging.debug('Creating a transactional session scope')
 
             session = Session()
-
+            import pdb; pdb.set_trace()
             attempt = models.Attempt.get_from_package(pkg)
             session.add(attempt)
-
             try:
                 article_pkg = models.ArticlePkg.get_or_create_from_package(pkg, session)
                 if article_pkg not in session:
                     session.add(article_pkg)
 
                 attempt.articlepkg = article_pkg
+                logging.debug('attempt.articlepkg = article_pkg')
             except:
                 attempt.is_valid = False
                 logging.error('Failed to load an ArticlePkg for %s.' % package)
 
+
             transaction.commit()
+            logging.debug('attempt created')
             return attempt
 
         except IOError:
