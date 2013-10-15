@@ -1,3 +1,4 @@
+import transaction
 from pyramid.response import Response
 from pyramid.config import Configurator
 from wsgiref.simple_server import make_server
@@ -139,7 +140,7 @@ def new_ticket(request):
         ticket.comments.append(models.Comment(author=request.POST['ticket_author'], message=request.POST['message']))
     try:
         request.db.add(ticket)
-        request.db.commit()
+        transaction.commit()
     except:
         request.db.rollback()
         raise
@@ -147,18 +148,18 @@ def new_ticket(request):
     return HTTPCreated()
 
 
-@view_config(route_name='update_ticket', request_method='PATCH', renderer="gtw")
+@view_config(route_name='Ticket', request_method='POST', renderer="gtw")
 def update_ticket(request):
     """
     Update a ticket
     """
     ticket = request.db.query(models.Ticket).get(request.matchdict['id'])
     if ticket:
-        ticket.is_open = request.PATCH['is_open']
-        if request.PATCH.get('message', None):
-            ticket.comments.append(models.Comment(author=request.PATCH['comment_author'], message=request.PATCH['message']))
+        ticket.is_open = request.POST['is_open']
+        if request.POST.get('message', None):
+            ticket.comments.append(models.Comment(author=request.POST['comment_author'], message=request.POST['message']))
         try:
-            request.db.commit()
+            transaction.commit()
             return HTTPAccepted()
         except:
             request.db.rollback()
@@ -167,8 +168,7 @@ def update_ticket(request):
         return HTTPNotFound()
 
 
-if __name__ == '__main__':
-
+def main():
     def bind_db(event):
         event.request.db = event.request.registry.Session()
 
@@ -192,17 +192,21 @@ if __name__ == '__main__':
 
     # tickets new and update
     config_pyrmd.add_route('ticket', '/api/%s/tickets/' % version)
-    config_pyrmd.add_route('update_ticket', '/api/%s/tickets/{id}/' % version)
 
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 
     #DB session bound to each request
-    config_pyrmd.registry.Session = models.Session
+    config_pyrmd.registry.Session = models.ScopedSession
     config_pyrmd.registry.Session.configure(bind=engine)
     config_pyrmd.add_subscriber(bind_db, NewRequest)
 
-    config_pyrmd.scan()
+    config_pyrmd.scan('gateway_server')
 
-    app = config_pyrmd.make_wsgi_app()
+    return (config_pyrmd.make_wsgi_app(), config)
+
+
+if __name__ == '__main__':
+
+    app, config = main()
     server = make_server(config.get('http_server', 'ip'), config.getint('http_server', 'port'), app)
     server.serve_forever()
