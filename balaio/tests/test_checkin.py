@@ -310,56 +310,56 @@ class CheckinTests(unittest.TestCase):
 
         return fp
 
-    def test_get_attempt_ok(self):
-        """
-        Attempt generates fine
-        """
-        self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
-            models.Attempt)
+    # def test_get_attempt_ok(self):
+    #     """
+    #     Attempt generates fine
+    #     """
+    #     self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
+    #         models.Attempt)
 
-    def test_get_attempt_failure(self):
-        """
-        Attempt is already registered
-        """
-        self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
-            models.Attempt)
-        self.assertRaises(ValueError, checkin.get_attempt, 'samples/0042-9686-bwho-91-08-545.zip')
+    # def test_get_attempt_failure(self):
+    #     """
+    #     Attempt is already registered
+    #     """
+    #     self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
+    #         models.Attempt)
+    #     self.assertRaises(ValueError, checkin.get_attempt, 'samples/0042-9686-bwho-91-08-545.zip')
 
-    def test_get_attempt_article_title_is_already_registered(self):
-        """
-        There are more than one article registered with same article title
-        """
-        pkg = checkin.PackageAnalyzer('samples/0042-9686-bwho-91-08-545.zip')
-        article = models.ArticlePkg(**pkg.meta)
-        self.session.add(article)
-        transaction.commit()
+    # def test_get_attempt_article_title_is_already_registered(self):
+    #     """
+    #     There are more than one article registered with same article title
+    #     """
+    #     pkg = checkin.PackageAnalyzer('samples/0042-9686-bwho-91-08-545.zip')
+    #     article = models.ArticlePkg(**pkg.meta)
+    #     self.session.add(article)
+    #     transaction.commit()
 
-        article2 = models.ArticlePkg(**pkg.meta)
-        article2.journal_title = 'REV'
-        self.session.add(article2)
-        transaction.commit()
+    #     article2 = models.ArticlePkg(**pkg.meta)
+    #     article2.journal_title = 'REV'
+    #     self.session.add(article2)
+    #     transaction.commit()
 
-        attempt = checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip')
-        self.assertIsInstance(attempt, models.Attempt)
+    #     attempt = checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip')
+    #     self.assertIsInstance(attempt, models.Attempt)
 
-    def test_get_attempt_invalid_package_missing_xml(self):
-        """
-        There are more than one article registered with same article title
-        """
-        pkg = self._make_test_archive([('texto.txt', b'bla bla')])
-        self.assertRaises(ValueError, checkin.get_attempt, pkg.name)
+    # def test_get_attempt_invalid_package_missing_xml(self):
+    #     """
+    #     There are more than one article registered with same article title
+    #     """
+    #     pkg = self._make_test_archive([('texto.txt', b'bla bla')])
+    #     self.assertRaises(ValueError, checkin.get_attempt, pkg.name)
 
-    def test_get_attempt_invalid_package_missing_issn(self):
-        """
-        Package is invalid because there is no ISSN
-        """
-        pkg = self._make_test_archive([('texto.xml', b'<root/>')])
-        attempt = checkin.get_attempt(pkg.name)
-        self.assertIsInstance(attempt, models.Attempt)
+    # def test_get_attempt_invalid_package_missing_issn(self):
+    #     """
+    #     Package is invalid because there is no ISSN
+    #     """
+    #     pkg = self._make_test_archive([('texto.xml', b'<root/>')])
+    #     attempt = checkin.get_attempt(pkg.name)
+    #     self.assertIsInstance(attempt, models.Attempt)
 
-    def test_get_attempt_inexisting_package(self):
-        """
-        The package is missing
-        """
-        self.assertRaises(ValueError, checkin.get_attempt, 'package.zip')
+    # def test_get_attempt_inexisting_package(self):
+    #     """
+    #     The package is missing
+    #     """
+    #     self.assertRaises(ValueError, checkin.get_attempt, 'package.zip')
 
