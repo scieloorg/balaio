@@ -66,7 +66,7 @@ class Attempt(Base):
     def __init__(self, *args, **kwargs):
         super(Attempt, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
-        self.is_valid = True
+        self.is_valid = kwargs.get('is_valid', True)
 
     def to_dict(self):
         checkpoints = {cp.point.name: cp.to_dict() for cp in self.checkpoint if cp.point is not Point.checkout}
