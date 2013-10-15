@@ -15,6 +15,7 @@ def attempt_is_valid(data):
         attempt = data
 
     if attempt.is_valid != True:
+        logger.debug('Attempt %s does not comply the precondition to be processed by the pipe. Bypassing.' % repr(attempt))
         raise UnmetPrecondition()
 
 
