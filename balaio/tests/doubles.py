@@ -218,7 +218,26 @@ class TicketStub(object):
 
 
 class ConfigStub(object):
-    pass
+    def __init__(self, fp, config=object):
+        from ConfigParser import SafeConfigParser
+
+        self.conf = SafeConfigParser()
+        self.conf.add_section('app')
+        self.conf.set('app', 'db_dsn', 'sqlite:///:memory:')
+        self.conf.set('app', 'debug', str(False))
+
+    @classmethod
+    def from_env(cls):
+        return cls('')
+
+    def __getattr__(self, attr):
+        return getattr(self.conf, attr)
+
+    def items(self):
+        """Settings as key-value pair.
+        """
+        return [(section, dict(self.conf.items(section))) for \
+            section in [section for section in self.conf.sections()]]
 
 
 class PipeStub(object):
