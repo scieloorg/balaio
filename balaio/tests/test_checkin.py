@@ -291,11 +291,15 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
 class CheckinTests(unittest.TestCase):
 
     def setUp(self):
-        config = utils.Configuration.from_env()
-        self.engine = models.create_engine_from_config(config)
+        from sqlalchemy import create_engine
+        self.engine = create_engine('sqlite:///:memory:', echo=False)
         models.Base.metadata.create_all(self.engine)
 
         models.create_engine_from_config = lambda config: self.engine
+
+        Session = models.Session
+        Session.configure(bind=self.engine)
+        self.session = Session()
 
     def tearDown(self):
         models.Base.metadata.drop_all(self.engine)

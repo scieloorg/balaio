@@ -14,7 +14,7 @@ import transaction
 import models
 import utils
 import excepts
-
+import notifier
 
 __all__ = ['PackageAnalyzer', 'get_attempt']
 logger = logging.getLogger('balaio.checkin')
@@ -218,7 +218,7 @@ def get_attempt(package):
     :param package: filesystem path to package
     """
     config = utils.Configuration.from_env()
-    
+    CheckinNotifier = notifier.checkin_notifier_factory(config)
     logger.info('Analyzing package: %s' % package)
 
     with PackageAnalyzer(package) as pkg:
@@ -236,6 +236,13 @@ def get_attempt(package):
             session.add(attempt)
             transaction.commit()
 
+            # attempt notifier
+            #import pdb; pdb.set_trace()
+            checkin_notifier = CheckinNotifier(attempt)
+            logger.debug('Checkin notification: starts')
+            checkin_notifier.start()
+            logger.debug('Checkin notification: started')
+
             # Trying to bind a ArticlePkg
             session = Session()
             session.add(attempt)
@@ -252,6 +259,20 @@ def get_attempt(package):
                 transaction.abort()
                 logger.error('Failed to load an ArticlePkg for %s.' % package)
                 logger.debug('---> Traceback: %s' % e)
+
+                logger.debug('Checkin notification: Failed to load an ArticlePkg')
+                session = Session()
+                session.add(attempt)
+                checkin_notifier = CheckinNotifier(attempt)
+                checkin_notifier.tell('Failed to load an ArticlePkg for %s.' % package, models.Status.error, 'Checkin')
+
+            checkin_notifier = CheckinNotifier(attempt)
+            logger.debug('Checkin notification: Attempt commited')
+            checkin_notifier.tell('Attempt commited', models.Status.ok, 'Checkin')
+
+            logger.debug('Checkin notification: ends')
+            checkin_notifier.end()
+            logger.debug('Checkin notification: ended')
 
             return attempt
 
