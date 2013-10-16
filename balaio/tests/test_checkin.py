@@ -320,6 +320,13 @@ class CheckinTests(unittest.TestCase):
         self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
             models.Attempt)
 
+    def test_accessing_generated_attempt_data(self):
+        """
+        Attempt generates fine
+        """
+        attempt = checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip')
+        self.assertTrue('0042-9686-bwho-91-08-545.zip' in attempt.filepath)
+
     def test_get_attempt_failure(self):
         """
         Attempt is already registered
