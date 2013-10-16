@@ -1,18 +1,23 @@
 # coding: utf-8
 import scieloapi
 import sqlalchemy
+import transaction
 
 from utils import SingletonMixin, Configuration
 import models
 
 
 def auto_commit_or_rollback(method):
+    """
+    Performs a commit if changes are made to the session or abort on errors.
+    """
     def _method(self, *args, **kwargs):
         try:
             _return = method(self, *args, **kwargs)
-            self.db_session.commit()
+            if self.db_session.dirty:
+                transaction.commit()
         except sqlalchemy.exc.IntegrityError:
-            self.db_session.rollback()
+            transaction.abort()
             raise
         else:
             return _return
