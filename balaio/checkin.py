@@ -222,57 +222,60 @@ def get_attempt(package):
     logger.info('Analyzing package: %s' % package)
 
     with PackageAnalyzer(package) as pkg:
+        Session = models.Session
+        logger.debug('Binding a new sqlalchemy.engine')
+
+        Session.configure(bind=models.create_engine_from_config(config))
+        logger.debug('Creating a transactional session scope')
+
         try:
-            Session = models.Session
-            logger.debug('Binding a new sqlalchemy.engine')
-
-            Session.configure(bind=models.create_engine_from_config(config))
-            logger.debug('Creating a transactional session scope')
-
             session = Session()
-            
+
+            # Building a new Attempt
             attempt = models.Attempt.get_from_package(pkg)
             session.add(attempt)
-            
+            transaction.commit()
+
+            # Trying to bind a ArticlePkg
+            session = Session()
+            session.add(attempt)
             try:
                 article_pkg = models.ArticlePkg.get_or_create_from_package(pkg, session)
                 if article_pkg not in session:
                     session.add(article_pkg)
 
                 attempt.articlepkg = article_pkg
-                logger.debug('attempt.articlepkg = article_pkg')
-            except:
-                attempt.is_valid = False
+                attempt.is_valid = True
+
+                transaction.commit()
+            except Exception as e:
+                transaction.abort()
                 logger.error('Failed to load an ArticlePkg for %s.' % package)
+                logger.debug('---> Traceback: %s' % e)
 
-
-            transaction.commit()
-            logger.debug('attempt created')
             return attempt
 
-        except IOError:
+        except IOError as e:
             transaction.abort()
             logger.error('The package %s had been deleted during analysis' % package)
+            logger.debug('---> Traceback: %s' % e)
             raise ValueError('The package %s had been deleted during analysis' % package)
 
-        except IntegrityError:
+        except IntegrityError as e:
             transaction.abort()
             logger.error('The package already exists. Aborting.')
+            logger.debug('---> Traceback: %s' % e)
             raise excepts.DuplicatedPackage('The package %s already exists. Aborting.' % package)
 
-        except:
-            import traceback
-
+        except Exception as e:
             transaction.abort()
 
-            logger.error('Unexpected error! The package analysis for %s was aborted. Traceback: %s' % (
-                package, traceback.print_exc()))
+            logger.error('Unexpected error! The package analysis for %s was aborted.' % (
+                package))
+            logger.debug('---> Traceback: %s' % e)
             raise ValueError('Unexpected error! The package analysis for %s was aborted.' % package)
 
         finally:
             logger.debug('Closing the transactional session scope')
             session.close()
-
-
-
 

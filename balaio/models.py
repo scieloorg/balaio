@@ -150,8 +150,6 @@ class ArticlePkg(Base):
 
         meta = package.meta
         try:
-            import pdb; pdb.set_trace()
-        
             article_pkg = session.query(ArticlePkg).filter_by(article_title=meta['article_title']).one()
         except MultipleResultsFound as e:
             logger.error('Multiple results trying to get a models.ArticlePkg for article_title=%s. %s' % (
