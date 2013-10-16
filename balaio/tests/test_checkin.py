@@ -6,7 +6,7 @@ import mocker
 import unittest
 import transaction
 
-from balaio import checkin, models
+from balaio import checkin, models, excepts
 
 
 class SPSMixinTests(mocker.MockerTestCase):
@@ -326,7 +326,8 @@ class CheckinTests(unittest.TestCase):
         """
         self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
             models.Attempt)
-        self.assertRaises(ValueError, checkin.get_attempt, 'samples/0042-9686-bwho-91-08-545.zip')
+        self.assertRaises(excepts.DuplicatedPackage,
+            lambda: checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'))
 
     def test_get_attempt_article_title_is_already_registered(self):
         """
