@@ -1,4 +1,4 @@
-# coding: utf-8
+#coding: utf-8
 import datetime
 import logging
 
@@ -73,17 +73,19 @@ class Attempt(Base):
         self.is_valid = kwargs.get('is_valid', True)
 
     def to_dict(self):
+
         checkpoints = {cp.point.name: cp.to_dict() for cp in self.checkpoint if cp.point is not Point.checkout}
-        return checkpoints.update(dict(id=self.id,
-                                        package_checksum=self.package_checksum,
-                                        articlepkg_id=self.articlepkg_id,
-                                        started_at=str(self.started_at),
-                                        finished_at=str(self.finished_at) if self.finished_at else None,
-                                        collection_uri=self.collection_uri,
-                                        filepath=self.filepath,
-                                        is_valid=self.is_valid,
-                                    )
-                                )
+
+        checkpoints.update(id=self.id,
+                           package_checksum=self.package_checksum,
+                           articlepkg_id=self.articlepkg_id,
+                           started_at=str(self.started_at),
+                           finished_at=str(self.finished_at) if self.finished_at else None,
+                           collection_uri=self.collection_uri,
+                           filepath=self.filepath,
+                           is_valid=self.is_valid,)
+
+        return checkpoints
 
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
