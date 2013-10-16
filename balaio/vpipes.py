@@ -1,11 +1,22 @@
 import logging
 
-from plumber import Pipe, Pipeline
+from plumber import Pipe, Pipeline, precondition, UnmetPrecondition
 
 import scieloapitoolbelt
 
 
 logger = logging.getLogger(__name__)
+
+
+def attempt_is_valid(data):
+    try:
+        attempt, _, __ = data
+    except TypeError:
+        attempt = data
+
+    if attempt.is_valid != True:
+        logger.debug('Attempt %s does not comply the precondition to be processed by the pipe. Bypassing.' % repr(attempt))
+        raise UnmetPrecondition()
 
 
 class ValidationPipe(Pipe):
@@ -18,6 +29,7 @@ class ValidationPipe(Pipe):
         self._scieloapi = scieloapi
         self._sapi_tools = sapi_tools
 
+    @precondition(attempt_is_valid)
     def transform(self, item):
         """
         Performs a transformation to one `item` of data iterator.
