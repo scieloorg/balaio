@@ -142,7 +142,6 @@ class AttemptTests(mocker.MockerTestCase):
         pkg_analyzer = doubles.PackageAnalyzerStub()
 
         attempt = Attempt.get_from_package(pkg_analyzer)
-
         self.assertIsInstance(attempt, Attempt)
 
     def test_get_from_package_not_valid_for_missing_meta(self):
@@ -162,7 +161,6 @@ class AttemptTests(mocker.MockerTestCase):
         pkg_analyzer.is_valid_package = lambda *args, **kwargs: False
 
         attempt = Attempt.get_from_package(pkg_analyzer)
-
         self.assertFalse(attempt.is_valid)
 
 

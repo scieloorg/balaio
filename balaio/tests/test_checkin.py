@@ -9,6 +9,7 @@ import transaction
 from balaio import checkin, models, excepts
 from balaio import utils
 
+
 class SPSMixinTests(mocker.MockerTestCase):
 
     def _make_test_archive(self, arch_data):
