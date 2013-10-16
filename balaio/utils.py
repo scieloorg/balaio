@@ -195,6 +195,10 @@ def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
 
 
+def mark_as_duplicated(filename):
+    prefix_file(filename, '_duplicated_')
+
+
 def setup_logging():
     global has_logger
     # avoid setting up more than once per process

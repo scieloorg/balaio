@@ -87,7 +87,8 @@ def create_checkpoint_notifier(config, point):
                 models.Checkpoint.attempt == attempt).filter(
                 models.Checkpoint.point == point.value).one()
         except sqlalchemy.orm.exc.NoResultFound:
-            checkpoint = models.Checkpoint(point, attempt=attempt)
+            checkpoint = models.Checkpoint(point)
+            checkpoint.attempt = attempt
         except sqlalchemy.orm.exc.MultipleResultsFound as e:
             #logger.error(e.message)
             pass

@@ -5,12 +5,15 @@ import zipfile
 import itertools
 import xml.etree.ElementTree as etree
 import logging
+import sys
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.exc import IntegrityError
+import transaction
 
 import models
 import utils
+import excepts
 
 
 __all__ = ['PackageAnalyzer', 'get_attempt']
@@ -198,9 +201,22 @@ class PackageAnalyzer(SPSMixin, Xray):
 
 def get_attempt(package):
     """
-    Always returns a brand new models.Attempt instance, bound to
-    the expected models.ArticlePkg instance.
-    - Verify if exist at least one ISSN.
+    Returns a brand new models.Attempt instance, bound to a models.ArticlePkg
+    instance.
+
+    A package is valid when it has at least one valid xml file, according to
+    SPS or rSPS xsd, and one pdf file.
+
+    Case 1: Package is valid and has all needed metadata:
+            A :class:`models.Attempt` is returned, bound to a :class:`models.ArticlePkg`.
+    Case 2: Package is valid and doesn't have all needed metadata:
+            A :class:`models.Attempt` is returned, with :attr:`models.Attempt.is_valid==False`.
+    Case 3: Package is invalid
+            A :class:`models.Attempt` is returned, with :attr:`models.Attempt.is_valid==False`.
+    Case 4: Package is duplicated
+            raises :class:`excepts.DuplicatedPackage`.
+
+    :param package: filesystem path to package
     """
     config = utils.Configuration.from_env()
 
@@ -208,58 +224,53 @@ def get_attempt(package):
 
     with PackageAnalyzer(package) as pkg:
         try:
-            pkg_meta = pkg.meta
+            Session = models.Session
+            logger.debug('Binding a new sqlalchemy.engine')
 
-            if pkg.is_valid_package() and (pkg_meta['journal_eissn'] or pkg_meta['journal_pissn']):
-                Session = models.Session
+            Session.configure(bind=models.create_engine_from_config(config))
+            logger.debug('Creating a transactional session scope')
 
-                logging.debug('Binding a new sqlalchemy.engine')
-                Session.configure(bind=models.create_engine_from_config(config))
+            session = Session()
 
-                logging.debug('Creating a transactional session scope')
-                session = Session()
+            attempt = models.Attempt.get_from_package(pkg)
+            session.add(attempt)
 
-                try:
-                    logging.debug('Getting a models.ArticlePkg')
-                    try:
-                        article_pkg = session.query(models.ArticlePkg).filter_by(article_title=pkg_meta['article_title']).one()
-                    except MultipleResultsFound as e:
-                        logging.error('Multiple results trying to get a models.ArticlePkg for article_title=%s. %s' % (
-                            pkg_meta['article_title'], e))
-                        raise ValueError('Impossible to find a models.ArticlePkg matching criteria')
-                    except NoResultFound as e:
-                        logging.debug('Creating a new models.ArticlePkg')
-                        article_pkg = models.ArticlePkg(**pkg_meta)
-                        session.add(article_pkg)
+            try:
+                article_pkg = models.ArticlePkg.get_or_create_from_package(pkg, session)
+                if article_pkg not in session:
+                    session.add(article_pkg)
 
-                    logger.debug('Trying to generate an Attempt for package with chksum: %s and ArticlePkg: %s' % (
-                        pkg.checksum, repr(article_pkg)))
-                    try:
-                        attempt = models.Attempt(package_checksum=pkg.checksum,
-                                                 articlepkg=article_pkg,
-                                                 filepath=package)
-                        session.add(attempt)
-                        session.commit()
-                        logging.debug('Created %s' % attempt)
+                attempt.articlepkg = article_pkg
+            except:
+                attempt.is_valid = False
+                logger.error('Failed to load an ArticlePkg for %s.' % package)
 
-                    except IntegrityError:
-                        logging.debug('The package had already been analyzed')
-                        raise ValueError('The package had already been analyzed')
-                except:
-                    logging.error('The transaction was aborted due to an exception')
-                    session.rollback()
-                    raise
-                finally:
-                    logging.debug('Closing the transactional session scope')
-                    session.close()
+            transaction.commit()
+            return attempt
 
-                return attempt
-            else:
-                errors = ', '.join(pkg.errors)
-                logger.debug('Invalid package: %s. Errors: %s' % (package, errors))
-                raise ValueError('the package is not valid: %s' % errors)
-
-        except IOError as e:
+        except IOError:
+            transaction.abort()
             logger.error('The package %s had been deleted during analysis' % package)
             raise ValueError('The package %s had been deleted during analysis' % package)
+
+        except IntegrityError:
+            transaction.abort()
+            logger.error('The package already exists. Aborting.')
+            raise excepts.DuplicatedPackage('The package %s already exists. Aborting.' % package)
+
+        except:
+            import traceback
+
+            transaction.abort()
+
+            logger.error('Unexpected error! The package analysis for %s was aborted. Traceback: %s' % (
+                package, traceback.print_exc()))
+            raise ValueError('Unexpected error! The package analysis for %s was aborted.' % package)
+
+        finally:
+            logger.debug('Closing the transactional session scope')
+            session.close()
+
+
+
 

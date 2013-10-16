@@ -4,6 +4,7 @@ from xml.etree.ElementTree import ElementTree
 
 import mocker
 import unittest
+import transaction
 
 from balaio import checkin, models
 
@@ -292,14 +293,17 @@ class CheckinTests(unittest.TestCase):
     def setUp(self):
         from sqlalchemy import create_engine
 
-        engine = create_engine('sqlite:///:memory:', echo=False)
+        self.engine = create_engine('sqlite:///:memory:', echo=False)
 
         Session = models.Session
-        Session.configure(bind=engine)
+        Session.configure(bind=self.engine)
         self.session = Session()
 
-        models.Base.metadata.create_all(engine)
-        models.create_engine_from_config = lambda config: engine
+        models.Base.metadata.create_all(self.engine)
+        models.create_engine_from_config = lambda config: self.engine
+
+    def tearDown(self):
+        models.Base.metadata.drop_all(self.engine)
 
     def _make_test_archive(self, arch_data):
         fp = NamedTemporaryFile()
@@ -331,31 +335,34 @@ class CheckinTests(unittest.TestCase):
         pkg = checkin.PackageAnalyzer('samples/0042-9686-bwho-91-08-545.zip')
         article = models.ArticlePkg(**pkg.meta)
         self.session.add(article)
-        self.session.commit()
+        transaction.commit()
 
         article2 = models.ArticlePkg(**pkg.meta)
         article2.journal_title = 'REV'
         self.session.add(article2)
-        self.session.commit()
-        
-        self.assertRaises(ValueError, checkin.get_attempt, 'samples/0042-9686-bwho-91-08-545.zip')
+        transaction.commit()
+
+        attempt = checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip')
+        self.assertIsInstance(attempt, models.Attempt)
 
     def test_get_attempt_invalid_package_missing_xml(self):
         """
         There are more than one article registered with same article title
         """
         pkg = self._make_test_archive([('texto.txt', b'bla bla')])
-        self.assertRaises(AttributeError, checkin.get_attempt, pkg.name)
+        self.assertRaises(ValueError, checkin.get_attempt, pkg.name)
 
     def test_get_attempt_invalid_package_missing_issn(self):
         """
         Package is invalid because there is no ISSN
         """
         pkg = self._make_test_archive([('texto.xml', b'<root/>')])
-        self.assertRaises(ValueError, checkin.get_attempt, pkg.name)
+        attempt = checkin.get_attempt(pkg.name)
+        self.assertIsInstance(attempt, models.Attempt)
 
     def test_get_attempt_inexisting_package(self):
         """
         The package is missing
         """
         self.assertRaises(ValueError, checkin.get_attempt, 'package.zip')
+
