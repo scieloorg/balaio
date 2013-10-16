@@ -208,5 +208,8 @@ def main():
 if __name__ == '__main__':
 
     app, config = main()
-    server = make_server(config.get('http_server', 'ip'), config.getint('http_server', 'port'), app)
+    port = config.getint('http_server', 'port')
+    server = make_server(config.get('http_server', 'ip'), port, app)
+
+    print "Started Gateway Server on port: " + str(port)
     server.serve_forever()
