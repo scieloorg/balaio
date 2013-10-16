@@ -1,5 +1,6 @@
 # coding: utf-8
 import datetime
+import logging
 
 import enum
 
@@ -24,6 +25,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from zope.sqlalchemy import ZopeTransactionExtension
 
+
+logger = logging.getLogger(__name__)
 
 #Use scoped_session only to web app
 ScopedSession = scoped_session(
@@ -96,6 +99,7 @@ class Attempt(Base):
                           is_valid=False,
                           filepath=package._filename)
         meta = package.meta
+
         if package.is_valid_package() and (meta['journal_eissn'] or meta['journal_pissn']):
             attempt.is_valid = True
         
@@ -143,16 +147,19 @@ class ArticlePkg(Base):
         :param package: instance of :class:`checkin.ArticlePackage`.
         :param session: sqlalchemy db session
         """
+
         meta = package.meta
         try:
+            import pdb; pdb.set_trace()
+        
             article_pkg = session.query(ArticlePkg).filter_by(article_title=meta['article_title']).one()
         except MultipleResultsFound as e:
-            logging.error('Multiple results trying to get a models.ArticlePkg for article_title=%s. %s' % (
+            logger.error('Multiple results trying to get a models.ArticlePkg for article_title=%s. %s' % (
                 meta['article_title'], e))
 
             raise ValueError('Multiple ArticlePkg for the given criteria')
         except NoResultFound as e:
-            logging.debug('Creating a new models.ArticlePkg')
+            logger.debug('Creating a new models.ArticlePkg')
 
             article_pkg = ArticlePkg(**meta)
 

@@ -209,44 +209,45 @@ def get_attempt(package):
     Case 1: Package is valid and has all needed metadata:
             A :class:`models.Attempt` is returned, bound to a :class:`models.ArticlePkg`.
     Case 2: Package is valid and doesn't have all needed metadata:
-            A :class:`models.Attempt` is returned, with :attr:`models.ArticlePkg.is_valid==False`.
+            A :class:`models.Attempt` is returned, with :attr:`models.Attempt.is_valid==False`.
     Case 3: Package is invalid
-            A :class:`models.Attempt` is returned, with :attr:`models.ArticlePkg.is_valid==False`.
+            A :class:`models.Attempt` is returned, with :attr:`models.Attempt.is_valid==False`.
     Case 4: Package is duplicated
             raises :class:`excepts.DuplicatedPackage`.
 
     :param package: filesystem path to package
     """
     config = utils.Configuration.from_env()
-
+    
     logger.info('Analyzing package: %s' % package)
 
     with PackageAnalyzer(package) as pkg:
         try:
             Session = models.Session
-            logging.debug('Binding a new sqlalchemy.engine')
+            logger.debug('Binding a new sqlalchemy.engine')
 
             Session.configure(bind=models.create_engine_from_config(config))
-            logging.debug('Creating a transactional session scope')
+            logger.debug('Creating a transactional session scope')
 
             session = Session()
             
             attempt = models.Attempt.get_from_package(pkg)
             session.add(attempt)
+            
             try:
                 article_pkg = models.ArticlePkg.get_or_create_from_package(pkg, session)
                 if article_pkg not in session:
                     session.add(article_pkg)
 
                 attempt.articlepkg = article_pkg
-                logging.debug('attempt.articlepkg = article_pkg')
+                logger.debug('attempt.articlepkg = article_pkg')
             except:
                 attempt.is_valid = False
-                logging.error('Failed to load an ArticlePkg for %s.' % package)
+                logger.error('Failed to load an ArticlePkg for %s.' % package)
 
 
             transaction.commit()
-            logging.debug('attempt created')
+            logger.debug('attempt created')
             return attempt
 
         except IOError:
@@ -269,7 +270,7 @@ def get_attempt(package):
             raise ValueError('Unexpected error! The package analysis for %s was aborted.' % package)
 
         finally:
-            logging.debug('Closing the transactional session scope')
+            logger.debug('Closing the transactional session scope')
             session.close()
 
 
