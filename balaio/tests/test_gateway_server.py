@@ -28,7 +28,7 @@ def _init_test_DB():
 def _load_fixtures(obj_list):
 
     with transaction.manager:
-            models.ScopedSession.add_all(obj_list)
+        models.ScopedSession.add_all(obj_list)
 
 
 class FunctionalAPITest(unittest.TestCase):
@@ -87,7 +87,6 @@ class TicketFunctionalAPITest(unittest.TestCase):
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/tickets/', status=200)
 
-    @unittest.expectedFailure
     def test_GET_to_one_ticket(self):
         res = self.testapp.get('/api/v1/tickets/1/')
 
@@ -211,7 +210,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/packages/', status=200)
 
-    @unittest.expectedFailure
     def test_GET_to_one_package(self):
         res = self.testapp.get('/api/v1/packages/1/')
 
