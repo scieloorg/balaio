@@ -115,14 +115,27 @@ class TearDownPipe(vpipes.Pipe):
         self._sapi_tools = sapi_tools
         self._pkg_analyzer = pkg_analyzer
 
-    @vpipes.precondition(vpipes.attempt_is_valid)
     def transform(self, item):
+        """
+        :param item:
+        """
+        try:
+            attempt, pkg_analyzer, __ = item
+        except TypeError:
+            attempt = item
+
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
-        attempt, pkg_analyzer, journal_and_issue_data = item
 
-        self._notifier(attempt).end()
+        try:
+            self._notifier(attempt).end()
+        except RuntimeError:
+            pass
 
-        pkg_analyzer.restore_perms()
+        if 'pkg_analyzer' in locals():
+            pkg_analyzer.restore_perms()
+
+        if not attempt.is_valid:
+            utils.mark_as_failed(attempt.filepath)
 
         logger.info('Finished validating %s' % attempt)
 

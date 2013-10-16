@@ -19,10 +19,10 @@ from sqlalchemy.orm import (
     scoped_session,
     sessionmaker,
 )
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from zope.sqlalchemy import ZopeTransactionExtension
-from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
 
 #Use scoped_session only to web app
@@ -67,6 +67,7 @@ class Attempt(Base):
     def __init__(self, *args, **kwargs):
         super(Attempt, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
+        self.is_valid = kwargs.get('is_valid', True)
 
     def to_dict(self):
         checkpoints = {cp.point.name: cp.to_dict() for cp in self.checkpoint if cp.point is not Point.checkout}
@@ -146,12 +147,12 @@ class ArticlePkg(Base):
         try:
             article_pkg = session.query(ArticlePkg).filter_by(article_title=meta['article_title']).one()
         except MultipleResultsFound as e:
-            #logging.error('Multiple results trying to get a models.ArticlePkg for article_title=%s. %s' % (
-            #    meta['article_title'], e))
+            logging.error('Multiple results trying to get a models.ArticlePkg for article_title=%s. %s' % (
+                meta['article_title'], e))
 
             raise ValueError('Multiple ArticlePkg for the given criteria')
         except NoResultFound as e:
-            #logging.debug('Creating a new models.ArticlePkg')
+            logging.debug('Creating a new models.ArticlePkg')
 
             article_pkg = ArticlePkg(**meta)
 

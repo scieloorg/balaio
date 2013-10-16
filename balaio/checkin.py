@@ -230,7 +230,7 @@ def get_attempt(package):
             logging.debug('Creating a transactional session scope')
 
             session = Session()
-            import pdb; pdb.set_trace()
+            
             attempt = models.Attempt.get_from_package(pkg)
             session.add(attempt)
             try:
