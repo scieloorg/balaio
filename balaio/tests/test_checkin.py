@@ -293,14 +293,17 @@ class CheckinTests(unittest.TestCase):
     def setUp(self):
         from sqlalchemy import create_engine
 
-        engine = create_engine('sqlite:///:memory:', echo=False)
+        self.engine = create_engine('sqlite:///:memory:', echo=False)
 
         Session = models.Session
-        Session.configure(bind=engine)
+        Session.configure(bind=self.engine)
         self.session = Session()
 
-        models.Base.metadata.create_all(engine)
-        models.create_engine_from_config = lambda config: engine
+        models.Base.metadata.create_all(self.engine)
+        models.create_engine_from_config = lambda config: self.engine
+
+    def tearDown(self):
+        models.Base.metadata.drop_all(self.engine)
 
     def _make_test_archive(self, arch_data):
         fp = NamedTemporaryFile()
