@@ -100,12 +100,9 @@ class Attempt(Base):
         attempt = Attempt(package_checksum=package.checksum,
                           is_valid=False,
                           filepath=package._filename)
-
         meta = package.meta
-
         if package.is_valid_package() and (meta['journal_eissn'] or meta['journal_pissn']):
             attempt.is_valid = True
-
         return attempt
 
 
@@ -151,7 +148,6 @@ class ArticlePkg(Base):
         :param session: sqlalchemy db session
         """
         meta = package.meta
-
         try:
             article_pkg = session.query(ArticlePkg).filter_by(article_title=meta['article_title']).one()
         except MultipleResultsFound as e:

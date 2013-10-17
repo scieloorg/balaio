@@ -7,6 +7,7 @@ import unittest
 import transaction
 
 from balaio import checkin, models, excepts
+from balaio import utils
 
 
 class SPSMixinTests(mocker.MockerTestCase):
@@ -292,15 +293,14 @@ class CheckinTests(unittest.TestCase):
 
     def setUp(self):
         from sqlalchemy import create_engine
-
         self.engine = create_engine('sqlite:///:memory:', echo=False)
+        models.Base.metadata.create_all(self.engine)
+
+        models.create_engine_from_config = lambda config: self.engine
 
         Session = models.Session
         Session.configure(bind=self.engine)
         self.session = Session()
-
-        models.Base.metadata.create_all(self.engine)
-        models.create_engine_from_config = lambda config: self.engine
 
     def tearDown(self):
         models.Base.metadata.drop_all(self.engine)

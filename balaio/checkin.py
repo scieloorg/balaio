@@ -14,7 +14,7 @@ import transaction
 import models
 import utils
 import excepts
-
+import notifier
 
 __all__ = ['PackageAnalyzer', 'get_attempt']
 logger = logging.getLogger('balaio.checkin')
@@ -35,7 +35,7 @@ class SPSMixin(object):
         if len(xmls) == 1:
             return xmls[0]
         else:
-            raise AttributeError('there is not a single xml file')
+            raise AttributeError('there is not a single xml file' + str(len(xmls)))
 
     @property
     def meta(self):
@@ -50,7 +50,6 @@ class SPSMixin(object):
                      "issue_number": ".//article-meta/issue",
                      "supplement": ".//article-meta/supplement",
                      }
-
         for node_k, node_v in xml_nodes.items():
             node = self.xml.find(node_v)
             dct_mta[node_k] = getattr(node, 'text', None)
@@ -219,7 +218,7 @@ def get_attempt(package):
     :param package: filesystem path to package
     """
     config = utils.Configuration.from_env()
-
+    CheckinNotifier = notifier.checkin_notifier_factory(config)
     logger.info('Analyzing package: %s' % package)
 
     with PackageAnalyzer(package) as pkg:
@@ -237,6 +236,10 @@ def get_attempt(package):
             session.add(attempt)
             transaction.commit()
 
+            # attempt notifier
+            checkin_notifier = CheckinNotifier(attempt)
+            checkin_notifier.start()
+
             # Trying to bind a ArticlePkg
             session = Session()
             session.add(attempt)
@@ -253,6 +256,16 @@ def get_attempt(package):
                 transaction.abort()
                 logger.error('Failed to load an ArticlePkg for %s.' % package)
                 logger.debug('---> Traceback: %s' % e)
+
+                logger.debug('Checkin notification: Failed to load an ArticlePkg')
+                session = Session()
+                session.add(attempt)
+                checkin_notifier = CheckinNotifier(attempt)
+                checkin_notifier.tell('Failed to load an ArticlePkg for %s.' % package, models.Status.error, 'Checkin')
+
+            checkin_notifier = CheckinNotifier(attempt)
+            checkin_notifier.tell('Attempt commited', models.Status.ok, 'Checkin')
+            checkin_notifier.end()
 
             return attempt
 
