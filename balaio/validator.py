@@ -145,7 +145,7 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
     Validate the publisher name in article `.//journal-meta/publisher/publisher-name`,
     comparing it to the registered publisher name in journal data.
     """
-    _stage_ = 'Journal meta'
+    _stage_ = 'Journal'
 
     def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer, normalize_data):
         self._notifier = notifier
@@ -184,7 +184,7 @@ class ReferenceValidationPipe(vpipes.ValidationPipe):
     Validate if exist the tag ref-list.
     Analyzed tag: ``.//ref-list/ref``
     """
-    _stage_ = 'Reference Validation'
+    _stage_ = 'References'
 
     def __init__(self, notifier, pkg_analyzer):
         self._notifier = notifier
@@ -210,7 +210,7 @@ class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
     Verify if exists content in tag source
     Analized tag: ``.//ref-list/ref/element-citation/source``
     """
-    _stage_ = 'Reference Source Validation'
+    _stage_ = 'References'
 
     def __init__(self, notifier, pkg_analyzer):
         self._notifier = notifier
@@ -249,7 +249,7 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
     Verify the format of the year, example: ``1999``
     Analized tag: ``.//ref-list/ref/element-citation/year``
     """
-    _stage_ = 'Reference Year Validation'
+    _stage_ = 'References'
 
     def __init__(self, notifier, pkg_analyzer):
         self._notifier = notifier
@@ -289,7 +289,7 @@ class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
     Validate the tag article-title references when type is Journal.
     Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']/article-title``
     """
-    _stage_ = 'Reference Journal Type Article Title Validation'
+    _stage_ = 'References'
 
     def __init__(self, notifier, pkg_analyzer):
         self._notifier = notifier
@@ -326,7 +326,7 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
     Checks exist abbreviated title on source and xml
     Verify if abbreviated title of the xml is equal to source
     """
-    _stage_ = 'Journal Abbreviated Title Validation'
+    _stage_ = 'Journal'
 
     def __init__(self, notifier, pkg_analyzer, scieloapi, normalize_data):
         self._notifier = notifier
@@ -358,7 +358,7 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
     Funding group is mandatory only if there is contract number in the article,
     and this data is usually in acknowledge
     """
-    _stage_ = 'Funding Group Validation'
+    _stage_ = 'Article'
 
     def __init__(self, notifier, pkg_analyzer):
         self._notifier = notifier
@@ -409,7 +409,7 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
     """
     Validate NLM journal title
     """
-    _stage_ = 'NLM Journal Title validation'
+    _stage_ = 'Journal'
 
     def __init__(self, notifier, pkg_analyzer, scieloapi, sapi_tools, normalize_data):
         self._notifier = notifier
@@ -451,7 +451,7 @@ class DOIVAlidationPipe(vpipes.ValidationPipe):
     Verify if exists DOI in XML and if it`s validated before the CrossRef
     """
 
-    _stage_ = 'DOI Validation'
+    _stage_ = 'Article'
 
     def __init__(self, notifier, pkg_analyzer, doi_validator):
         self._notifier = notifier
@@ -479,7 +479,7 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
     Analyzed tag: ``.//article-categories/subj-group[@subj-group-type="heading"]/subject``
     """
 
-    _stage_ = 'ArticleSectionValidationPipe'
+    _stage_ = 'Article'
 
     def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer, normalize_data):
         self._notifier = notifier
@@ -531,7 +531,7 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
     Analyzed tag: ``.//article-meta/pub-date``
     """
 
-    _stage_ = 'ArticleMetaPubDateValidationPipe'
+    _stage_ = 'Article'
 
     def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer, normalize_data):
         self._notifier = notifier
@@ -631,4 +631,3 @@ if __name__ == '__main__':
         results = [msg for msg in ppl.run(messages)]
     except KeyboardInterrupt:
         sys.exit(0)
-
