@@ -512,9 +512,8 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
 
     _stage_ = 'Article'
 
-    def __init__(self, notifier, normalize_data):
+    def __init__(self, notifier):
         self._notifier = notifier
-        self._normalize_data = normalize_data
 
     def validate(self, item):
         """
@@ -589,7 +588,7 @@ if __name__ == '__main__':
             checkin.PackageAnalyzer, utils.normalize_data),
         FundingGroupValidationPipe(notifier_dep),
         DOIVAlidationPipe(notifier_dep, utils.is_valid_doi),
-        ArticleMetaPubDateValidationPipe(notifier_dep, utils.normalize_data),
+        ArticleMetaPubDateValidationPipe(notifier_dep),
         ReferenceValidationPipe(notifier_dep),
         ReferenceSourceValidationPipe(notifier_dep),
         ReferenceJournalTypeArticleTitleValidationPipe(notifier_dep),

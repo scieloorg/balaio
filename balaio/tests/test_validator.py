@@ -1121,9 +1121,8 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
     def _makeOne(self, data, **kwargs):
         from balaio import utils
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
-        _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
-
-        vpipe = validator.ArticleMetaPubDateValidationPipe(_notifier, _normalize_data)
+        
+        vpipe = validator.ArticleMetaPubDateValidationPipe(_notifier)
         vpipe.feed(data)
         return vpipe
 
