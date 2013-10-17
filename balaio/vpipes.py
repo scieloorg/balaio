@@ -24,10 +24,8 @@ class ValidationPipe(Pipe):
     """
     Specialized Pipe which validates the data and notifies the result.
     """
-    def __init__(self, notifier, scieloapi, sapi_tools):
+    def __init__(self, notifier):
         self._notifier = notifier
-        self._scieloapi = scieloapi
-        self._sapi_tools = sapi_tools
 
     @precondition(attempt_is_valid)
     def transform(self, item):

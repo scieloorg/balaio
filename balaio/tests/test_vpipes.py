@@ -10,30 +10,18 @@ class ValidationPipeTests(mocker.MockerTestCase):
 
     def _makeOne(self, data, **kwargs):
         from balaio import vpipes
-        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _notifier = kwargs.get('_notifier', lambda args: NotifierStub)
-        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
-
-        vpipe = vpipes.ValidationPipe(scieloapi=_scieloapi,
-                                      notifier=_notifier,
-                                      sapi_tools=_sapi_tools)
+        
+        vpipe = vpipes.ValidationPipe(notifier=_notifier)
         vpipe.feed(data)
         return vpipe
-
-    def test_scieloapi_isnt_called_during_initialization(self):
-        mock_scieloapi = self.mocker.mock()
-        self.mocker.replay()
-
-        vpipe = self._makeOne([{'name': 'foo'}], _scieloapi=mock_scieloapi)
-        self.assertIsInstance(vpipe, vpipes.ValidationPipe)
 
     def test_notifier_isnt_called_during_initialization(self):
         mock_notifier = self.mocker.mock()
         mock_scieloapi = self.mocker.mock()
         self.mocker.replay()
 
-        vpipe = self._makeOne([{'name': 'foo'}],
-            _scieloapi=mock_scieloapi, _notifier=mock_notifier)
+        vpipe = self._makeOne([{'name': 'foo'}], _notifier=mock_notifier)
 
         self.assertIsInstance(vpipe, vpipes.ValidationPipe)
 
