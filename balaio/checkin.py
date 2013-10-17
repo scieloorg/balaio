@@ -53,7 +53,7 @@ class SPSMixin(object):
         for node_k, node_v in xml_nodes.items():
             node = self.xml.find(node_v)
             dct_mta[node_k] = getattr(node, 'text', None)
-            
+
         ign, dct_mta['issue_suppl_volume'], dct_mta['issue_number'], dct_mta['issue_suppl_number'] = utils.issue_identification(dct_mta['issue_volume'], dct_mta['issue_number'], dct_mta['supplement'])
         del dct_mta['supplement']
         return dct_mta
@@ -237,11 +237,8 @@ def get_attempt(package):
             transaction.commit()
 
             # attempt notifier
-            #import pdb; pdb.set_trace()
             checkin_notifier = CheckinNotifier(attempt)
-            logger.debug('Checkin notification: starts')
             checkin_notifier.start()
-            logger.debug('Checkin notification: started')
 
             # Trying to bind a ArticlePkg
             session = Session()
@@ -267,12 +264,8 @@ def get_attempt(package):
                 checkin_notifier.tell('Failed to load an ArticlePkg for %s.' % package, models.Status.error, 'Checkin')
 
             checkin_notifier = CheckinNotifier(attempt)
-            logger.debug('Checkin notification: Attempt commited')
             checkin_notifier.tell('Attempt commited', models.Status.ok, 'Checkin')
-
-            logger.debug('Checkin notification: ends')
             checkin_notifier.end()
-            logger.debug('Checkin notification: ended')
 
             return attempt
 
