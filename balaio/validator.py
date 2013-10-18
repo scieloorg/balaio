@@ -219,15 +219,12 @@ class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
 
                 if source is not None:
                     if source.text is None:
-                        lst_errors.append((ref.attrib['id'], 'Missing data: source'))
+                        lst_errors.append(ref.attrib['id'])
                 else:
-                    lst_errors.append((ref.attrib['id'], 'Missing data: source'))
+                    lst_errors.append(ref.attrib['id'])
 
         if lst_errors:
-            msg_error = ''
-
-            for ref_id, msg in lst_errors:
-                msg_error += ' %s: %s' % (ref_id, msg)
+            msg_error = 'Missing data: source, in references: ' + ' '.join(lst_errors)
 
         return [models.Status.error, msg_error] if lst_errors else [models.Status.ok, 'Valid data: source']
 
@@ -416,8 +413,10 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
 
         xml_tree = pkg_analyzer.xml
         xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
+        if not xml_nlm_title:
+            xml_nlm_title = ''
         if self._normalize_data(xml_nlm_title) == self._normalize_data(j_nlm_title):
-            status, description = [models.Status.ok, 'Valid NLM journal title: ' % xml_nlm_title]
+            status, description = [models.Status.ok, 'Valid NLM journal title: %s' % xml_nlm_title]
         else:
             status, description = [models.Status.error, 'Mismatched data: %s. Expected: %s' % (xml_nlm_title, j_nlm_title)]
 
@@ -478,7 +477,7 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
             if self._is_a_registered_section_title(issue_data['sections'], xml_section):
                 r = [models.Status.ok, 'Valid value for section: %s' % xml_section]
             else:
-                r = [models.Status.error, 'Mismatched data: %s. Expected one of %s' % (xml_section, list_sections(issue_data['sections']))]
+                r = [models.Status.error, 'Mismatched data: %s. Expected one of %s' % (xml_section, self.list_sections(issue_data['sections']))]
         else:
             r = [models.Status.warning, 'Missing data: article section']
         return r
@@ -498,7 +497,7 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
                 break
         return r
 
-    def _is_a_registered_section_title(self, sections):
+    def list_sections(self, sections):
         """
         Return section titles of an issue
         """

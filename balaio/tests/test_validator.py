@@ -180,7 +180,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
         return pkg_analyzer_stub
 
     def test_reference_list_with_valid_tag_source(self):
-        expected = [models.Status.ok, '']
+        expected = [models.Status.ok, 'Valid data: source']
         data = '''
             <root>
               <ref-list>
@@ -202,7 +202,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_source(self):
-        expected = [models.Status.error, ' B23: missing tag source']
+        expected = [models.Status.error, 'Missing data: source, in references: B23']
         data = '''
             <root>
               <ref-list>
@@ -224,7 +224,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_source(self):
-        expected = [models.Status.error, ' B23: missing tag source B24: missing tag source']
+        expected = [models.Status.error, 'Missing data: source, in references: B23 B24']
         data = '''
             <root>
               <ref-list>
@@ -254,7 +254,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
-        expected = [models.Status.error, ' B23: missing content in tag source']
+        expected = [models.Status.error, 'Missing data: source, in references: B23']
         data = '''
             <root>
               <ref-list>
@@ -291,7 +291,7 @@ class ReferenceValidationPipeTests(unittest.TestCase):
         return pkg_analyzer_stub
 
     def test_reference_with_valid_tag_ref(self):
-        expected = [models.Status.ok, '']
+        expected = [models.Status.ok, 'Found 1 references']
         data = '''
             <root>
               <ref-list>
