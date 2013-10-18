@@ -169,11 +169,8 @@ class SetupPipeTests(mocker.MockerTestCase):
 class ReferenceSourceValidationTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
-
-        vpipe = validator.ReferenceSourceValidationPipe(_notifier, _pkg_analyzer)
+        vpipe = validator.ReferenceSourceValidationPipe(_notifier)
         vpipe.feed(data)
         return vpipe
 
@@ -282,11 +279,9 @@ class ReferenceSourceValidationTests(unittest.TestCase):
 class ReferenceValidationPipeTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
 
-        vpipe = validator.ReferenceValidationPipe(_notifier, _pkg_analyzer)
+        vpipe = validator.ReferenceValidationPipe(_notifier)
         vpipe.feed(data)
         return vpipe
 
@@ -335,12 +330,9 @@ class ReferenceValidationPipeTests(unittest.TestCase):
 class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
 
-        vpipe = validator.ReferenceJournalTypeArticleTitleValidationPipe(_notifier,
-            _pkg_analyzer)
+        vpipe = validator.ReferenceJournalTypeArticleTitleValidationPipe(_notifier)
         vpipe.feed(data)
         return vpipe
 
@@ -449,11 +441,9 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
 class ReferenceDateValidationTests(unittest.TestCase):
 
     def _makeOne(self, data, **kwargs):
-
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
 
-        vpipe = validator.ReferenceYearValidationPipe(_notifier, _pkg_analyzer)
+        vpipe = validator.ReferenceYearValidationPipe(_notifier)
         vpipe.feed(data)
         return vpipe
 
@@ -607,14 +597,10 @@ class ReferenceDateValidationTests(unittest.TestCase):
 class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
 
     def _makeOne(self, data, **kwargs):
-
-        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
-        vpipe = validator.JournalAbbreviatedTitleValidationPipe(_notifier,
-            _pkg_analyzer, _scieloapi, _normalize_data)
+        vpipe = validator.JournalAbbreviatedTitleValidationPipe(_notifier, _normalize_data)
         vpipe.feed(data)
         return vpipe
 
@@ -643,7 +629,7 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         vpipe._normalize_data = mock_normalize_data
 
         self.assertEqual(expected,
@@ -670,7 +656,7 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         vpipe._normalize_data = mock_normalize_data
 
         self.assertEqual(expected,
@@ -686,10 +672,9 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
 
         journal_and_issue_data = {'journal': {}}
 
-
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -705,7 +690,7 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -716,14 +701,10 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
     """
     def _makeOne(self, data, **kwargs):
         from balaio import utils
-        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
-        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
-        vpipe = validator.PublisherNameValidationPipe(_notifier,
-            _scieloapi, _sapi_tools, _pkg_analyzer, _normalize_data)
+        vpipe = validator.PublisherNameValidationPipe(_notifier, _normalize_data)
         vpipe.feed(data)
         return vpipe
 
@@ -752,7 +733,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         vpipe._normalize_data = mock_normalize_data
         self.assertEqual(expected,
                          vpipe.validate(data))
@@ -777,7 +758,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         vpipe._normalize_data = mock_normalize_data
         self.assertEqual(expected,
                          vpipe.validate(data))
@@ -790,11 +771,9 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
         journal_and_issue_data = {'journal': {}}
-
-
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -809,7 +788,7 @@ class PublisherNameValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -818,9 +797,7 @@ class FundingGroupValidationPipeTests(mocker.MockerTestCase):
 
     def _makeOne(self, data, **kwargs):
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-
-        vpipe = validator.FundingGroupValidationPipe(_notifier, _pkg_analyzer)
+        vpipe = validator.FundingGroupValidationPipe(_notifier)
         vpipe.feed(data)
         return vpipe
 
@@ -887,14 +864,10 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
     """
     def _makeOne(self, data, **kwargs):
         from balaio import utils
-        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
-        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
-        vpipe = validator.NLMJournalTitleValidationPipe(_notifier,
-            _pkg_analyzer, _scieloapi, _sapi_tools, _normalize_data)
+        vpipe = validator.NLMJournalTitleValidationPipe(_notifier, _normalize_data)
         vpipe.feed(data)
         return vpipe
 
@@ -922,7 +895,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         vpipe._normalize_data = mock_normalize_data
 
         self.assertEqual(expected,
@@ -948,7 +921,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         vpipe._normalize_data = mock_normalize_data
 
         self.assertEqual(expected,
@@ -965,7 +938,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -980,7 +953,7 @@ class NLMJournalTitleValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, journal_and_issue_data)
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -989,10 +962,9 @@ class DOIVAlidationPipeTests(mocker.MockerTestCase):
 
     def _makeOne(self, data, **kwargs):
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
+        _doi_validator = kwargs.get('_doi_validator', lambda: False)
 
-        vpipe = validator.DOIVAlidationPipe(_notifier, _pkg_analyzer, _normalize_data)
+        vpipe = validator.DOIVAlidationPipe(_notifier, _doi_validator)
         vpipe.feed(data)
         return vpipe
 
@@ -1014,12 +986,9 @@ class DOIVAlidationPipeTests(mocker.MockerTestCase):
 
         self.mocker.replay()
 
-        #journal_and_issue_data = {'journal': {'doi': u'10.1590/S0001-37652013000100008'}}
-
         data = (stub_attempt, stub_package_analyzer, {})
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
-        vpipe._doi_validator = mock_doi_validator
+        vpipe = self._makeOne(data, _doi_validator=mock_doi_validator)
 
         self.assertEqual(expected,
                          vpipe.validate(data))
@@ -1037,12 +1006,9 @@ class DOIVAlidationPipeTests(mocker.MockerTestCase):
 
         self.mocker.replay()
 
-        #journal_and_issue_data = {'journal': {'doi': u'10.1590/S0001-37652013000100002'}}
-
         data = (stub_attempt, stub_package_analyzer, {})
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
-        vpipe._doi_validator = mock_doi_validator
+        vpipe = self._makeOne(data, _doi_validator=mock_doi_validator)
 
         self.assertEqual(expected,
                          vpipe.validate(data))
@@ -1054,11 +1020,9 @@ class DOIVAlidationPipeTests(mocker.MockerTestCase):
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
-        #journal_and_issue_data = {'journal': {'doi': u'10.1590/S0001-37652013000100002'}}
-
         data = (stub_attempt, stub_package_analyzer, {})
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
 
         self.assertEqual(expected,
                          vpipe.validate(data))
@@ -1070,13 +1034,10 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
     """
     def _makeOne(self, data, **kwargs):
         from balaio import utils
-        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
-        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
 
-        vpipe = validator.ArticleSectionValidationPipe(_notifier, _scieloapi, _sapi_tools, _pkg_analyzer, _normalize_data)
+        vpipe = validator.ArticleSectionValidationPipe(_notifier, _normalize_data)
         vpipe.feed(data)
         return vpipe
 
@@ -1113,7 +1074,7 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         vpipe._is_a_registered_section_title = mock_is_a_registered_section_title
         self.assertEqual(expected,
                          vpipe.validate(data))
@@ -1133,7 +1094,7 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         #vpipe._normalize_data = mock_normalize_data
         vpipe._is_a_registered_section_title = mock_is_a_registered_section_title
         self.assertEqual(expected,
@@ -1148,7 +1109,7 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -1159,14 +1120,9 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
     """
     def _makeOne(self, data, **kwargs):
         from balaio import utils
-        _scieloapi = kwargs.get('_scieloapi', ScieloAPIClientStub())
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
-        _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
-        _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
-        _normalize_data = kwargs.get('_normalize_data', utils.normalize_data)
-
-        vpipe = validator.ArticleMetaPubDateValidationPipe(_notifier,
-            _scieloapi, _sapi_tools, _pkg_analyzer, _normalize_data)
+        
+        vpipe = validator.ArticleMetaPubDateValidationPipe(_notifier)
         vpipe.feed(data)
         return vpipe
 
@@ -1190,7 +1146,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -1204,7 +1160,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -1218,7 +1174,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data(1999, 1, 3))
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -1231,7 +1187,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -1245,7 +1201,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -1258,7 +1214,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -1271,7 +1227,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
 
@@ -1284,6 +1240,6 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
 
         data = (stub_attempt, stub_package_analyzer, self._issue_data())
 
-        vpipe = self._makeOne(data, _pkg_analyzer=stub_package_analyzer)
+        vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
