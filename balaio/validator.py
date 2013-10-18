@@ -499,7 +499,7 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
             if self._is_a_registered_section_title(issue_data['sections'], xml_section):
                 r = [models.Status.ok, 'Valid value for section: %s' % xml_section]
             else:
-                r = [models.Status.error, 'Mismatched data: %s. Expected one of %s' % (xml_section, list_sections(issue_data['sections'])]
+                r = [models.Status.error, 'Mismatched data: %s. Expected one of %s' % (xml_section, list_sections(issue_data['sections']))]
         else:
             r = [models.Status.warning, 'Missing data: article section']
         return r
