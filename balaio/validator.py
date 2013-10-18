@@ -181,7 +181,7 @@ class ReferenceValidationPipe(vpipes.ValidationPipe):
     _stage_ = 'References'
 
     def __init__(self, notifier):
-        self.notifier = notifier
+        self._notifier = notifier
 
     def validate(self, item):
         """
@@ -584,8 +584,7 @@ if __name__ == '__main__':
         PublisherNameValidationPipe(notifier_dep, utils.normalize_data),
         JournalAbbreviatedTitleValidationPipe(notifier_dep, utils.normalize_data),
         NLMJournalTitleValidationPipe(notifier_dep, utils.normalize_data),
-        ArticleSectionValidationPipe(notifier_dep, scieloapi, scieloapitoolbelt,
-            checkin.PackageAnalyzer, utils.normalize_data),
+        ArticleSectionValidationPipe(notifier_dep, utils.normalize_data),
         FundingGroupValidationPipe(notifier_dep),
         DOIVAlidationPipe(notifier_dep, utils.is_valid_doi),
         ArticleMetaPubDateValidationPipe(notifier_dep),
