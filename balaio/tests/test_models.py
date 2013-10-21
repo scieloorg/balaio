@@ -148,7 +148,8 @@ class AttemptTests(mocker.MockerTestCase):
         mock_session = self.mocker.mock()
         self.mocker.replay()
         pkg_analyzer = doubles.PackageAnalyzerStub()
-        pkg_analyzer.meta = {'journal_eissn': None, 'journal_pissn': None}
+        pkg_analyzer.meta = {'journal_eissn': None, 'journal_pissn': None,
+                            'article_title': None}
 
         attempt = Attempt.get_from_package(pkg_analyzer)
         self.assertFalse(attempt.is_valid)

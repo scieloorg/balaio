@@ -101,7 +101,7 @@ class Attempt(Base):
                           is_valid=False,
                           filepath=package._filename)
         meta = package.meta
-        if package.is_valid_package() and (meta['journal_eissn'] or meta['journal_pissn']):
+        if package.is_valid_package() and meta['article_title'] and (meta['journal_eissn'] or meta['journal_pissn']):
             attempt.is_valid = True
         return attempt
 
