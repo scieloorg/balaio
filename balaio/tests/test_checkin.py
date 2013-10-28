@@ -177,6 +177,24 @@ class SPSMixinTests(mocker.MockerTestCase):
 
         self.assertIsNone(pkg.meta['issue_number'])
 
+    def test_meta_is_not_valid(self):
+        data = [
+            ('bar.xml', b'<root></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertFalse(pkg.is_valid_meta())
+
+    def test_meta_is_valid(self):
+        data = [
+            ('bar.xml', b'<root><journal-meta><issn pub-type="ppub">12-34</issn></journal-meta><article-meta><issue>3</issue><title-group><article-title>Titulo de artigo</article-title></title-group></article-meta></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertTrue(pkg.is_valid_meta())
+
 
 class XrayTests(mocker.MockerTestCase):
 
