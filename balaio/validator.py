@@ -483,10 +483,20 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
     def _is_a_registered_section_title(self, sections, section_title):
         """
         Return section titles of an issue
+
+        :param sections: has the structure:
+                [ {'titles':
+                    ['pt', 'Artigos Originais'],
+                    ['es', 'Articulos Originales'],
+                    ['en', 'Original Articles'],
+                  },
+                  {'titles':
+                    ['pt', 'Editorial'],
+                    ['es', 'Editorial'],
+                    ['en', 'Editorial'],
+                  },
+                ]
         """
-        # issue_data['sections'][0]['titles'][0][0=idioma, 1=titulo]
-        # no entanto, deveria ser
-        # issue_data['sections'][0]['titles'][0][idioma] = titulo
         section_title = self._normalize_data(section_title)
         r = False
         for section in sections:
