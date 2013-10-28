@@ -60,7 +60,7 @@ class SPSMixin(object):
 
     def is_valid_meta(self):
         meta = self.meta
-        return meta['article_title'] and (meta['journal_eissn'] or meta['journal_pissn']) or (meta['issue_volume'] or meta['issue_number'])
+        return meta['article_title'] and (meta['journal_eissn'] or meta['journal_pissn']) and (meta['issue_volume'] or meta['issue_number'])
     
     @property
     def criteria(self):
