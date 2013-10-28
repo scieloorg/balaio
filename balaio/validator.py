@@ -103,6 +103,8 @@ class SetupPipe(vpipes.Pipe):
             logger.info('%s is not related to a known journal' % attempt)
             attempt.is_valid = False
 
+        if 'sections' in journal_and_issue_data:
+            journal_and_issue_data['section titles'] = self._sapi_tools.section_titles(journal_and_issue_data['sections'])
         return_value = (attempt, pkg_analyzer, journal_and_issue_data)
         logger.debug('%s returning %s' % (self.__class__.__name__, ','.join([repr(val) for val in return_value])))
         return return_value
@@ -480,28 +482,23 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
         xml_section = xml_tree.findtext('.//article-categories/subj-group[@subj-group-type="heading"]/subject')
 
         if xml_section:
-            if self._is_a_registered_section_title(issue_data['sections'], xml_section):
+            if self._is_a_registered_section_title(issue_data['section titles'], xml_section):
                 r = [models.Status.ok, xml_section]
             else:
-                r = [models.Status.error, xml_section + ' is not registered as section in ' + issue_data.get('label')]
+                r = [models.Status.error, 'Mismatched data: %s. Expected one of %s' % (xml_section, ' | '.join(issue_data['section titles']))]
         else:
             r = [models.Status.warning, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]/subject']
         return r
 
     def _is_a_registered_section_title(self, sections, section_title):
         """
-        Return section titles of an issue
+        Returns True if ``section_title`` is one of the ``sections`` of this issue
+
+        :param sections: list of section titles
+        :param section_title: section title to validate
         """
-        # issue_data['sections'][0]['titles'][0][0=idioma, 1=titulo]
-        # no entanto, deveria ser
-        # issue_data['sections'][0]['titles'][0][idioma] = titulo
         section_title = self._normalize_data(section_title)
-        r = False
-        for section in sections:
-            r = any([True for lang, sectitle in section['titles'] if self._normalize_data(sectitle) == section_title])
-            if r:
-                break
-        return r
+        return any([True for sectitle in sections if self._normalize_data(sectitle) == section_title])
 
 
 class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):

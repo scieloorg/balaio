@@ -1048,15 +1048,7 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
 
     def _issue_data(self):
         # isso deveria ser um dict no lugar de uma lista, mas a api retorna assim
-        dict_item1 = {u'titles': [
-            [u'es', u'Artículos Originales'],
-            [u'en', u'Original Articles'],
-        ]}
-        dict_item2 = {u'titles': [
-            [u'es', u'Editorial'],
-            [u'en', u'Editorial'],
-        ]}
-        return {u'sections': [dict_item1, dict_item2], u'label': '1(1)'}
+        return {u'section titles': [u'Artículos Originales', u'Original Articles', u'Editorial'], u'label': '1(1)'}
 
     def test_article_section_matched(self):
         expected = [models.Status.ok, 'Original Articles']
@@ -1067,7 +1059,7 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
         mock_is_a_registered_section_title = self.mocker.mock()
-        mock_is_a_registered_section_title(self._issue_data()['sections'], 'Original Articles')
+        mock_is_a_registered_section_title(self._issue_data()['section titles'], 'Original Articles')
         self.mocker.result(True)
 
         self.mocker.replay()
@@ -1080,14 +1072,14 @@ class ArticleSectionValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate(data))
 
     def test_article_section_is_not_registered(self):
-        expected = [models.Status.error, 'Articles is not registered as section in 1(1)']
+        expected = [models.Status.error, 'Mismatched data: Articles. Expected one of %s' % ' | '.join(self._issue_data()['section titles'])]
         xml = '<root><article-meta><article-categories><subj-group subj-group-type="heading"><subject>Articles</subject></subj-group></article-categories></article-meta></root>'
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
 
         mock_is_a_registered_section_title = self.mocker.mock()
-        mock_is_a_registered_section_title(self._issue_data()['sections'], 'Articles')
+        mock_is_a_registered_section_title(self._issue_data()['section titles'], 'Articles')
         self.mocker.result(False)
 
         self.mocker.replay()
