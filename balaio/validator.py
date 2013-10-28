@@ -265,9 +265,11 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
 
         msg_error = ''
         if missing_data_ref_id_list:
-            msg_error = 'Missing data: year, in %s\n' % ' '.join(missing_data_ref_id_list)
+            msg_error = 'Missing data: year, in %s' % ' '.join(missing_data_ref_id_list)
 
         if bad_data:
+            if msg_error:
+                msg_error += '. '
             msg_error += 'Invalid value for year: %s' % ', '.join(['%s (%s)' % (year, ref) for ref, year in bad_data])
 
         return [models.Status.error, msg_error] if msg_error else [models.Status.ok, 'Valid data: year']

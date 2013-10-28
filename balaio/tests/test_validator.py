@@ -522,7 +522,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_year(self):
-        expected = [models.Status.error, 'Missing data: year, in B23\n']
+        expected = [models.Status.error, 'Missing data: year, in B23']
         data = '''
             <root>
               <ref-list>
@@ -543,7 +543,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_year(self):
-        expected = [models.Status.error, 'Missing data: year, in B23 B24\n']
+        expected = [models.Status.error, 'Missing data: year, in B23 B24']
         data = '''
             <root>
               <ref-list>
@@ -571,7 +571,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_year_missing_content(self):
-        expected = [models.Status.error, 'Missing data: year, in B23\n']
+        expected = [models.Status.error, 'Missing data: year, in B23']
         data = '''
             <root>
               <ref-list>
