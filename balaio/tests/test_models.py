@@ -140,6 +140,7 @@ class AttemptTests(mocker.MockerTestCase):
         mock_session = self.mocker.mock()
         self.mocker.replay()
         pkg_analyzer = doubles.PackageAnalyzerStub()
+        pkg_analyzer.is_valid_meta = lambda *args, **kwargs: True
 
         attempt = Attempt.get_from_package(pkg_analyzer)
         self.assertIsInstance(attempt, Attempt)
@@ -148,7 +149,9 @@ class AttemptTests(mocker.MockerTestCase):
         mock_session = self.mocker.mock()
         self.mocker.replay()
         pkg_analyzer = doubles.PackageAnalyzerStub()
-        pkg_analyzer.meta = {'journal_eissn': None, 'journal_pissn': None}
+        pkg_analyzer.meta = {'journal_eissn': None, 'journal_pissn': None,
+                            'article_title': None}
+        pkg_analyzer.is_valid_meta = lambda *args, **kwargs: False
 
         attempt = Attempt.get_from_package(pkg_analyzer)
         self.assertFalse(attempt.is_valid)
@@ -158,6 +161,7 @@ class AttemptTests(mocker.MockerTestCase):
         self.mocker.replay()
         pkg_analyzer = doubles.PackageAnalyzerStub()
         pkg_analyzer.meta = {'journal_eissn': '1234-1234', 'journal_pissn': '4321-1234'}
+        pkg_analyzer.is_valid_meta = lambda *args, **kwargs: True
         pkg_analyzer.is_valid_package = lambda *args, **kwargs: False
 
         attempt = Attempt.get_from_package(pkg_analyzer)
@@ -169,10 +173,13 @@ class ArticlePkgTests(mocker.MockerTestCase):
     def test_get_or_create_from_package(self):
         mock_session = self.mocker.mock()
 
+        pkg_analyzer = doubles.PackageAnalyzerStub()
+        pkg_analyzer.criteria = {'article_title': 'foo', 'journal_eissn':'1234-1234', 'journal_pissn':'1234-4321'}
+    
         mock_session.query(ArticlePkg)
         self.mocker.result(mock_session)
 
-        mock_session.filter_by(article_title=mocker.ANY)
+        mock_session.filter_by(**pkg_analyzer.criteria)
         self.mocker.result(mock_session)
 
         mock_session.one()
@@ -180,7 +187,6 @@ class ArticlePkgTests(mocker.MockerTestCase):
 
         self.mocker.replay()
 
-        pkg_analyzer = doubles.PackageAnalyzerStub()
         article_pkg = ArticlePkg.get_or_create_from_package(pkg_analyzer, mock_session)
 
         self.assertIsInstance(article_pkg, ArticlePkg)
