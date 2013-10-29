@@ -1,18 +1,20 @@
 #coding: utf-8
 import json
-import sys, os
+import sys
+import os
 import unittest
-import transaction
-from webtest import TestApp
 
 from pyramid import testing
-from balaio import gateway_server
-from balaio.tests.doubles import *
-from sqlalchemy import create_engine
-from balaio.gateway_server import main
 from pyramid.httpexceptions import HTTPNotFound,HTTPAccepted, HTTPCreated
+from sqlalchemy import create_engine
+from webtest import TestApp
+import transaction
 
 from balaio import models
+from balaio import gateway_server
+from balaio.tests.doubles import *
+from balaio.gateway_server import main
+
 
 sys.path.append(os.path.dirname(__file__) + '/../')
 
@@ -36,8 +38,9 @@ class FunctionalAPITest(unittest.TestCase):
     def setUp(self):
         self.session = models.ScopedSession
         self.config = testing.setUp()
+        engine = create_engine('sqlite://')
 
-        app, config = main()
+        app = main(ConfigStub(), engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
@@ -46,7 +49,7 @@ class FunctionalAPITest(unittest.TestCase):
 
     def test_root(self):
         resp = self.testapp.get('/', status=200)
-        self.assertTrue('Gateway version v1' in resp.body)
+        self.assertTrue('http server' in resp.body.lower())
 
     def test_GET_to_unavailable_resource(self):
         self.testapp.get('/api/v1/lokmshin/', status=404)
@@ -60,8 +63,9 @@ class AttemptFunctionalAPITest(unittest.TestCase):
 
         self.session = models.ScopedSession
         self.config = testing.setUp()
+        engine = create_engine('sqlite://')
 
-        app, config = main()
+        app = main(ConfigStub(), engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
@@ -139,8 +143,9 @@ class TicketFunctionalAPITest(unittest.TestCase):
 
         self.session = models.ScopedSession
         self.config = testing.setUp()
+        engine = create_engine('sqlite://')
 
-        app, config = main()
+        app = main(ConfigStub(), engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
@@ -262,8 +267,9 @@ class PackageFunctionalAPITest(unittest.TestCase):
 
         self.session = models.ScopedSession
         self.config = testing.setUp()
+        engine = create_engine('sqlite://')
 
-        app, config = main()
+        app = main(ConfigStub(), engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):

@@ -55,7 +55,7 @@ class Attempt(Base):
     __tablename__ = 'attempt'
 
     id = Column(Integer, primary_key=True)
-    package_checksum = Column(String(length=32), unique=True)
+    package_checksum = Column(String(length=64), unique=True)
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'), nullable=True)
     started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)

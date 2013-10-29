@@ -1,7 +1,10 @@
+import argparse
+
 import transaction
+from wsgiref.simple_server import make_server
+
 from pyramid.response import Response
 from pyramid.config import Configurator
-from wsgiref.simple_server import make_server
 from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted, HTTPCreated
 from pyramid.view import notfound_view_config, view_config
 from pyramid.events import NewRequest
@@ -28,7 +31,7 @@ def notfound(request):
 
 @view_config(route_name='index')
 def index(request):
-    return Response('Gateway version %s' % request.registry.settings['http_server']['version'])
+    return Response("Balaio's HTTP server.")
 
 
 @view_config(route_name='ArticlePkg', request_method='GET', renderer="gtw")
@@ -168,30 +171,30 @@ def update_ticket(request):
         return HTTPNotFound()
 
 
-def main():
+def main(config, engine):
+    """
+    Returns a pyramid app.
+
+    :param config: an instance of :class:`utils.Configuration`.
+    :param engine: sqlalchemy engine.
+    """
     def bind_db(event):
         event.request.db = event.request.registry.Session()
-
-    #Database configurator
-    config = utils.Configuration.from_env()
-    engine = models.create_engine_from_config(config)
 
     config_pyrmd = Configurator(settings=dict(config.items()))
     config_pyrmd.add_route('index', '/')
 
-    version = config.get('http_server', 'version')
-
     # get
-    config_pyrmd.add_route('ArticlePkg', '/api/%s/packages/{id}/' % version)
-    config_pyrmd.add_route('Attempt', '/api/%s/attempts/{id}/' % version)
-    config_pyrmd.add_route('Ticket', '/api/%s/tickets/{id}/' % version)
+    config_pyrmd.add_route('ArticlePkg', '/api/v1/packages/{id}/')
+    config_pyrmd.add_route('Attempt', '/api/v1/attempts/{id}/')
+    config_pyrmd.add_route('Ticket', '/api/v1/tickets/{id}/')
 
     # lists
-    config_pyrmd.add_route('list_package', '/api/%s/packages/' % version)
-    config_pyrmd.add_route('list_attempts', '/api/%s/attempts/' % version)
+    config_pyrmd.add_route('list_package', '/api/v1/packages/')
+    config_pyrmd.add_route('list_attempts', '/api/v1/attempts/')
 
     # tickets new and update
-    config_pyrmd.add_route('ticket', '/api/%s/tickets/' % version)
+    config_pyrmd.add_route('ticket', '/api/v1/tickets/')
 
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 
@@ -202,14 +205,32 @@ def main():
 
     config_pyrmd.scan('gateway_server')
 
-    return (config_pyrmd.make_wsgi_app(), config)
+    return config_pyrmd.make_wsgi_app()
 
 
 if __name__ == '__main__':
 
-    app, config = main()
-    port = config.getint('http_server', 'port')
-    server = make_server(config.get('http_server', 'ip'), port, app)
+    parser = argparse.ArgumentParser(description=u'HTTP Server')
+    parser.add_argument('-c',
+                        action='store',
+                        dest='configfile',
+                        required=True)
 
-    print "Started Gateway Server on port: " + str(port)
-    server.serve_forever()
+    args = parser.parse_args()
+
+    # app setup
+    config = utils.Configuration.from_file(args.configfile)
+    engine = models.create_engine_from_config(config)
+    app = main(config, engine)
+
+    listening = config.get('http_server', 'ip')
+    port = config.getint('http_server', 'port')
+
+    server = make_server(listening, port, app)
+
+    print "HTTP Server started listening %s on port %s" % (listening, port)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        sys.exit('HTTP server stopped.')
+
