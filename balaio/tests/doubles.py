@@ -215,7 +215,14 @@ class TicketStub(object):
 
 
 class ConfigStub(object):
-    pass
+    def get(self, section, option):
+        return 'foo'
+
+    def getint(self, section, option):
+        return 1
+
+    def items(self):
+        return [(None, None)]
 
 
 class PipeStub(object):
