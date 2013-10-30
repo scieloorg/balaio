@@ -1,18 +1,20 @@
 #coding: utf-8
 import json
-import sys, os
+import sys
+import os
 import unittest
-import transaction
-from webtest import TestApp
 
 from pyramid import testing
-from balaio import gateway_server
-from balaio.tests.doubles import *
-from sqlalchemy import create_engine
-from balaio.gateway_server import main
 from pyramid.httpexceptions import HTTPNotFound,HTTPAccepted, HTTPCreated
+from sqlalchemy import create_engine
+from webtest import TestApp
+import transaction
 
 from balaio import models
+from balaio import gateway_server
+from balaio.tests.doubles import *
+from balaio.gateway_server import main
+
 
 sys.path.append(os.path.dirname(__file__) + '/../')
 
@@ -36,8 +38,9 @@ class FunctionalAPITest(unittest.TestCase):
     def setUp(self):
         self.session = models.ScopedSession
         self.config = testing.setUp()
+        engine = create_engine('sqlite://')
 
-        app, config = main()
+        app = main(ConfigStub(), engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
@@ -46,10 +49,90 @@ class FunctionalAPITest(unittest.TestCase):
 
     def test_root(self):
         resp = self.testapp.get('/', status=200)
-        self.assertTrue('Gateway version v1' in resp.body)
+        self.assertTrue('http server' in resp.body.lower())
 
     def test_GET_to_unavailable_resource(self):
         self.testapp.get('/api/v1/lokmshin/', status=404)
+
+
+class AttemptFunctionalAPITest(unittest.TestCase):
+
+    def setUp(self):
+        _init_test_DB()
+        _load_fixtures(self._makeList())
+
+        self.session = models.ScopedSession
+        self.config = testing.setUp()
+        engine = create_engine('sqlite://')
+
+        app = main(ConfigStub(), engine)
+        self.testapp = TestApp(app)
+
+    def tearDown(self):
+        self.session.remove()
+        testing.tearDown()
+
+    def _makeOne(self, id=1):
+        import datetime
+
+        attempt = models.Attempt(id=id,
+                    package_checksum='20132df0as89dds73as936' + str(id),
+                    started_at=datetime.datetime(2013, 10, 9, 16, 44, 29, 865787),
+                    finished_at=None,
+                    collection_uri='http://www.scielo.br',
+                    articlepkg_id=1,
+                    filepath='/tmp/watch/xxx.zip',
+                    is_valid=True)
+
+        attempt.started_at = datetime.datetime(2013, 10, 9, 16, 44, 29, 865787)
+
+        return attempt
+
+    def _makeList(self):
+        return [self._makeOne(), self._makeOne(2), self._makeOne(3)]
+
+    def test_GET_to_available_resource(self):
+        self.testapp.get('/api/v1/attempts/', status=200)
+
+    def test_GET_to_one_attempt(self):
+        res = self.testapp.get('/api/v1/attempts/1/')
+
+        self.assertEqual(json.loads(res.body), json.loads('{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "package_checksum": "20132df0as89dds73as9361", "resource_uri": "/api/v1/attempts/1/"}'))
+
+    def test_GET_to_attempts(self):
+        res = self.testapp.get('/api/v1/attempts/')
+
+        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": 0}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "package_checksum": "20132df0as89dds73as9361", "resource_uri": "/api/v1/attempts/1/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "package_checksum": "20132df0as89dds73as9362", "resource_uri": "/api/v1/attempts/2/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "package_checksum": "20132df0as89dds73as9363", "resource_uri": "/api/v1/attempts/3/"}]}'))
+
+    def test_GET_to_attempts_with_param_limit(self):
+        res = self.testapp.get('/api/v1/attempts/?limit=45')
+
+        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 45, "offset": 0}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "package_checksum": "20132df0as89dds73as9361", "resource_uri": "/api/v1/attempts/1/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "package_checksum": "20132df0as89dds73as9362", "resource_uri": "/api/v1/attempts/2/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "package_checksum": "20132df0as89dds73as9363", "resource_uri": "/api/v1/attempts/3/"}]}'))
+
+    def test_GET_to_attempts_with_param_offset(self):
+        res = self.testapp.get('/api/v1/attempts/?offset=1')
+
+        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "package_checksum": "20132df0as89dds73as9362", "resource_uri": "/api/v1/attempts/2/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "package_checksum": "20132df0as89dds73as9363", "resource_uri": "/api/v1/attempts/3/"}]}'))
+
+    def test_GET_to_attempts_with_param_offset_and_limit(self):
+        res = self.testapp.get('/api/v1/attempts/?offset=4&limit=78')
+
+        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 78, "offset": "4"}, "objects": []}'))
+
+    def test_GET_to_attempts_with_param_low_limit(self):
+        res = self.testapp.get('/api/v1/attempts/?limit=2')
+
+        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": "/api/v1/attempts/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "package_checksum": "20132df0as89dds73as9361", "resource_uri": "/api/v1/attempts/1/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "package_checksum": "20132df0as89dds73as9362", "resource_uri": "/api/v1/attempts/2/"}]}'))
+
+    def test_GET_to_attempts_with_param_low_offset_and_limit(self):
+        res = self.testapp.get('/api/v1/attempts/?limit=2&offset=1')
+
+        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": "/api/v1/attempts/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "package_checksum": "20132df0as89dds73as9362", "resource_uri": "/api/v1/attempts/2/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "package_checksum": "20132df0as89dds73as9363", "resource_uri": "/api/v1/attempts/3/"}]}'))
+
+    def test_GET_to_attempts_with_param_low_limit_and_offset(self):
+        res = self.testapp.get('/api/v1/attempts/?limit=1&offset=2')
+
+        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": "/api/v1/attempts/?limit=1&offset=1", "next": "/api/v1/attempts/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "package_checksum": "20132df0as89dds73as9363", "resource_uri": "/api/v1/attempts/3/"}]}'))
 
 
 class TicketFunctionalAPITest(unittest.TestCase):
@@ -60,8 +143,9 @@ class TicketFunctionalAPITest(unittest.TestCase):
 
         self.session = models.ScopedSession
         self.config = testing.setUp()
+        engine = create_engine('sqlite://')
 
-        app, config = main()
+        app = main(ConfigStub(), engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
@@ -183,8 +267,9 @@ class PackageFunctionalAPITest(unittest.TestCase):
 
         self.session = models.ScopedSession
         self.config = testing.setUp()
+        engine = create_engine('sqlite://')
 
-        app, config = main()
+        app = main(ConfigStub(), engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):

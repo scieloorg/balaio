@@ -109,11 +109,8 @@ class SetupPipe(vpipes.Pipe):
 
 
 class TearDownPipe(vpipes.Pipe):
-    def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer):
+    def __init__(self, notifier):
         self._notifier = notifier
-        self._scieloapi = scieloapi
-        self._sapi_tools = sapi_tools
-        self._pkg_analyzer = pkg_analyzer
 
     def transform(self, item):
         """
@@ -145,14 +142,11 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
     Validate the publisher name in article `.//journal-meta/publisher/publisher-name`,
     comparing it to the registered publisher name in journal data.
     """
-    _stage_ = 'Journal meta'
+    _stage_ = 'Journal'
 
-    def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer, normalize_data):
-        self._notifier = notifier
-        self._scieloapi = scieloapi
-        self._sapi_tools = sapi_tools
-        self._pkg_analyzer = pkg_analyzer
+    def __init__(self, notifier, normalize_data):
         self._normalize_data = normalize_data
+        self._notifier = notifier
 
     def validate(self, item):
         """
@@ -184,11 +178,10 @@ class ReferenceValidationPipe(vpipes.ValidationPipe):
     Validate if exist the tag ref-list.
     Analyzed tag: ``.//ref-list/ref``
     """
-    _stage_ = 'Reference Validation'
+    _stage_ = 'References'
 
-    def __init__(self, notifier, pkg_analyzer):
+    def __init__(self, notifier):
         self._notifier = notifier
-        self._pkg_analyzer = pkg_analyzer
 
     def validate(self, item):
         """
@@ -210,14 +203,12 @@ class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
     Verify if exists content in tag source
     Analized tag: ``.//ref-list/ref/element-citation/source``
     """
-    _stage_ = 'Reference Source Validation'
+    _stage_ = 'References'
 
-    def __init__(self, notifier, pkg_analyzer):
+    def __init__(self, notifier):
         self._notifier = notifier
-        self._pkg_analyzer = pkg_analyzer
 
     def validate(self, item):
-
         lst_errors = []
         attempt, pkg_analyzer, journal_and_issue_data = item
         refs = pkg_analyzer.xml.findall(".//ref-list/ref")
@@ -249,11 +240,10 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
     Verify the format of the year, example: ``1999``
     Analized tag: ``.//ref-list/ref/element-citation/year``
     """
-    _stage_ = 'Reference Year Validation'
+    _stage_ = 'References'
 
-    def __init__(self, notifier, pkg_analyzer):
+    def __init__(self, notifier):
         self._notifier = notifier
-        self._pkg_analyzer = pkg_analyzer
 
     def validate(self, item):
 
@@ -289,11 +279,10 @@ class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
     Validate the tag article-title references when type is Journal.
     Analized tag: ``.//ref-list/ref/element-citation[@publication-type='journal']/article-title``
     """
-    _stage_ = 'Reference Journal Type Article Title Validation'
+    _stage_ = 'References'
 
-    def __init__(self, notifier, pkg_analyzer):
+    def __init__(self, notifier):
         self._notifier = notifier
-        self._pkg_analyzer = pkg_analyzer
 
     def validate(self, item):
 
@@ -326,12 +315,10 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
     Checks exist abbreviated title on source and xml
     Verify if abbreviated title of the xml is equal to source
     """
-    _stage_ = 'Journal Abbreviated Title Validation'
+    _stage_ = 'Journal'
 
-    def __init__(self, notifier, pkg_analyzer, scieloapi, normalize_data):
+    def __init__(self, notifier, normalize_data):
         self._notifier = notifier
-        self._pkg_analyzer = pkg_analyzer
-        self._scieloapi = scieloapi
         self._normalize_data = normalize_data
 
     def validate(self, item):
@@ -358,11 +345,10 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
     Funding group is mandatory only if there is contract number in the article,
     and this data is usually in acknowledge
     """
-    _stage_ = 'Funding Group Validation'
+    _stage_ = 'Article'
 
-    def __init__(self, notifier, pkg_analyzer):
+    def __init__(self, notifier):
         self._notifier = notifier
-        self._pkg_analyzer = pkg_analyzer
 
     def validate(self, item):
         """
@@ -409,13 +395,10 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
     """
     Validate NLM journal title
     """
-    _stage_ = 'NLM Journal Title validation'
+    _stage_ = 'Journal'
 
-    def __init__(self, notifier, pkg_analyzer, scieloapi, sapi_tools, normalize_data):
+    def __init__(self, notifier, normalize_data):
         self._notifier = notifier
-        self._pkg_analyzer = pkg_analyzer
-        self._scieloapi = scieloapi
-        self._sapi_tools = sapi_tools
         self._normalize_data = normalize_data
 
     def validate(self, item):
@@ -451,11 +434,10 @@ class DOIVAlidationPipe(vpipes.ValidationPipe):
     Verify if exists DOI in XML and if it`s validated before the CrossRef
     """
 
-    _stage_ = 'DOI Validation'
+    _stage_ = 'Article'
 
-    def __init__(self, notifier, pkg_analyzer, doi_validator):
+    def __init__(self, notifier, doi_validator):
         self._notifier = notifier
-        self._pkg_analyzer = pkg_analyzer
         self._doi_validator = doi_validator
 
     def validate(self, item):
@@ -479,13 +461,10 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
     Analyzed tag: ``.//article-categories/subj-group[@subj-group-type="heading"]/subject``
     """
 
-    _stage_ = 'ArticleSectionValidationPipe'
+    _stage_ = 'Article'
 
-    def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer, normalize_data):
+    def __init__(self, notifier, normalize_data):
         self._notifier = notifier
-        self._scieloapi = scieloapi
-        self._sapi_tools = sapi_tools
-        self._pkg_analyzer = pkg_analyzer
         self._normalize_data = normalize_data
 
     def validate(self, item):
@@ -531,14 +510,10 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
     Analyzed tag: ``.//article-meta/pub-date``
     """
 
-    _stage_ = 'ArticleMetaPubDateValidationPipe'
+    _stage_ = 'Article'
 
-    def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer, normalize_data):
+    def __init__(self, notifier):
         self._notifier = notifier
-        self._scieloapi = scieloapi
-        self._sapi_tools = sapi_tools
-        self._pkg_analyzer = pkg_analyzer
-        self._normalize_data = normalize_data
 
     def validate(self, item):
         """
@@ -606,29 +581,21 @@ if __name__ == '__main__':
     ppl = vpipes.Pipeline(
         SetupPipe(notifier_dep, scieloapi, scieloapitoolbelt,
             checkin.PackageAnalyzer, utils.is_valid_issn),
-        PublisherNameValidationPipe(notifier_dep, scieloapi, scieloapitoolbelt,
-            checkin.PackageAnalyzer, utils.normalize_data),
-        JournalAbbreviatedTitleValidationPipe(notifier_dep, checkin.PackageAnalyzer,
-            scieloapi, utils.normalize_data),
-        NLMJournalTitleValidationPipe(notifier_dep, checkin.PackageAnalyzer,
-            scieloapi, scieloapitoolbelt, utils.normalize_data),
-        ArticleSectionValidationPipe(notifier_dep, scieloapi, scieloapitoolbelt,
-            checkin.PackageAnalyzer, utils.normalize_data),
-        FundingGroupValidationPipe(notifier_dep, checkin.PackageAnalyzer),
-        DOIVAlidationPipe(notifier_dep, checkin.PackageAnalyzer, utils.is_valid_doi),
-        ArticleMetaPubDateValidationPipe(notifier_dep, scieloapi, scieloapitoolbelt,
-            checkin.PackageAnalyzer, utils.normalize_data),
-        ReferenceValidationPipe(notifier_dep, checkin.PackageAnalyzer),
-        ReferenceSourceValidationPipe(notifier_dep, checkin.PackageAnalyzer),
-        ReferenceJournalTypeArticleTitleValidationPipe(notifier_dep,
-            checkin.PackageAnalyzer),
-        ReferenceYearValidationPipe(notifier_dep, checkin.PackageAnalyzer),
-        TearDownPipe(notifier_dep, scieloapi, scieloapitoolbelt,
-            checkin.PackageAnalyzer)
+        PublisherNameValidationPipe(notifier_dep, utils.normalize_data),
+        JournalAbbreviatedTitleValidationPipe(notifier_dep, utils.normalize_data),
+        NLMJournalTitleValidationPipe(notifier_dep, utils.normalize_data),
+        ArticleSectionValidationPipe(notifier_dep, utils.normalize_data),
+        FundingGroupValidationPipe(notifier_dep),
+        DOIVAlidationPipe(notifier_dep, utils.is_valid_doi),
+        ArticleMetaPubDateValidationPipe(notifier_dep),
+        ReferenceValidationPipe(notifier_dep),
+        ReferenceSourceValidationPipe(notifier_dep),
+        ReferenceJournalTypeArticleTitleValidationPipe(notifier_dep),
+        ReferenceYearValidationPipe(notifier_dep),
+        TearDownPipe(notifier_dep)
     )
 
     try:
         results = [msg for msg in ppl.run(messages)]
     except KeyboardInterrupt:
         sys.exit(0)
-

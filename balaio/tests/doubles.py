@@ -176,15 +176,12 @@ class AttemptStub(object):
     def to_dict(self):
         return dict(id=self.id,
                     package_checksum=self.package_checksum,
-                    articlepkg_id=ArticlePkgStub().id,
+                    articlepkg_id=self.articlepkg.id,
                     started_at=str(self.started_at),
-                    finished_at=self.finished_at,
+                    finished_at=str(self.finished_at) if self.finished_at else None,
                     collection_uri=self.collection_uri,
                     filepath=self.filepath,
                     is_valid=self.is_valid,
-                    comments=[{'author': 'Author', 'date': '2013-09-18 14:11:04.129956', 'message': 'Message'},
-                    {'author': 'Author', 'date': '2013-09-18 14:11:04.129956', 'message': 'Message'},
-                    {'author': 'Author', 'date': '2013-09-18 14:11:04.129956', 'message': 'Message'}]
                     )
 
 
@@ -218,7 +215,14 @@ class TicketStub(object):
 
 
 class ConfigStub(object):
-    pass
+    def get(self, section, option):
+        return 'foo'
+
+    def getint(self, section, option):
+        return 1
+
+    def items(self):
+        return [(None, None)]
 
 
 class PipeStub(object):

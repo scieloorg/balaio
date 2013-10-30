@@ -7,6 +7,7 @@ import unittest
 import transaction
 
 from balaio import checkin, models, excepts
+from balaio import utils
 
 
 class SPSMixinTests(mocker.MockerTestCase):
@@ -176,6 +177,24 @@ class SPSMixinTests(mocker.MockerTestCase):
 
         self.assertIsNone(pkg.meta['issue_number'])
 
+    def test_meta_is_not_valid(self):
+        data = [
+            ('bar.xml', b'<root></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertFalse(pkg.is_valid_meta())
+
+    def test_meta_is_valid(self):
+        data = [
+            ('bar.xml', b'<root><journal-meta><issn pub-type="ppub">12-34</issn></journal-meta><article-meta><issue>3</issue><title-group><article-title>Titulo de artigo</article-title></title-group></article-meta></root>'),
+        ]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertTrue(pkg.is_valid_meta())
+
 
 class XrayTests(mocker.MockerTestCase):
 
@@ -292,15 +311,14 @@ class CheckinTests(unittest.TestCase):
 
     def setUp(self):
         from sqlalchemy import create_engine
-
         self.engine = create_engine('sqlite:///:memory:', echo=False)
+        models.Base.metadata.create_all(self.engine)
+
+        models.create_engine_from_config = lambda config: self.engine
 
         Session = models.Session
         Session.configure(bind=self.engine)
         self.session = Session()
-
-        models.Base.metadata.create_all(self.engine)
-        models.create_engine_from_config = lambda config: self.engine
 
     def tearDown(self):
         models.Base.metadata.drop_all(self.engine)

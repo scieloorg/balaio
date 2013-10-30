@@ -1,4 +1,4 @@
-# coding: utf-8
+#coding: utf-8
 import datetime
 import logging
 
@@ -55,7 +55,7 @@ class Attempt(Base):
     __tablename__ = 'attempt'
 
     id = Column(Integer, primary_key=True)
-    package_checksum = Column(String(length=32), unique=True)
+    package_checksum = Column(String(length=64), unique=True)
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'), nullable=True)
     started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)
@@ -73,17 +73,19 @@ class Attempt(Base):
         self.is_valid = kwargs.get('is_valid', True)
 
     def to_dict(self):
+
         checkpoints = {cp.point.name: cp.to_dict() for cp in self.checkpoint if cp.point is not Point.checkout}
-        return checkpoints.update(dict(id=self.id,
-                                        package_checksum=self.package_checksum,
-                                        articlepkg_id=self.articlepkg_id,
-                                        started_at=str(self.started_at),
-                                        finished_at=str(self.finished_at) if self.finished_at else None,
-                                        collection_uri=self.collection_uri,
-                                        filepath=self.filepath,
-                                        is_valid=self.is_valid,
-                                    )
-                                )
+
+        checkpoints.update(id=self.id,
+                           package_checksum=self.package_checksum,
+                           articlepkg_id=self.articlepkg_id,
+                           started_at=str(self.started_at),
+                           finished_at=str(self.finished_at) if self.finished_at else None,
+                           collection_uri=self.collection_uri,
+                           filepath=self.filepath,
+                           is_valid=self.is_valid,)
+
+        return checkpoints
 
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
@@ -98,12 +100,9 @@ class Attempt(Base):
         attempt = Attempt(package_checksum=package.checksum,
                           is_valid=False,
                           filepath=package._filename)
-
         meta = package.meta
-
-        if package.is_valid_package() and (meta['journal_eissn'] or meta['journal_pissn']):
+        if package.is_valid_package() and package.is_valid_meta():
             attempt.is_valid = True
-
         return attempt
 
 
@@ -149,9 +148,8 @@ class ArticlePkg(Base):
         :param session: sqlalchemy db session
         """
         meta = package.meta
-
         try:
-            article_pkg = session.query(ArticlePkg).filter_by(article_title=meta['article_title']).one()
+            article_pkg = session.query(ArticlePkg).filter_by(**package.criteria).one()
         except MultipleResultsFound as e:
             logger.error('Multiple results trying to get a models.ArticlePkg for article_title=%s. %s' % (
                 meta['article_title'], e))
