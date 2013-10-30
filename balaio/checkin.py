@@ -61,16 +61,8 @@ class SPSMixin(object):
     def is_valid_meta(self):
         meta = self.meta
         return meta['article_title'] and (meta['journal_eissn'] or meta['journal_pissn']) and (meta['issue_volume'] or meta['issue_number'])
-    
-    @property
-    def criteria(self):
-        meta = self.meta
-        select = ['article_title',
-                'journal_eissn', 'journal_pissn',
-                'issue_number', 'issue_volume', 'issue_suppl_number', 'issue_suppl_volume']
-        return {k: meta[k] for k in select if meta.get(k, None)}
 
-        
+
 class Xray(object):
 
     def __init__(self, filename):
