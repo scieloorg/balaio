@@ -255,7 +255,6 @@ def get_attempt(package):
             # Trying to bind a ArticlePkg
             session = Session()
             session.add(attempt)
-
             try:
                 article_pkg = models.ArticlePkg.get_or_create_from_package(pkg, session)
                 if article_pkg not in session:
@@ -265,9 +264,6 @@ def get_attempt(package):
                 attempt.is_valid = True
 
                 transaction.commit()
-
-                checkin_notifier.tell('Attempt is valid.', models.Status.ok, 'Checkin')
-
             except Exception as e:
                 transaction.abort()
                 logger.error('Failed to load an ArticlePkg for %s.' % package)
@@ -276,11 +272,13 @@ def get_attempt(package):
                 logger.debug('Checkin notification: Failed to load an ArticlePkg')
                 session = Session()
                 session.add(attempt)
-
+                checkin_notifier = CheckinNotifier(attempt)
                 checkin_notifier.tell('Failed to load an ArticlePkg for %s.' % package, models.Status.error, 'Checkin')
 
-            finally:
-                checkin_notifier.end()
+            checkin_notifier = CheckinNotifier(attempt)
+            checkin_notifier.tell('Attempt commited', models.Status.ok, 'Checkin')
+            checkin_notifier.end()
+
             return attempt
 
         except IOError as e:
@@ -306,4 +304,3 @@ def get_attempt(package):
         finally:
             logger.debug('Closing the transactional session scope')
             session.close()
-

@@ -202,7 +202,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_source(self):
-        expected = [models.Status.error, 'Missing data: source, in B23']
+        expected = [models.Status.error, 'Missing data: source. (B23)']
         data = '''
             <root>
               <ref-list>
@@ -224,7 +224,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_source(self):
-        expected = [models.Status.error, 'Missing data: source, in B23 B24']
+        expected = [models.Status.error, 'Missing data: source. (B23, B24)']
         data = '''
             <root>
               <ref-list>
@@ -254,7 +254,7 @@ class ReferenceSourceValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
-        expected = [models.Status.error, 'Missing data: source, in B23']
+        expected = [models.Status.error, 'Missing data: source. (B23)']
         data = '''
             <root>
               <ref-list>
@@ -364,7 +364,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_article_title(self):
-        expected = [models.Status.error, 'Missing data: article-title, in B23']
+        expected = [models.Status.error, 'Missing data: article-title. (B23)']
         data = '''
             <root>
               <ref-list>
@@ -386,7 +386,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_article_title(self):
-        expected = [models.Status.error, 'Missing data: article-title, in B23 B24']
+        expected = [models.Status.error, 'Missing data: article-title. (B23, B24)']
         data = '''
             <root>
               <ref-list>
@@ -416,7 +416,7 @@ class ReferenceJournalTypeArticleTitleValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_source_missing_content(self):
-        expected = [models.Status.error, 'Missing data: article-title, in B23']
+        expected = [models.Status.error, 'Missing data: article-title. (B23)']
         data = '''
             <root>
               <ref-list>
@@ -522,7 +522,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_missing_tag_year(self):
-        expected = [models.Status.error, 'Missing data: year, in B23']
+        expected = [models.Status.error, 'Missing data: year. (B23)']
         data = '''
             <root>
               <ref-list>
@@ -543,7 +543,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_two_missing_tag_year(self):
-        expected = [models.Status.error, 'Missing data: year, in B23 B24']
+        expected = [models.Status.error, 'Missing data: year. (B23, B24)']
         data = '''
             <root>
               <ref-list>
@@ -571,7 +571,7 @@ class ReferenceDateValidationTests(unittest.TestCase):
             vpipe.validate([None, pkg_analyzer_stub, None]), expected)
 
     def test_reference_list_with_tag_year_missing_content(self):
-        expected = [models.Status.error, 'Missing data: year, in B23']
+        expected = [models.Status.error, 'Missing data: year. (B23)']
         data = '''
             <root>
               <ref-list>

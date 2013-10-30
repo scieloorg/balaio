@@ -224,7 +224,7 @@ class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
                     lst_errors.append(ref.attrib['id'])
 
         if lst_errors:
-            msg_error = 'Missing data: source, in ' + ' '.join(lst_errors)
+            msg_error = 'Missing data: source. (%s)' % ', '.join(lst_errors)
 
         return [models.Status.error, msg_error] if lst_errors else [models.Status.ok, 'Valid data: source']
 
@@ -265,7 +265,7 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
 
         msg_error = ''
         if missing_data_ref_id_list:
-            msg_error = 'Missing data: year, in %s' % ' '.join(missing_data_ref_id_list)
+            msg_error = 'Missing data: year. (%s)' % ', '.join(missing_data_ref_id_list)
 
         if bad_data:
             if msg_error:
@@ -302,7 +302,7 @@ class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
                 else:
                     lst_errors.append(ref.attrib['id'])
 
-        return [models.Status.error, 'Missing data: article-title, in %s' % ' '.join(lst_errors) ] if lst_errors else [models.Status.ok, 'Valid data: article-title']
+        return [models.Status.error, 'Missing data: article-title. (%s)' % ', '.join(lst_errors) ] if lst_errors else [models.Status.ok, 'Valid data: article-title']
 
 
 class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
