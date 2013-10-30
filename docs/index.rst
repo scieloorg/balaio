@@ -1,19 +1,32 @@
-.. SciELO Balaio documentation master file, created by
-   sphinx-quickstart on Fri May 10 11:10:09 2013.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Documentação técnica do projeto Balaio
+======================================
 
-Welcome to SciELO Balaio's documentation!
-=========================================
+Balaio é uma ferramenta automatizada para apoiar o processo 
+de ingresso de artigos em coleções SciELO.
 
-Contents:
-
-.. toctree::
-   :maxdepth: 2
+Esta aplicação foi projetada para operar no contexto da nova
+plataforma tecnológica de gestão de dados, e suas funcionalidades
+serão expostas aos usuários por meio do `SciELO Manager <http://manager.scielo.org>`_.
 
 
-Development guides
-==================
+Funcionalidades
+---------------
+
+* Monitoramento do sistema de arquivos para novos depósitos.
+* Validação automática de diversos aspectos do pacote.
+    * Metadados.
+* Criação de tickets com pendências associadas ao artigo em processo de submissão.
+
+
+Funcionalidades pendentes
+-------------------------
+
+* Validação automática de arquivos complementares (imagens, pdf etc).
+* Integração do sistema de notificações com o SciELO Manager (painel de controle do usuário).
+
+
+Guias de desenvolvimento
+========================
 
 Technical guides and artifacts explaining software components
 and design decisions.
@@ -22,12 +35,6 @@ and design decisions.
    :maxdepth: 2
    
    dev/gateway_http_api
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   design
+   domain
 
