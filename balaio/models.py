@@ -55,7 +55,7 @@ class Attempt(Base):
     __tablename__ = 'attempt'
 
     id = Column(Integer, primary_key=True)
-    package_checksum = Column(String(length=32), unique=True)
+    package_checksum = Column(String(length=64), unique=True)
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'), nullable=True)
     started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)
@@ -101,7 +101,7 @@ class Attempt(Base):
                           is_valid=False,
                           filepath=package._filename)
         meta = package.meta
-        if package.is_valid_package() and meta['article_title'] and (meta['journal_eissn'] or meta['journal_pissn']):
+        if package.is_valid_package() and package.is_valid_meta():
             attempt.is_valid = True
         return attempt
 
@@ -149,7 +149,7 @@ class ArticlePkg(Base):
         """
         meta = package.meta
         try:
-            article_pkg = session.query(ArticlePkg).filter_by(article_title=meta['article_title']).one()
+            article_pkg = session.query(ArticlePkg).filter_by(**package.criteria).one()
         except MultipleResultsFound as e:
             logger.error('Multiple results trying to get a models.ArticlePkg for article_title=%s. %s' % (
                 meta['article_title'], e))

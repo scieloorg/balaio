@@ -362,7 +362,10 @@ def issue_identification(volume, number, supplement):
     """
     # issue can have contents like: 2, Suppl, 3 Suppl 1, Suppl 1
     number, label, suppl = parse_issue_tag(number)
-    if not suppl:
+    if label:
+        if not suppl:
+            suppl = label
+    else:
         suppl = supplement
     volume_suppl, number_suppl = supplement_type(volume, number, suppl)
 
