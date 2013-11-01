@@ -1,8 +1,12 @@
+import sys
 import pickle
 import logging
 import logging.handlers
 import SocketServer
 import struct
+
+
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(process)d - %(thread)d - %(name)s - %(message)s'
 
 
 class LogRecordStreamHandler(SocketServer.StreamRequestHandler):
@@ -74,11 +78,15 @@ class LogRecordSocketReceiver(SocketServer.ThreadingTCPServer):
             abort = self.abort
 
 def main():
-    logging.basicConfig(
-        format='%(asctime)s %(name)-15s %(levelname)-8s %(message)s')
+    logging.basicConfig(format=LOG_FORMAT)
     tcpserver = LogRecordSocketReceiver()
     print('About to start TCP server...')
     tcpserver.serve_until_stopped()
 
+
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+       sys.exit('Logging server stopped.')
+
