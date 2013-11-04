@@ -8,4 +8,5 @@ pyramid
 WebTest
 transaction
 zope.sqlalchemy
+psycopg2
 lxml

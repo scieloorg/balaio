@@ -62,14 +62,6 @@ class SPSMixin(object):
         meta = self.meta
         return meta['article_title'] and (meta['journal_eissn'] or meta['journal_pissn']) and (meta['issue_volume'] or meta['issue_number'])
 
-    @property
-    def criteria(self):
-        meta = self.meta
-        select = ['article_title',
-                'journal_eissn', 'journal_pissn',
-                'issue_number', 'issue_volume', 'issue_suppl_number', 'issue_suppl_volume']
-        return {k: meta[k] for k in select if meta.get(k, None)}
-
 
 class Xray(object):
 
@@ -277,20 +269,23 @@ def get_attempt(package):
                 attempt.is_valid = True
 
                 transaction.commit()
+
+                checkin_notifier = CheckinNotifier(attempt)
+                checkin_notifier.tell('Attempt is valid.', models.Status.ok, 'Checkin')
+                checkin_notifier.end()
             except Exception as e:
                 transaction.abort()
                 logger.error('Failed to load an ArticlePkg for %s.' % package)
                 logger.debug('---> Traceback: %s' % e)
 
                 logger.debug('Checkin notification: Failed to load an ArticlePkg')
+               
                 session = Session()
                 session.add(attempt)
                 checkin_notifier = CheckinNotifier(attempt)
                 checkin_notifier.tell('Failed to load an ArticlePkg for %s.' % package, models.Status.error, 'Checkin')
 
-            checkin_notifier = CheckinNotifier(attempt)
-            checkin_notifier.tell('Attempt commited', models.Status.ok, 'Checkin')
-            checkin_notifier.end()
+                checkin_notifier.end()
 
             return attempt
 
@@ -317,4 +312,3 @@ def get_attempt(package):
         finally:
             logger.debug('Closing the transactional session scope')
             session.close()
-
