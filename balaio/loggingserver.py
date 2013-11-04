@@ -88,5 +88,5 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-       sys.exit('Logging server stopped.')
+        sys.exit('Logging server stopped.')
 
