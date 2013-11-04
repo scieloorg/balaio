@@ -163,13 +163,13 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
 
             if xml_publisher_name:
                 if self._normalize_data(xml_publisher_name) == self._normalize_data(j_publisher_name):
-                    r = [models.Status.ok, '']
+                    r = [models.Status.ok, 'Valid publisher name: ' + xml_publisher_name]
                 else:
-                    r = [models.Status.error, j_publisher_name + ' [journal]\n' + xml_publisher_name + ' [article]']
-            else:
-                r = [models.Status.error, 'Missing publisher-name in article']
+                    r = [models.Status.error, 'Mismatched data: %s. Expected: %s' % (xml_publisher_name, j_publisher_name)]
+            else:   
+                r = [models.Status.error, 'Missing data: publisher name']
         else:
-            r = [models.Status.error, 'Missing publisher_name in journal']
+            r = [models.Status.error, 'Missing data: publisher name, in scieloapi']
         return r
 
 
@@ -191,9 +191,9 @@ class ReferenceValidationPipe(vpipes.ValidationPipe):
         refs = pkg_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
-            return [models.Status.ok, '']
+            return [models.Status.ok, 'Found ' + str(len(refs)) + ' references']
         else:
-            return [models.Status.warning, 'tag reference missing']
+            return [models.Status.warning, 'Missing data: references']
 
 
 class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
@@ -219,17 +219,14 @@ class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
 
                 if source is not None:
                     if source.text is None:
-                        lst_errors.append((ref.attrib['id'], 'missing content in tag source'))
+                        lst_errors.append(ref.attrib['id'])
                 else:
-                    lst_errors.append((ref.attrib['id'], 'missing tag source'))
+                    lst_errors.append(ref.attrib['id'])
 
         if lst_errors:
-            msg_error = ''
+            msg_error = 'Missing data: source. (%s)' % ', '.join(lst_errors)
 
-            for ref_id, msg in lst_errors:
-                msg_error += ' %s: %s' % (ref_id, msg)
-
-        return [models.Status.error, msg_error] if lst_errors else [models.Status.ok, '']
+        return [models.Status.error, msg_error] if lst_errors else [models.Status.ok, 'Valid data: source']
 
 
 class ReferenceYearValidationPipe(vpipes.ValidationPipe):
@@ -247,7 +244,8 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
 
     def validate(self, item):
 
-        lst_errors = []
+        missing_data_ref_id_list = []
+        bad_data = []
 
         attempt, pkg_analyzer, journal_and_issue_data = item
         refs = pkg_analyzer.xml.findall(".//ref-list/ref")
@@ -258,20 +256,23 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
 
                 if year is not None:
                     if year.text is None:
-                        lst_errors.append((ref.attrib['id'], 'missing content in tag year'))
+                        missing_data_ref_id_list.append(ref.attrib['id'])
                     else:
                         if not re.search(r'\d{4}', year.text):
-                            lst_errors.append((ref.attrib['id'], 'date format is not good'))
+                            bad_data.append((ref.attrib['id'], year.text))
                 else:
-                    lst_errors.append((ref.attrib['id'], 'missing tag year'))
+                    missing_data_ref_id_list.append(ref.attrib['id'])
 
-        if lst_errors:
-            msg_error = ''
+        msg_error = ''
+        if missing_data_ref_id_list:
+            msg_error = 'Missing data: year. (%s)' % ', '.join(missing_data_ref_id_list)
 
-            for ref_id, msg in lst_errors:
-                msg_error += ' %s: %s' % (ref_id, msg)
+        if bad_data:
+            if msg_error:
+                msg_error += '. '
+            msg_error += 'Invalid value for year: %s' % ', '.join(['%s (%s)' % (year, ref) for ref, year in bad_data])
 
-        return [models.Status.error, msg_error] if lst_errors else [models.Status.ok, '']
+        return [models.Status.error, msg_error] if msg_error else [models.Status.ok, 'Valid data: year']
 
 
 class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
@@ -297,17 +298,11 @@ class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
 
                 if article_title is not None:
                     if article_title.text is None:
-                        lst_errors.append((ref.attrib['id'], 'missing content in tag article-title'))
+                        lst_errors.append(ref.attrib['id'])
                 else:
-                    lst_errors.append((ref.attrib['id'], 'missing tag article-title'))
+                    lst_errors.append(ref.attrib['id'])
 
-        if lst_errors:
-            msg_error = ''
-
-            for ref_id, msg in lst_errors:
-                msg_error += ' %s: %s' % (ref_id, msg)
-
-        return [models.Status.error, msg_error] if lst_errors else [models.Status.ok, '']
+        return [models.Status.error, 'Missing data: article-title. (%s)' % ', '.join(lst_errors) ] if lst_errors else [models.Status.ok, 'Valid data: article-title']
 
 
 class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
@@ -330,13 +325,13 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
             abbrev_title_xml = pkg_analyzer.xml.find('.//journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
             if abbrev_title_xml is not None:
                 if self._normalize_data(abbrev_title) == self._normalize_data(abbrev_title_xml.text):
-                    return [models.Status.ok, '']
+                    return [models.Status.ok, 'Valid abbrev-journal-title: %s' % abbrev_title_xml.text ]
                 else:
-                    return [models.Status.error, 'the abbreviated title in xml is defferent from the abbreviated title in the source']
+                    return [models.Status.error, 'Mismatched data: %s. Expected: %s' % (abbrev_title_xml.text, abbrev_title)]
             else:
-                return [models.Status.error, 'missing abbreviated title in xml']
+                return [models.Status.error, 'Missing data: abbrev-journal-title']
         else:
-            return [models.Status.error, 'missing abbreviated title in source']
+            return [models.Status.error, 'Missing data: short_title, in scieloapi']
 
 
 class FundingGroupValidationPipe(vpipes.ValidationPipe):
@@ -375,15 +370,15 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
 
         funding_nodes = xml_tree.findall('.//funding-group')
 
-        status, description = [models.Status.ok, etree.tostring(funding_nodes[0])] if funding_nodes != [] else [models.Status.warning, 'no funding-group']
+        status, description = [models.Status.ok, etree.tostring(funding_nodes[0])] if funding_nodes != [] else [models.Status.warning, 'Missing data: funding-group']
         if status == models.Status.warning:
             ack_node = xml_tree.findall('.//ack')
             ack_text = etree.tostring(ack_node[0]) if ack_node != [] else ''
 
             if ack_text == '':
-                description = 'no funding-group and no ack'
+                description = 'Missing data: funding-group, ack'
             elif _contains_number(ack_text):
-                description = ack_text + ' looks to have contract number. If so, it must be identified using funding-group'
+                description = '%s has numbers. If it is a contract number, it must be identified in funding-group.' % ack_text
             else:
                 description = ack_text
                 status = models.Status.ok
@@ -413,19 +408,16 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
         attempt, pkg_analyzer, journal_and_issue_data = item
 
         j_nlm_title = journal_and_issue_data.get('journal').get('medline_title', '')
-        if j_nlm_title == '':
-            status, description = [models.Status.ok, 'journal has no NLM journal title']
-        else:
-            xml_tree = pkg_analyzer.xml
-            xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
 
-            if xml_nlm_title:
-                if self._normalize_data(xml_nlm_title) == self._normalize_data(j_nlm_title):
-                    status, description = [models.Status.ok, xml_nlm_title]
-                else:
-                    status, description = [models.Status.error, j_nlm_title + ' [journal]\n' + xml_nlm_title + ' [article]']
-            else:
-                status, description = [models.Status.error, 'Missing .//journal-meta/journal-id[@journal-id-type="nlm-ta"] in article']
+        xml_tree = pkg_analyzer.xml
+        xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
+        if not xml_nlm_title:
+            xml_nlm_title = ''
+        if self._normalize_data(xml_nlm_title) == self._normalize_data(j_nlm_title):
+            status, description = [models.Status.ok, 'Valid NLM journal title: %s' % xml_nlm_title]
+        else:
+            status, description = [models.Status.error, 'Mismatched data: %s. Expected: %s' % (xml_nlm_title, j_nlm_title)]
+
         return [status, description]
 
 
@@ -444,15 +436,15 @@ class DOIVAlidationPipe(vpipes.ValidationPipe):
 
         attempt, pkg_analyzer, journal_data = item
 
-        doi_xml = pkg_analyzer.xml.find('.//article-id/[@pub-id-type="doi"]')
+        doi_xml = pkg_analyzer.xml.findtext('.//article-id/[@pub-id-type="doi"]')
 
-        if doi_xml is not None:
-            if self._doi_validator(doi_xml.text):
-                return [models.Status.ok, '']
+        if doi_xml:
+            if self._doi_validator(doi_xml):
+                return [models.Status.ok, 'Valid DOI: %s' % doi_xml]
             else:
-                return [models.Status.warning, 'DOI is not valid']
+                return [models.Status.warning, 'DOI is not registered: %s' % doi_xml]
         else:
-            return [models.Status.warning, 'missing DOI in xml']
+            return [models.Status.warning, 'Missing data: DOI']
 
 
 class ArticleSectionValidationPipe(vpipes.ValidationPipe):
@@ -481,20 +473,30 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
 
         if xml_section:
             if self._is_a_registered_section_title(issue_data['sections'], xml_section):
-                r = [models.Status.ok, xml_section]
+                r = [models.Status.ok, 'Valid article section: %s' % xml_section]
             else:
-                r = [models.Status.error, xml_section + ' is not registered as section in ' + issue_data.get('label')]
+                r = [models.Status.error, 'Mismatched data: %s. Expected one of %s' % (xml_section, self.list_sections(issue_data['sections']))]
         else:
-            r = [models.Status.warning, 'Missing .//article-categories/subj-group[@subj-group-type="heading"]/subject']
+            r = [models.Status.warning, 'Missing data: article section']
         return r
 
     def _is_a_registered_section_title(self, sections, section_title):
         """
         Return section titles of an issue
+
+        :param sections: has the structure:
+                [ {'titles':
+                    ['pt', 'Artigos Originais'],
+                    ['es', 'Articulos Originales'],
+                    ['en', 'Original Articles'],
+                  },
+                  {'titles':
+                    ['pt', 'Editorial'],
+                    ['es', 'Editorial'],
+                    ['en', 'Editorial'],
+                  },
+                ]
         """
-        # issue_data['sections'][0]['titles'][0][0=idioma, 1=titulo]
-        # no entanto, deveria ser
-        # issue_data['sections'][0]['titles'][0][idioma] = titulo
         section_title = self._normalize_data(section_title)
         r = False
         for section in sections:
@@ -502,6 +504,19 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
             if r:
                 break
         return r
+
+    def list_sections(self, sections):
+        """
+        Return section titles of an issue
+        """
+        # issue_data['sections'][0]['titles'][0][0=idioma, 1=titulo]
+        # no entanto, deveria ser
+        # issue_data['sections'][0]['titles'][0][idioma] = titulo
+        titles = []
+        for section in sections:
+            for lang, sectitle in section['titles']:
+                titles.append(sectitle)
+        return ' | '.join(titles)
 
 
 class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
@@ -522,50 +537,45 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
         `item` is a tuple comprised of instances of models.Attempt, a
         checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
         """
-        _months_ = {v: k for k, v in enumerate(calendar.month_abbr)}
+        _months_by_name = {v: k for k, v in enumerate(calendar.month_abbr)}
+        _month_abbrev_name = {k: v for k, v in enumerate(calendar.month_abbr)}
 
         attempt, pkg_analyzer, issue_data = item
 
         xml_tree = pkg_analyzer.xml
         xml_data = xml_tree.findall('.//article-meta//pub-date')
 
-        issue_publication_year = str(issue_data.get('publication_year'))
-        issue_publication_start_month = str(issue_data.get('publication_start_month'))
-        issue_publication_end_month = str(issue_data.get('publication_end_month'))
+        issue_year = str(issue_data.get('publication_year'))
+        issue_start_month_name = _month_abbrev_name.get(issue_data.get('publication_start_month'))
+        issue_end_month_name = _month_abbrev_name.get(issue_data.get('publication_end_month'))
+        issue_start_month_num = str(issue_data.get('publication_start_month'))
+        issue_end_month_num = str(issue_data.get('publication_end_month'))
 
-        unmatcheds = []
-        matched = []
-        start = '0'
-        end = '0'
+        expected = []
+        if issue_end_month_num == '0':
+            expected.append('%s/%s' % (issue_start_month_name, issue_year))
+            expected.append('%s/%s' % (issue_start_month_num, issue_year))
+        else:
+            expected.append('%s-%s/%s' % (issue_start_month_name, issue_end_month_name, issue_year))
+            expected.append('%s-%s/%s' % (issue_start_month_num, issue_end_month_name, issue_year))
 
+        unmatched = []
+        r = None
         for item in xml_data:
             year = item.findtext('year')
             month = item.findtext('month')
             season = item.findtext('season')
             if season:
-                if '-' in season:
-                    start, end = season.split('-')
-                    start = str(_months_.get(start))
-                    end = str(_months_.get(end))
+                xml_date = '%s/%s' % (season, year)
             else:
-                end = '0'
-                start = str(int(month)) if month.isdigit() else str(int(_months_.get(month)))
-            if year == issue_publication_year and start == issue_publication_start_month and end == issue_publication_end_month:
-                matched = (year, start, end)
-                break
+                xml_date = '%s/%s' % ((str(int(month)), year) if month.isdigit() else (month, year))
+
+            if xml_date in expected:
+                return [models.Status.ok, 'Valid publication date: %s' % xml_date]
             else:
-                unmatcheds.append((year, start, end))
+                unmatched.append(xml_date)
 
-        if matched:
-            year, start, end = matched
-            r = [models.Status.ok, 'year: {0}\nstart: {1}\nend: {2}'.format(year, start, end)]
-        else:
-            description = ''
-            for year, start, end in unmatcheds:
-                description += 'year: {0}\nstart: {1}\nend: {2}'.format(year, start, end) + '\n'
-
-            r = [models.Status.error, 'Unmatched publication date.\nIn article:\n' + description + 'In   issue: \n' + 'year: {0}\nstart: {1}\nend: {2}'.format(issue_publication_year, issue_publication_start_month, issue_publication_end_month) + '\n']
-        return r
+        return [models.Status.error, 'Mismatched data: %s. Expected one of %s' % (' | '.join(unmatched), ' | '.join(expected))]
 
 
 if __name__ == '__main__':
