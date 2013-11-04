@@ -304,4 +304,3 @@ def get_attempt(package):
         finally:
             logger.debug('Closing the transactional session scope')
             session.close()
-
