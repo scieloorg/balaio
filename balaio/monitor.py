@@ -55,6 +55,7 @@ class Monitor(object):
                     logger.debug('The file is gone before marked as duplicated. %s' % e)
 
             else:
+                utils.send_message(sys.stdout, attempt, utils.make_digest)
                 logging.debug('Message sent for %s: %s, %s' % (filepath,
                     repr(attempt), repr(utils.make_digest)))
 
