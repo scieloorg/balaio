@@ -101,7 +101,7 @@ class Attempt(Base):
                           is_valid=False,
                           filepath=package._filename)
         meta = package.meta
-        if package.is_valid_package() and package.is_valid_meta():
+        if package.is_valid_package() and package.is_valid_meta() and package.is_valid_schema():
             attempt.is_valid = True
         return attempt
 

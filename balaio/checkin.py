@@ -1,11 +1,11 @@
 #coding: utf-8
 import os
+import sys
 import stat
 import zipfile
 import itertools
-import xml.etree.ElementTree as etree
 import logging
-import sys
+from lxml import etree
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.exc import IntegrityError
@@ -61,7 +61,7 @@ class SPSMixin(object):
     def is_valid_meta(self):
         meta = self.meta
         return meta['article_title'] and (meta['journal_eissn'] or meta['journal_pissn']) and (meta['issue_volume'] or meta['issue_number'])
-    
+
     @property
     def criteria(self):
         meta = self.meta
@@ -70,7 +70,7 @@ class SPSMixin(object):
                 'issue_number', 'issue_volume', 'issue_suppl_number', 'issue_suppl_volume']
         return {k: meta[k] for k in select if meta.get(k, None)}
 
-        
+
 class Xray(object):
 
     def __init__(self, filename):
@@ -158,7 +158,7 @@ class PackageAnalyzer(SPSMixin, Xray):
 
     def is_valid_package(self):
         """
-        Validate if exist at least one xml file and one pdf file
+        Validate if exist at least one XML file and one PDF file
         """
         is_valid = True
         for ext in ['xml', 'pdf']:
@@ -169,6 +169,19 @@ class PackageAnalyzer(SPSMixin, Xray):
                 is_valid = False
 
         return is_valid
+
+    def is_valid_schema(self):
+        """
+        Validate if the XML is a valid schema against the SPS XSD.
+        SPS Schema project: https://github.com/scieloorg/scielo_publishing_schema
+        """
+        fp = open(os.path.dirname(os.path.abspath(__file__)) + '/../xsds/sps.xsd', 'r')
+
+        xmlschema_doc = etree.parse(fp)
+
+        xmlschema = etree.XMLSchema(xmlschema_doc)
+
+        return xmlschema.validate(self.xml)
 
     def lock_package(self):
         """

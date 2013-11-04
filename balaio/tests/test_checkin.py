@@ -1,6 +1,7 @@
+#coding: utf-8
 import zipfile
 from tempfile import NamedTemporaryFile
-from xml.etree.ElementTree import ElementTree
+from lxml import etree
 
 import mocker
 import unittest
@@ -32,14 +33,14 @@ class SPSMixinTests(mocker.MockerTestCase):
         pkg = self._makeOne(arch.name)
 
         xmls = pkg.xmls
-        self.assertIsInstance(xmls.next(), ElementTree)
+        self.assertIsInstance(xmls.next(), etree._ElementTree)
 
     def test_xml_returns_etree_instance(self):
         data = [('bar.xml', b'<root><name>bar</name></root>')]
         arch = self._make_test_archive(data)
         pkg = self._makeOne(arch.name)
 
-        self.assertIsInstance(pkg.xml, ElementTree)
+        self.assertIsInstance(pkg.xml, etree._ElementTree)
 
     def test_xml_raises_AttributeError_when_multiple_xmls(self):
         data = [
@@ -305,6 +306,167 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
             in_context_perm = oct(stat.S_IMODE(os.stat(arch.name).st_mode))
             for forbidden_val in ['3', '6', '7']:
                 self.assertNotEqual(in_context_perm[1], forbidden_val)
+
+    def test_is_valid_schema_with_valid_xml(self):
+        data = [('bar.xml', b'''<?xml version="1.0" encoding="utf-8"?>
+                <article article-type="in-brief" dtd-version="1.0" xml:lang="en" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mml="http://www.w3.org/1998/Math/MathML">
+                <front>
+                    <journal-meta>
+                        <journal-id journal-id-type="nlm-ta">Bull World Health Organ</journal-id>
+                        <journal-title-group>
+                            <journal-title>Bulletin of the World Health Organization</journal-title>
+                            <abbrev-journal-title abbrev-type="pubmed">Bull. World Health Organ.</abbrev-journal-title>
+                        </journal-title-group>
+                        <issn pub-type="ppub">0042-9686</issn>
+                        <publisher>
+                            <publisher-name>World Health Organization</publisher-name>
+                        </publisher>
+                    </journal-meta>
+                    <article-meta>
+                        <article-id pub-id-type="publisher-id">BLT.13.000813</article-id>
+                        <article-id pub-id-type="doi">10.2471/BLT.13.000813</article-id>
+                        <article-categories>
+                            <subj-group subj-group-type="heading">
+                                <subject> In This Month´s Bulletin</subject>
+                            </subj-group>
+                        </article-categories>
+                        <title-group>
+                            <article-title>In this month's <italic>Bulletin</italic>
+                            </article-title>
+                        </title-group>
+                        <pub-date pub-type="ppub">
+                            <month>08</month>
+                            <year>2013</year>
+                        </pub-date>
+                        <volume>91</volume>
+                        <issue>8</issue>
+                        <fpage>545</fpage>
+                        <lpage>545</lpage>
+                        <permissions>
+                            <copyright-statement>(c) World Health Organization (WHO) 2013. All rights reserved.</copyright-statement>
+                            <copyright-year>2013</copyright-year>
+                        </permissions>
+                    </article-meta>
+                </front>
+                <body>
+                    <p>In the editorial section, David B Evans and colleagues (546) discuss the dimensions of universal health coverage. In the news, Gary Humphreys &#x26; Catherine Fiankan-Bokonga (549&#x2013;550) report on the approach France is taking to counter trends in childhood obesity. Fiona Fleck (551&#x2013;552) interviews Philip James on how the global obesity epidemic started and what should be done to reverse it.</p>
+                    <sec sec-type="other1">
+                        <title>Nigeria</title>
+                    </sec>
+                </body>
+            </article>
+            ''')]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertTrue(pkg.is_valid_schema())
+
+    def test_is_valid_schema_with_invalid_xml(self):
+        data = [('bar.xml', b'''<?xml version="1.0" encoding="utf-8"?>
+                <article article-type="in-brief" dtd-version="1.0" xml:lang="en" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mml="http://www.w3.org/1998/Math/MathML">
+                <front>
+                    <journal-meta>
+                        <journal-title-group>
+                            <journal-title>Bulletin of the World Health Organization</journal-title>
+                            <abbrev-journal-title abbrev-type="pubmed">Bull. World Health Organ.</abbrev-journal-title>
+                        </journal-title-group>
+                        <issn pub-type="ppub">0042-9686</issn>
+                        <publisher>
+                            <publisher-name>World Health Organization</publisher-name>
+                        </publisher>
+                    </journal-meta>
+                    <article-meta>
+                        <article-id pub-id-type="publisher-id">BLT.13.000813</article-id>
+                        <article-id pub-id-type="doi">10.2471/BLT.13.000813</article-id>
+                        <article-categories>
+                            <subj-group subj-group-type="heading">
+                                <subject> In This Month´s Bulletin</subject>
+                            </subj-group>
+                        </article-categories>
+                        <title-group>
+                            <article-title>In this month's <italic>Bulletin</italic>
+                            </article-title>
+                        </title-group>
+                        <pub-date pub-type="ppub">
+                            <month>08</month>
+                            <year>2013</year>
+                        </pub-date>
+                        <volume>91</volume>
+                        <issue>8</issue>
+                        <fpage>545</fpage>
+                        <lpage>545</lpage>
+                        <permissions>
+                            <copyright-statement>(c) World Health Organization (WHO) 2013. All rights reserved.</copyright-statement>
+                            <copyright-year>2013</copyright-year>
+                        </permissions>
+                    </article-meta>
+                </front>
+                <body>
+                    <p>In the editorial section, David B Evans and colleagues (546) discuss the dimensions of universal health coverage. In the news, Gary Humphreys &#x26; Catherine Fiankan-Bokonga (549&#x2013;550) report on the approach France is taking to counter trends in childhood obesity. Fiona Fleck (551&#x2013;552) interviews Philip James on how the global obesity epidemic started and what should be done to reverse it.</p>
+                    <sec sec-type="other1">
+                        <title>Nigeria</title>
+                    </sec>
+                </body>
+            </article>
+            ''')]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertFalse(pkg.is_valid_schema())
+
+    def test_is_valid_schema_with_wrong_tag(self):
+        data = [('bar.xml', b'''<?xml version="1.0" encoding="utf-8"?>
+                <article article-type="in-brief" dtd-version="1.0" xml:lang="en" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mml="http://www.w3.org/1998/Math/MathML">
+                <front>
+                    <a>wrong</a>
+                    <journal-meta>
+                        <journal-title-group>
+                            <journal-title>Bulletin of the World Health Organization</journal-title>
+                            <abbrev-journal-title abbrev-type="pubmed">Bull. World Health Organ.</abbrev-journal-title>
+                        </journal-title-group>
+                        <issn pub-type="ppub">0042-9686</issn>
+                        <publisher>
+                            <publisher-name>World Health Organization</publisher-name>
+                        </publisher>
+                    </journal-meta>
+                    <article-meta>
+                        <article-id pub-id-type="publisher-id">BLT.13.000813</article-id>
+                        <article-id pub-id-type="doi">10.2471/BLT.13.000813</article-id>
+                        <article-categories>
+                            <subj-group subj-group-type="heading">
+                                <subject> In This Month´s Bulletin</subject>
+                            </subj-group>
+                        </article-categories>
+                        <title-group>
+                            <article-title>In this month's <italic>Bulletin</italic>
+                            </article-title>
+                        </title-group>
+                        <pub-date pub-type="ppub">
+                            <month>08</month>
+                            <year>2013</year>
+                        </pub-date>
+                        <volume>91</volume>
+                        <issue>8</issue>
+                        <fpage>545</fpage>
+                        <lpage>545</lpage>
+                        <permissions>
+                            <copyright-statement>(c) World Health Organization (WHO) 2013. All rights reserved.</copyright-statement>
+                            <copyright-year>2013</copyright-year>
+                        </permissions>
+                    </article-meta>
+                </front>
+                <body>
+                    <p>In the editorial section, David B Evans and colleagues (546) discuss the dimensions of universal health coverage. In the news, Gary Humphreys &#x26; Catherine Fiankan-Bokonga (549&#x2013;550) report on the approach France is taking to counter trends in childhood obesity. Fiona Fleck (551&#x2013;552) interviews Philip James on how the global obesity epidemic started and what should be done to reverse it.</p>
+                    <sec sec-type="other1">
+                        <title>Nigeria</title>
+                    </sec>
+                </body>
+            </article>
+            ''')]
+        arch = self._make_test_archive(data)
+        pkg = self._makeOne(arch.name)
+
+        self.assertFalse(pkg.is_valid_schema())
 
 
 class CheckinTests(unittest.TestCase):

@@ -96,6 +96,9 @@ class PackageAnalyzerStub(object):
     def is_valid_package(self):
         return True
 
+    def is_valid_schema(self):
+        return True
+
 
 def get_ScieloAPIToolbeltStubModule():
     """

@@ -1,5 +1,5 @@
 requests
-pyinotify
+#pyinotify
 sqlalchemy
 enum34
 git+git://github.com/gustavofonseca/plumber.git#egg=plumber
@@ -8,3 +8,4 @@ pyramid
 WebTest
 transaction
 zope.sqlalchemy
+lxml
