@@ -21,6 +21,12 @@ logger = logging.getLogger('balaio.checkin')
 utils.setup_logging()
 
 
+def get_xmlschema(path):
+    xmlschema_doc = etree.parse(open(path, 'r'))
+    xmlschema = etree.XMLSchema(xmlschema_doc)
+    return xmlschema
+
+
 class SPSMixin(object):
 
     @property
@@ -123,6 +129,7 @@ class Xray(object):
 
 
 class PackageAnalyzer(SPSMixin, Xray):
+    xmlschema = get_xmlschema(os.path.dirname(os.path.abspath(__file__)) + '/../xsds/sps.xsd')
 
     def __init__(self, *args):
         super(PackageAnalyzer, self).__init__(*args)
@@ -167,13 +174,7 @@ class PackageAnalyzer(SPSMixin, Xray):
         Validate if the XML is a valid schema against the SPS XSD.
         SPS Schema project: https://github.com/scieloorg/scielo_publishing_schema
         """
-        fp = open(os.path.dirname(os.path.abspath(__file__)) + '/../xsds/sps.xsd', 'r')
-
-        xmlschema_doc = etree.parse(fp)
-
-        xmlschema = etree.XMLSchema(xmlschema_doc)
-
-        return xmlschema.validate(self.xml)
+        return self.xmlschema.validate(self.xml)
 
     def lock_package(self):
         """
@@ -279,7 +280,7 @@ def get_attempt(package):
                 logger.debug('---> Traceback: %s' % e)
 
                 logger.debug('Checkin notification: Failed to load an ArticlePkg')
-               
+
                 session = Session()
                 session.add(attempt)
                 checkin_notifier = CheckinNotifier(attempt)
