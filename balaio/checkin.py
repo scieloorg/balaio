@@ -236,7 +236,6 @@ def get_attempt(package):
     :param package: filesystem path to package
     """
     config = utils.Configuration.from_env()
-    CheckinNotifier = notifier.checkin_notifier_factory(config)
     logger.info('Analyzing package: %s' % package)
 
     with PackageAnalyzer(package) as pkg:
@@ -252,15 +251,9 @@ def get_attempt(package):
             # Building a new Attempt
             attempt = models.Attempt.get_from_package(pkg)
             session.add(attempt)
-            transaction.commit()
-
-            # attempt notifier
-            checkin_notifier = CheckinNotifier(attempt)
-            checkin_notifier.start()
 
             # Trying to bind a ArticlePkg
-            session = Session()
-            session.add(attempt)
+            savepoint = transaction.savepoint()
             try:
                 article_pkg = models.ArticlePkg.get_or_create_from_package(pkg, session)
                 if article_pkg not in session:
@@ -269,25 +262,16 @@ def get_attempt(package):
                 attempt.articlepkg = article_pkg
                 attempt.is_valid = True
 
-                transaction.commit()
+                #checkin_notifier.tell('Attempt is valid.', models.Status.ok, 'Checkin')
 
-                checkin_notifier = CheckinNotifier(attempt)
-                checkin_notifier.tell('Attempt is valid.', models.Status.ok, 'Checkin')
-                checkin_notifier.end()
             except Exception as e:
-                transaction.abort()
+                savepoint.rollback()
+                #checkin_notifier.tell('Failed to load an ArticlePkg for %s.' % package, models.Status.error, 'Checkin')
+
                 logger.error('Failed to load an ArticlePkg for %s.' % package)
                 logger.debug('---> Traceback: %s' % e)
 
-                logger.debug('Checkin notification: Failed to load an ArticlePkg')
-
-                session = Session()
-                session.add(attempt)
-                checkin_notifier = CheckinNotifier(attempt)
-                checkin_notifier.tell('Failed to load an ArticlePkg for %s.' % package, models.Status.error, 'Checkin')
-
-                checkin_notifier.end()
-
+            transaction.commit()
             return attempt
 
         except IOError as e:
@@ -313,3 +297,4 @@ def get_attempt(package):
         finally:
             logger.debug('Closing the transactional session scope')
             session.close()
+

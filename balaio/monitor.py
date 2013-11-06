@@ -12,6 +12,7 @@ import utils
 import checkin
 import models
 import excepts
+import notifier
 
 
 logger = logging.getLogger('balaio.monitor')
@@ -25,6 +26,9 @@ class Monitor(object):
     def __init__(self, workers=None):
         self.job_queue = Queue.Queue()
         self.total_workers = workers if workers else 1
+
+        self.config = utils.Configuration.from_env()
+        self.CheckinNotifier = notifier.checkin_notifier_factory(self.config)
 
         self.running_workers = []
         for w in range(self.total_workers):
@@ -55,9 +59,15 @@ class Monitor(object):
                     logger.debug('The file is gone before marked as duplicated. %s' % e)
 
             else:
+                checkin_notifier = self.CheckinNotifier(attempt)
+                checkin_notifier.start()
+
                 utils.send_message(sys.stdout, attempt, utils.make_digest)
                 logging.debug('Message sent for %s: %s, %s' % (filepath,
                     repr(attempt), repr(utils.make_digest)))
+
+                checkin_notifier.tell('Attempt is valid.', models.Status.ok, 'Checkin')
+                checkin_notifier.stop()
 
     def trigger_event(self, filepath):
         self.job_queue.put(filepath)
