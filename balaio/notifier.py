@@ -3,7 +3,6 @@ import scieloapi
 import sqlalchemy
 import transaction
 
-from utils import SingletonMixin, Configuration
 import models
 
 
@@ -37,15 +36,14 @@ class Notifier(object):
         :param db_session:
         """
         self.scieloapi = scieloapi_client
-        self.db_session = db_session
         self.checkpoint = checkpoint
+        self.db_session = db_session
 
         # make sure checkpoint is held by the session
         if self.checkpoint not in self.db_session:
             self.db_session.add(self.checkpoint)
 
 
-    @auto_commit_or_rollback
     def tell(self, message, status, label=None):
         """
         Adds the notice on checkpoint, and sends a notification to
@@ -57,36 +55,17 @@ class Notifier(object):
         """
         self.checkpoint.tell(message, status, label=label)
 
-    @auto_commit_or_rollback
     def start(self):
         self.checkpoint.start()
 
-    @auto_commit_or_rollback
     def end(self):
         self.checkpoint.end()
 
 
-class DBSessionFactory(SingletonMixin, object):
-    """
-    Encapsulates the `models.Session` configuration.
-    """
-    def __init__(self, config):
-        self.config = config
-
-    def __call__(self):
-        Session = models.Session
-        Session.configure(bind=models.create_engine_from_config(self.config))
-        return Session
-
-
 def create_checkpoint_notifier(config, point):
-    SessionFactory = DBSessionFactory(config)
-    Session = SessionFactory()
-
     scieloapi_client = None  # scieloapi.Client('some.user', 'some.key')
 
-    def _checkin_notifier_factory(attempt):
-        session = Session()
+    def _checkin_notifier_factory(attempt, session):
         try:
             checkpoint = session.query(models.Checkpoint).filter(
                 models.Checkpoint.attempt == attempt).filter(

@@ -4,9 +4,10 @@ import threading
 import Queue
 import logging
 import sys
-
 import zipfile
+
 import pyinotify
+import transaction
 
 import utils
 import checkin
@@ -29,6 +30,9 @@ class Monitor(object):
 
         self.config = utils.Configuration.from_env()
         self.CheckinNotifier = notifier.checkin_notifier_factory(self.config)
+        self.Session = models.Session
+        self.Session.configure(bind=models.create_engine_from_config(self.config))
+
 
         self.running_workers = []
         for w in range(self.total_workers):
@@ -59,7 +63,8 @@ class Monitor(object):
                     logger.debug('The file is gone before marked as duplicated. %s' % e)
 
             else:
-                checkin_notifier = self.CheckinNotifier(attempt)
+                session = self.Session()
+                checkin_notifier = self.CheckinNotifier(attempt, session)
                 checkin_notifier.start()
 
                 utils.send_message(sys.stdout, attempt, utils.make_digest)
@@ -68,6 +73,8 @@ class Monitor(object):
 
                 checkin_notifier.tell('Attempt is valid.', models.Status.ok, 'Checkin')
                 checkin_notifier.stop()
+
+                transaction.commit()
 
     def trigger_event(self, filepath):
         self.job_queue.put(filepath)

@@ -1,6 +1,7 @@
 import logging
 
 from plumber import Pipe, Pipeline, precondition, UnmetPrecondition
+import transaction
 
 import scieloapitoolbelt
 
@@ -35,11 +36,18 @@ class ValidationPipe(Pipe):
         `item` is a tuple comprised of instances of models.Attempt, a
         checkin.PackageAnalyzer, a dict of journal and issue data.
         """
-        logger.debug('%s started processing %s' % (self.__class__.__name__, item[0]))
+        attempt = item[0]
+        db_session = item[3]
+        logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
 
         result_status, result_description = self.validate(item)
 
-        self._notifier(item[0]).tell(result_description, result_status, label=self._stage_)
+        savepoint = transaction.savepoint()
+        try:
+            self._notifier(attempt, db_session).tell(result_description, result_status, label=self._stage_)
+        except Exception as e:
+            savepoint.rollback()
+            raise
 
         return item
 

@@ -63,8 +63,11 @@ class SetupPipe(vpipes.Pipe):
         :returns: a tuple (Attempt, PackageAnalyzer, journal_and_issue_data)
         """
         logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
+        Session = models.Session
+        Session.configure(bind=models.create_engine_from_config(utils.Configuration.from_env()))
+        db_session = Session()
 
-        self._notifier(attempt).start()
+        self._notifier(attempt, db_session).start()
 
         pkg_analyzer = self._pkg_analyzer(attempt.filepath)
         pkg_analyzer.lock_package()
@@ -103,7 +106,7 @@ class SetupPipe(vpipes.Pipe):
             logger.info('%s is not related to a known journal' % attempt)
             attempt.is_valid = False
 
-        return_value = (attempt, pkg_analyzer, journal_and_issue_data)
+        return_value = (attempt, pkg_analyzer, journal_and_issue_data, db_session)
         logger.debug('%s returning %s' % (self.__class__.__name__, ','.join([repr(val) for val in return_value])))
         return return_value
 
@@ -117,7 +120,7 @@ class TearDownPipe(vpipes.Pipe):
         :param item:
         """
         try:
-            attempt, pkg_analyzer, __ = item
+            attempt, pkg_analyzer, __, db_session = item
         except TypeError:
             attempt = item
 
@@ -133,6 +136,11 @@ class TearDownPipe(vpipes.Pipe):
 
         if not attempt.is_valid:
             utils.mark_as_failed(attempt.filepath)
+
+        try:
+            transaction.commit()
+        finally:
+            db_session.close()
 
         logger.info('Finished validating %s' % attempt)
 
@@ -155,7 +163,7 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         :param item: a tuple (models.Attempt, checkin.PackageAnalyzer, a dict of journal issue data).
         :returns: result of the validation in this format [status, description]
         """
-        attempt, pkg_analyzer, journal_and_issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item[:3]
         j_publisher_name = journal_and_issue_data.get('journal', {}).get('publisher_name', None)
         if j_publisher_name:
             data = pkg_analyzer.xml
@@ -166,7 +174,7 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
                     r = [models.Status.ok, 'Valid publisher name: ' + xml_publisher_name]
                 else:
                     r = [models.Status.error, 'Mismatched data: %s. Expected: %s' % (xml_publisher_name, j_publisher_name)]
-            else:   
+            else:
                 r = [models.Status.error, 'Missing data: publisher name']
         else:
             r = [models.Status.error, 'Missing data: publisher name, in scieloapi']
@@ -187,7 +195,7 @@ class ReferenceValidationPipe(vpipes.ValidationPipe):
         """
         The article may be a editorial why return a warning if no references
         """
-        attempt, pkg_analyzer, journal_and_issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item[:3]
         refs = pkg_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
@@ -210,7 +218,7 @@ class ReferenceSourceValidationPipe(vpipes.ValidationPipe):
 
     def validate(self, item):
         lst_errors = []
-        attempt, pkg_analyzer, journal_and_issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item[:3]
         refs = pkg_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
@@ -247,7 +255,7 @@ class ReferenceYearValidationPipe(vpipes.ValidationPipe):
         missing_data_ref_id_list = []
         bad_data = []
 
-        attempt, pkg_analyzer, journal_and_issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item[:3]
         refs = pkg_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
@@ -289,7 +297,7 @@ class ReferenceJournalTypeArticleTitleValidationPipe(vpipes.ValidationPipe):
 
         lst_errors = []
 
-        attempt, pkg_analyzer, journal_and_issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item[:3]
         refs = pkg_analyzer.xml.findall(".//ref-list/ref")
 
         if refs:
@@ -318,7 +326,7 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
 
     def validate(self, item):
 
-        attempt, pkg_analyzer, journal_and_issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item[:3]
         abbrev_title = journal_and_issue_data.get('journal').get('short_title')
 
         if abbrev_title:
@@ -364,7 +372,7 @@ class FundingGroupValidationPipe(vpipes.ValidationPipe):
             """
             return any((True for n in xrange(10) if str(n) in text))
 
-        attempt, pkg_analyzer, journal_and_issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item[:3]
 
         xml_tree = pkg_analyzer.xml
 
@@ -405,7 +413,7 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
         :returns: [models.Status.ok, ''], if journal has no nlm-journal-title
         :returns: [models.Status.error, nlm-journal-title in article and in journal], if nlm-journal-title in article and journal do not match.
         """
-        attempt, pkg_analyzer, journal_and_issue_data = item
+        attempt, pkg_analyzer, journal_and_issue_data = item[:3]
 
         j_nlm_title = journal_and_issue_data.get('journal').get('medline_title', '')
 
@@ -434,7 +442,7 @@ class DOIVAlidationPipe(vpipes.ValidationPipe):
 
     def validate(self, item):
 
-        attempt, pkg_analyzer, journal_data = item
+        attempt, pkg_analyzer, journal_data = item[:3]
 
         doi_xml = pkg_analyzer.xml.findtext('.//article-id/[@pub-id-type="doi"]')
 
@@ -466,7 +474,7 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
         `item` is a tuple comprised of instances of models.Attempt, a
         checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
         """
-        attempt, pkg_analyzer, issue_data = item
+        attempt, pkg_analyzer, issue_data = item[:3]
 
         xml_tree = pkg_analyzer.xml
         xml_section = xml_tree.findtext('.//article-categories/subj-group[@subj-group-type="heading"]/subject')
@@ -540,7 +548,7 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
         _months_by_name = {v: k for k, v in enumerate(calendar.month_abbr)}
         _month_abbrev_name = {k: v for k, v in enumerate(calendar.month_abbr)}
 
-        attempt, pkg_analyzer, issue_data = item
+        attempt, pkg_analyzer, issue_data = item[:3]
 
         xml_tree = pkg_analyzer.xml
         xml_data = xml_tree.findall('.//article-meta//pub-date')
