@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def attempt_is_valid(data):
     try:
-        attempt, _, __ = data
+        attempt, _, _, _ = data
     except TypeError:
         attempt = data
 
@@ -47,6 +47,7 @@ class ValidationPipe(Pipe):
             self._notifier(attempt, db_session).tell(result_description, result_status, label=self._stage_)
         except Exception as e:
             savepoint.rollback()
+            logger.error('An exception was raised during %s stage: %s' % (self._stage_, e))
             raise
 
         return item

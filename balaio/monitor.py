@@ -63,16 +63,24 @@ class Monitor(object):
                     logger.debug('The file is gone before marked as duplicated. %s' % e)
 
             else:
-                session = self.Session()
-                checkin_notifier = self.CheckinNotifier(attempt, session)
-                checkin_notifier.start()
-
                 utils.send_message(sys.stdout, attempt, utils.make_digest)
                 logging.debug('Message sent for %s: %s, %s' % (filepath,
                     repr(attempt), repr(utils.make_digest)))
 
-                checkin_notifier.tell('Attempt is valid.', models.Status.ok, 'Checkin')
-                checkin_notifier.stop()
+                # Create a notification to keep track of the checkin process
+                session = self.Session()
+                checkin_notifier = self.CheckinNotifier(attempt, session)
+                checkin_notifier.start()
+
+                if attempt.is_valid:
+                    notification_msg = 'Attempt ready to be validated'
+                    notification_status = models.Status.ok
+                else:
+                    notification_msg = 'Attempt cannot be validated'
+                    notification_status = models.Status.error
+
+                checkin_notifier.tell(notification_msg, notification_status, 'Checkin')
+                checkin_notifier.end()
 
                 transaction.commit()
 

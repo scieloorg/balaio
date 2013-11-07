@@ -6,6 +6,7 @@ import xml.etree.ElementTree as etree
 import calendar
 
 import scieloapi
+import transaction
 
 import vpipes
 import utils
@@ -20,12 +21,13 @@ logger = logging.getLogger('balaio.validator')
 
 class SetupPipe(vpipes.Pipe):
 
-    def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer, issn_validator):
+    def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer, issn_validator, Session):
         self._notifier = notifier
         self._scieloapi = scieloapi
         self._sapi_tools = sapi_tools
         self._pkg_analyzer = pkg_analyzer
         self._issn_validator = issn_validator
+        self.Session = Session
 
     def _fetch_journal_data(self, criteria):
         """
@@ -63,9 +65,7 @@ class SetupPipe(vpipes.Pipe):
         :returns: a tuple (Attempt, PackageAnalyzer, journal_and_issue_data)
         """
         logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
-        Session = models.Session
-        Session.configure(bind=models.create_engine_from_config(utils.Configuration.from_env()))
-        db_session = Session()
+        db_session = self.Session()
 
         self._notifier(attempt, db_session).start()
 
@@ -127,7 +127,7 @@ class TearDownPipe(vpipes.Pipe):
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
 
         try:
-            self._notifier(attempt).end()
+            self._notifier(attempt, db_session).end()
         except RuntimeError:
             pass
 
@@ -596,9 +596,12 @@ if __name__ == '__main__':
 
     notifier_dep = notifier.validation_notifier_factory(config)
 
+    Session = models.Session
+    Session.configure(bind=models.create_engine_from_config(config))
+
     ppl = vpipes.Pipeline(
         SetupPipe(notifier_dep, scieloapi, scieloapitoolbelt,
-            checkin.PackageAnalyzer, utils.is_valid_issn),
+            checkin.PackageAnalyzer, utils.is_valid_issn, Session),
         PublisherNameValidationPipe(notifier_dep, utils.normalize_data),
         JournalAbbreviatedTitleValidationPipe(notifier_dep, utils.normalize_data),
         NLMJournalTitleValidationPipe(notifier_dep, utils.normalize_data),
