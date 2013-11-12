@@ -27,7 +27,6 @@ def setUpModule():
     global global_engine
     global_engine = db_bootstrap()
 
-
 def _load_fixtures(obj_list):
 
     with transaction.manager:
@@ -342,9 +341,12 @@ class TicketFunctionalAPITest(unittest.TestCase):
         self.testapp = TestApp(app)
 
     def tearDown(self):
+        testing.tearDown()
+        self._clean_session()
+
+    def _clean_session(self):
         transaction.abort()
         models.ScopedSession.remove()
-        testing.tearDown()
 
     def _makeOne(self, id=1):
         import datetime
@@ -419,14 +421,85 @@ class TicketFunctionalAPITest(unittest.TestCase):
         self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets_with_param_limit(self):
+        ticket0_id = self._loaded_fixtures[0].id
+        articlepkg0_id = self._loaded_fixtures[0].articlepkg.id
+
+        ticket1_id = self._loaded_fixtures[1].id
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        ticket2_id = self._loaded_fixtures[2].id
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/tickets/?limit=45')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 45, "offset": 0}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "resource_uri": "/api/v1/tickets/1/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "resource_uri": "/api/v1/tickets/2/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "resource_uri": "/api/v1/tickets/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 45, "offset": 0},
+                       "objects": [
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"},
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"},
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg0_id, ticket0_id, ticket0_id,
+                             articlepkg1_id, ticket1_id, ticket1_id,
+                             articlepkg2_id, ticket2_id, ticket2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets_with_param_offset(self):
+        ticket1_id = self._loaded_fixtures[1].id
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        ticket2_id = self._loaded_fixtures[2].id
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/tickets/?offset=1')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "resource_uri": "/api/v1/tickets/2/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "resource_uri": "/api/v1/tickets/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"},
+                       "objects": [
+                          {"title": "Erro no pacote xxx",
+                           "finished_at": null,
+                           "author": "Aberlado Barbosa",
+                           "articlepkg_id": %s,
+                           "comments": [],
+                           "is_open": true,
+                           "started_at": "2013-10-09 16:44:29.865787",
+                           "id": %s,
+                           "resource_uri": "/api/v1/tickets/%s/"},
+                          {"title": "Erro no pacote xxx",
+                           "finished_at": null,
+                           "author": "Aberlado Barbosa",
+                           "articlepkg_id": %s,
+                           "comments": [],
+                           "is_open": true,
+                           "started_at": "2013-10-09 16:44:29.865787",
+                           "id": %s,
+                           "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg1_id, ticket1_id, ticket1_id,
+                             articlepkg2_id, ticket2_id, ticket2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets_with_param_offset_and_limit(self):
         res = self.testapp.get('/api/v1/tickets/?offset=4&limit=78')
@@ -434,24 +507,100 @@ class TicketFunctionalAPITest(unittest.TestCase):
         self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 78, "offset": "4"}, "objects": []}'))
 
     def test_GET_to_tickets_with_param_low_limit(self):
-        res = self.testapp.get('/api/v1/tickets/?limit=2')
+        ticket0_id = self._loaded_fixtures[0].id
+        articlepkg0_id = self._loaded_fixtures[0].articlepkg.id
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": "/api/v1/tickets/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "resource_uri": "/api/v1/tickets/1/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "resource_uri": "/api/v1/tickets/2/"}]}'))
+        ticket1_id = self._loaded_fixtures[1].id
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        res = self.testapp.get('/api/v1/tickets/?limit=2')
+        expected = '''{"meta": {"previous": null, "next": "/api/v1/tickets/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0},
+                       "objects": [
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"},
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg0_id, ticket0_id, ticket0_id,
+                             articlepkg1_id, ticket1_id, ticket1_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets_with_param_low_offset_and_limit(self):
+        ticket1_id = self._loaded_fixtures[1].id
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        ticket2_id = self._loaded_fixtures[2].id
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/tickets/?limit=2&offset=1')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": "/api/v1/tickets/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "resource_uri": "/api/v1/tickets/2/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "resource_uri": "/api/v1/tickets/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": "/api/v1/tickets/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"},
+                       "objects": [
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"},
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg1_id, ticket1_id, ticket1_id,
+                             articlepkg2_id, ticket2_id, ticket2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets_with_param_low_limit_and_offset(self):
+        ticket2_id = self._loaded_fixtures[2].id
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/tickets/?limit=1&offset=2')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": "/api/v1/tickets/?limit=1&offset=1", "next": "/api/v1/tickets/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "resource_uri": "/api/v1/tickets/3/"}]}'))
+        expected = '''{"meta": {"previous": "/api/v1/tickets/?limit=1&offset=1", "next": "/api/v1/tickets/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"},
+                       "objects": [
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg2_id, ticket2_id, ticket2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_POST_to_create_ticket_without_message(self):
+        articlepkg_id = self._loaded_fixtures[0].articlepkg.id
+        models.ScopedSession.flush()  # avoid integrity errors
+
         res = self.testapp.post('/api/v1/tickets/',
                 {
-                 'articlepkg_id': 1,
+                 'articlepkg_id': articlepkg_id,
                  'title': 'Article about xxx',
                  'ticket_author': 'Aberlado Barbosa',
                 })
@@ -459,9 +608,12 @@ class TicketFunctionalAPITest(unittest.TestCase):
         self.assertEqual(res.status_code, 201)
 
     def test_POST_to_create_ticket_with_message(self):
+        articlepkg_id = self._loaded_fixtures[0].articlepkg.id
+        models.ScopedSession.flush()  # avoid integrity errors
+
         res = self.testapp.post('/api/v1/tickets/',
                 {
-                 'articlepkg_id': 1,
+                 'articlepkg_id': articlepkg_id,
                  'title': 'Article about xxx',
                  'ticket_author': 'Aberlado Barbosa',
                  'message': 'Error on validation....'

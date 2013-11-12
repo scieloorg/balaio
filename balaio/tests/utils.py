@@ -15,6 +15,7 @@ def db_bootstrap():
     :returns: an instance of engine.
     """
     engine = create_engine('postgresql+psycopg2://postgres:@localhost/app_balaio', echo=False)
+    models.Base.metadata.drop_all(engine)
     models.init_database(engine)
 
     # patch the module function
