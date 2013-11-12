@@ -175,11 +175,11 @@ class ArticlePkgTests(mocker.MockerTestCase):
 
         pkg_analyzer = doubles.PackageAnalyzerStub()
         pkg_analyzer.criteria = {'article_title': 'foo', 'journal_eissn':'1234-1234', 'journal_pissn':'1234-4321'}
-    
+
         mock_session.query(ArticlePkg)
         self.mocker.result(mock_session)
 
-        mock_session.filter_by(**pkg_analyzer.criteria)
+        mock_session.filter_by(article_title='foo')
         self.mocker.result(mock_session)
 
         mock_session.one()

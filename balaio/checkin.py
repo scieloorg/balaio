@@ -282,9 +282,13 @@ def get_attempt(package):
 
         except IntegrityError as e:
             transaction.abort()
-            logger.error('The package already exists. Aborting.')
+            logger.error('The package has no integrity. Aborting.')
             logger.debug('---> Traceback: %s' % e)
-            raise excepts.DuplicatedPackage('The package %s already exists. Aborting.' % package)
+
+            if 'violates not-null constraint' in e.message:
+                raise ValueError('An integrity error was cast as ValueError.')
+            else:
+                raise excepts.DuplicatedPackage('The package %s already exists.' % package)
 
         except Exception as e:
             transaction.abort()

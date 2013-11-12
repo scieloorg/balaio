@@ -20,27 +20,30 @@ class SetupPipeTests(mocker.MockerTestCase):
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
+        _db_session = kwargs.get('db_session', SessionStub)
 
         vpipe = validator.SetupPipe(scieloapi=_scieloapi,
                                     notifier=_notifier,
                                     sapi_tools=_sapi_tools,
                                     pkg_analyzer=_pkg_analyzer,
-                                    issn_validator=_issn_validator)
+                                    issn_validator=_issn_validator,
+                                    Session=_db_session)
         vpipe.feed(data)
         return vpipe
 
     def test_transform_returns_right_datastructure(self):
         """
         The right datastructure is a tuple in the form:
-        (<models.Attempt>, <checkin.PackageAnalyzer>, <dict>)
+        (<models.Attempt>, <checkin.PackageAnalyzer>, <dict>, Session)
         """
         data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
 
         scieloapi = ScieloAPIClientStub()
-        scieloapi.issues.filter = lambda print_issn=None, eletronic_issn=None, volume=None, number=None, suppl_volume=None, suppl_number=None, limit=None: [{}]
+        scieloapi.issues.filter = lambda print_issn=None, eletronic_issn=None, \
+            volume=None, number=None, suppl_volume=None, suppl_number=None, limit=None: [{}]
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi)
-        vpipe._notifier = lambda args: NotifierStub()
+        vpipe._notifier = lambda a, b: NotifierStub()
         result = vpipe.transform(AttemptStub())
 
         self.assertIsInstance(result, tuple)
@@ -48,7 +51,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         self.assertIsInstance(result[1], PackageAnalyzerStub)
         # index 2 is the return data from scieloapi.journals.filter
         # so, testing its type actualy means nothing.
-        self.assertEqual(len(result), 3)
+        self.assertEqual(len(result), 4)
 
     def test_fetch_journal_data_with_valid_criteria(self):
         """
@@ -161,7 +164,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         vpipe._issn_validator = mock_issn_validator
         #vpipe._fetch_journal_data = mock_fetch_journal_data
         vpipe._fetch_journal_and_issue_data = mock_fetch_journal_and_issue_data
-        vpipe._notifier = lambda args: NotifierStub()
+        vpipe._notifier = lambda a, b: NotifierStub()
 
         result = vpipe.transform(stub_attempt)
 
@@ -1121,7 +1124,7 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
     def _makeOne(self, data, **kwargs):
         from balaio import utils
         _notifier = kwargs.get('_notifier', lambda: NotifierStub)
-        
+
         vpipe = validator.ArticleMetaPubDateValidationPipe(_notifier)
         vpipe.feed(data)
         return vpipe

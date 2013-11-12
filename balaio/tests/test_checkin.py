@@ -7,8 +7,8 @@ import mocker
 import unittest
 import transaction
 
-from balaio import checkin, models, excepts
-from balaio import utils
+from balaio import checkin, models, excepts, utils
+from .utils import db_bootstrap
 
 
 class SPSMixinTests(mocker.MockerTestCase):
@@ -472,15 +472,8 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
 class CheckinTests(unittest.TestCase):
 
     def setUp(self):
-        from sqlalchemy import create_engine
-        self.engine = create_engine('sqlite:///:memory:', echo=False)
-        models.Base.metadata.create_all(self.engine)
-
-        models.create_engine_from_config = lambda config: self.engine
-
-        Session = models.Session
-        Session.configure(bind=self.engine)
-        self.session = Session()
+        self.engine = db_bootstrap()
+        self.session = models.Session()
 
     def tearDown(self):
         models.Base.metadata.drop_all(self.engine)
@@ -540,13 +533,12 @@ class CheckinTests(unittest.TestCase):
         pkg = self._make_test_archive([('texto.txt', b'bla bla')])
         self.assertRaises(ValueError, checkin.get_attempt, pkg.name)
 
-    def test_get_attempt_invalid_package_missing_issn(self):
+    def test_get_attempt_invalid_package_missing_issn_and_article_title(self):
         """
-        Package is invalid because there is no ISSN
+        Package is invalid because there is no ISSN and article_title
         """
         pkg = self._make_test_archive([('texto.xml', b'<root/>')])
-        attempt = checkin.get_attempt(pkg.name)
-        self.assertIsInstance(attempt, models.Attempt)
+        self.assertRaises(ValueError, lambda: checkin.get_attempt(pkg.name))
 
     def test_get_attempt_inexisting_package(self):
         """
