@@ -10,3 +10,4 @@ transaction
 zope.sqlalchemy
 psycopg2
 lxml
+factory_boy
