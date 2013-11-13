@@ -7,7 +7,7 @@ def db_bootstrap():
     """
     Prepares the database to run tests.
 
-    It binds a sqlalchemy engine, creates all db schema,
+    It binds a sqlalchemy engine, recreates all db schema,
     patches `models.create_engine_from_config`, configures
     `models.Session` and `models.ScopedSession` globally
     and returns the engine.
