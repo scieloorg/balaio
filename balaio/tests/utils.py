@@ -1,6 +1,10 @@
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 
 from balaio import models
+
+
+DB_NAME = 'app_balaio_tests'
 
 
 def db_bootstrap():
@@ -14,8 +18,11 @@ def db_bootstrap():
 
     :returns: an instance of engine.
     """
-    engine = create_engine('postgresql+psycopg2://postgres:@localhost/app_balaio_tests', echo=False)
-    models.Base.metadata.drop_all(engine)
+    engine = create_engine('postgresql+psycopg2://postgres:@localhost/%s' % DB_NAME, echo=False)
+    try:
+        models.Base.metadata.drop_all(engine)
+    except OperationalError as e:
+        exit('You DB is not properly configured. Make sure the db `%s` exists. Traceback: %s' % (DB_NAME, e))
     models.init_database(engine)
 
     # patch the module function
