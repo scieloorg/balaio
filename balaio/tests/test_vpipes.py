@@ -11,7 +11,7 @@ class ValidationPipeTests(mocker.MockerTestCase):
     def _makeOne(self, data, **kwargs):
         from balaio import vpipes
         _notifier = kwargs.get('_notifier', lambda args: NotifierStub)
-        
+
         vpipe = vpipes.ValidationPipe(notifier=_notifier)
         vpipe.feed(data)
         return vpipe
@@ -32,7 +32,7 @@ class ValidationPipeTests(mocker.MockerTestCase):
         vpipes.ValidationPipe._notifier = NotifierStub()
         mock_self = self.mocker.mock(vpipes.ValidationPipe)
 
-        item = [AttemptStub(), ArticlePkgStub(), {}]
+        item = [AttemptStub(), ArticlePkgStub(), {}, SessionStub()]
 
         mock_self.validate(item)
         self.mocker.result([models.Status.ok, 'foo'])
@@ -40,9 +40,7 @@ class ValidationPipeTests(mocker.MockerTestCase):
         mock_self._stage_
         self.mocker.result('bar')
 
-        #mock_self._notifier.validation_event(mocker.ANY)
-        # self.mocker.result(None)
-        mock_self._notifier(item[0])
+        mock_self._notifier(item[0], item[3])
         self.mocker.result(NotifierStub())
 
         self.mocker.replay()

@@ -4,14 +4,16 @@ import threading
 import Queue
 import logging
 import sys
-
 import zipfile
+
 import pyinotify
+import transaction
 
 import utils
 import checkin
 import models
 import excepts
+import notifier
 
 
 logger = logging.getLogger('balaio.monitor')
@@ -25,6 +27,12 @@ class Monitor(object):
     def __init__(self, workers=None):
         self.job_queue = Queue.Queue()
         self.total_workers = workers if workers else 1
+
+        self.config = utils.Configuration.from_env()
+        self.CheckinNotifier = notifier.checkin_notifier_factory(self.config)
+        self.Session = models.Session
+        self.Session.configure(bind=models.create_engine_from_config(self.config))
+
 
         self.running_workers = []
         for w in range(self.total_workers):
@@ -58,6 +66,23 @@ class Monitor(object):
                 utils.send_message(sys.stdout, attempt, utils.make_digest)
                 logging.debug('Message sent for %s: %s, %s' % (filepath,
                     repr(attempt), repr(utils.make_digest)))
+
+                # Create a notification to keep track of the checkin process
+                session = self.Session()
+                checkin_notifier = self.CheckinNotifier(attempt, session)
+                checkin_notifier.start()
+
+                if attempt.is_valid:
+                    notification_msg = 'Attempt ready to be validated'
+                    notification_status = models.Status.ok
+                else:
+                    notification_msg = 'Attempt cannot be validated'
+                    notification_status = models.Status.error
+
+                checkin_notifier.tell(notification_msg, notification_status, 'Checkin')
+                checkin_notifier.end()
+
+                transaction.commit()
 
     def trigger_event(self, filepath):
         self.job_queue.put(filepath)

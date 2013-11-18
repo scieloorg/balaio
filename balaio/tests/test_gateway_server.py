@@ -10,22 +10,22 @@ from sqlalchemy import create_engine
 from webtest import TestApp
 import transaction
 
-from balaio import models
-from balaio import gateway_server
-from balaio.tests.doubles import *
-from balaio.gateway_server import main
+from balaio import models, gateway_server
+from .doubles import *
+from .utils import db_bootstrap
+from . import modelfactories
 
 
 sys.path.append(os.path.dirname(__file__) + '/../')
+global_engine = None
 
 
-def _init_test_DB():
-
-    engine = create_engine('sqlite://')
-    models.Base.metadata.create_all(engine)
-
-    models.ScopedSession.configure(bind=engine)
-
+def setUpModule():
+    """
+    Initialize the database.
+    """
+    global global_engine
+    global_engine = db_bootstrap()
 
 def _load_fixtures(obj_list):
 
@@ -36,15 +36,12 @@ def _load_fixtures(obj_list):
 class FunctionalAPITest(unittest.TestCase):
 
     def setUp(self):
-        self.session = models.ScopedSession
         self.config = testing.setUp()
-        engine = create_engine('sqlite://')
-
-        app = main(ConfigStub(), engine)
+        app = gateway_server.main(ConfigStub(), global_engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
-        self.session.remove()
+        models.ScopedSession.remove()
         testing.tearDown()
 
     def test_root(self):
@@ -58,138 +55,453 @@ class FunctionalAPITest(unittest.TestCase):
 class AttemptFunctionalAPITest(unittest.TestCase):
 
     def setUp(self):
-        _init_test_DB()
-        _load_fixtures(self._makeList())
-
-        self.session = models.ScopedSession
+        self._loaded_fixtures = [self._makeOne() for i in range(3)]
         self.config = testing.setUp()
-        engine = create_engine('sqlite://')
 
-        app = main(ConfigStub(), engine)
+        app = gateway_server.main(ConfigStub(), global_engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
-        self.session.remove()
+        transaction.abort()
+        models.ScopedSession.remove()
         testing.tearDown()
 
-    def _makeOne(self, id=1):
+    def _makeOne(self):
         import datetime
-
-        attempt = models.Attempt(id=id,
-                    package_checksum='20132df0as89dds73as936' + str(id),
-                    started_at=datetime.datetime(2013, 10, 9, 16, 44, 29, 865787),
-                    finished_at=None,
-                    collection_uri='http://www.scielo.br',
-                    articlepkg_id=1,
-                    filepath='/tmp/watch/xxx.zip',
-                    is_valid=True)
-
+        attempt = modelfactories.AttemptFactory.create()
         attempt.started_at = datetime.datetime(2013, 10, 9, 16, 44, 29, 865787)
-
         return attempt
-
-    def _makeList(self):
-        return [self._makeOne(), self._makeOne(2), self._makeOne(3)]
 
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/attempts/', status=200)
 
     def test_GET_to_one_attempt(self):
-        res = self.testapp.get('/api/v1/attempts/1/')
+        attempt_id = self._loaded_fixtures[0].id
+        attempt_checksum = self._loaded_fixtures[0].package_checksum
+        articlepkg_id = self._loaded_fixtures[0].articlepkg.id
 
-        self.assertEqual(json.loads(res.body), json.loads('{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "package_checksum": "20132df0as89dds73as9361", "resource_uri": "/api/v1/attempts/1/"}'))
+        res = self.testapp.get('/api/v1/attempts/%s/' % attempt_id)
+
+        expected = '''{"collection_uri": "",
+                       "filepath": "/tmp/watch/xxx.zip",
+                       "finished_at": null,
+                       "articlepkg_id": %s,
+                       "is_valid": true,
+                       "started_at": "2013-10-09 16:44:29.865787",
+                       "id": %s,
+                       "package_checksum": "%s",
+                       "resource_uri": "/api/v1/attempts/%s/"}''' % (articlepkg_id, attempt_id, attempt_checksum, attempt_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_attempts(self):
+        attempt0_id = self._loaded_fixtures[0].id
+        attempt0_checksum = self._loaded_fixtures[0].package_checksum
+        articlepkg0_id = self._loaded_fixtures[0].articlepkg.id
+
+        attempt1_id = self._loaded_fixtures[1].id
+        attempt1_checksum = self._loaded_fixtures[1].package_checksum
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        attempt2_id = self._loaded_fixtures[2].id
+        attempt2_checksum = self._loaded_fixtures[2].package_checksum
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/attempts/')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": 0}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "package_checksum": "20132df0as89dds73as9361", "resource_uri": "/api/v1/attempts/1/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "package_checksum": "20132df0as89dds73as9362", "resource_uri": "/api/v1/attempts/2/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "package_checksum": "20132df0as89dds73as9363", "resource_uri": "/api/v1/attempts/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": 0},
+                       "objects": [
+                           {"collection_uri": "",
+                            "filepath": "/tmp/watch/xxx.zip",
+                            "finished_at": null,
+                            "articlepkg_id": %s,
+                            "is_valid": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "package_checksum": "%s",
+                            "resource_uri": "/api/v1/attempts/%s/"},
+                           {"collection_uri": "",
+                            "filepath": "/tmp/watch/xxx.zip",
+                            "finished_at": null,
+                            "articlepkg_id": %s,
+                            "is_valid": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "package_checksum": "%s",
+                            "resource_uri": "/api/v1/attempts/%s/"},
+                           {"collection_uri": "",
+                            "filepath": "/tmp/watch/xxx.zip",
+                            "finished_at": null,
+                            "articlepkg_id": %s,
+                            "is_valid": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "package_checksum": "%s",
+                            "resource_uri": "/api/v1/attempts/%s/"}
+                        ]
+                    }''' % (articlepkg0_id, attempt0_id, attempt0_checksum, attempt0_id,
+                            articlepkg1_id, attempt1_id, attempt1_checksum, attempt1_id,
+                            articlepkg2_id, attempt2_id, attempt2_checksum, attempt2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_attempts_with_param_limit(self):
+        attempt0_id = self._loaded_fixtures[0].id
+        attempt0_checksum = self._loaded_fixtures[0].package_checksum
+        articlepkg0_id = self._loaded_fixtures[0].articlepkg.id
+
+        attempt1_id = self._loaded_fixtures[1].id
+        attempt1_checksum = self._loaded_fixtures[1].package_checksum
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        attempt2_id = self._loaded_fixtures[2].id
+        attempt2_checksum = self._loaded_fixtures[2].package_checksum
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/attempts/?limit=45')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 45, "offset": 0}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "package_checksum": "20132df0as89dds73as9361", "resource_uri": "/api/v1/attempts/1/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "package_checksum": "20132df0as89dds73as9362", "resource_uri": "/api/v1/attempts/2/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "package_checksum": "20132df0as89dds73as9363", "resource_uri": "/api/v1/attempts/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 45, "offset": 0},
+                       "objects": [
+                           {"collection_uri": "",
+                            "filepath": "/tmp/watch/xxx.zip",
+                            "finished_at": null,
+                            "articlepkg_id": %s,
+                            "is_valid": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "package_checksum": "%s",
+                            "resource_uri": "/api/v1/attempts/%s/"},
+                           {"collection_uri": "",
+                            "filepath": "/tmp/watch/xxx.zip",
+                            "finished_at": null,
+                            "articlepkg_id": %s,
+                            "is_valid": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "package_checksum": "%s",
+                            "resource_uri": "/api/v1/attempts/%s/"},
+                           {"collection_uri": "",
+                            "filepath": "/tmp/watch/xxx.zip",
+                            "finished_at": null,
+                            "articlepkg_id": %s,
+                            "is_valid": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "package_checksum": "%s",
+                            "resource_uri": "/api/v1/attempts/%s/"}
+                    ]}'''% (articlepkg0_id, attempt0_id, attempt0_checksum, attempt0_id,
+                            articlepkg1_id, attempt1_id, attempt1_checksum, attempt1_id,
+                            articlepkg2_id, attempt2_id, attempt2_checksum, attempt2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_attempts_with_param_offset(self):
+        attempt1_id = self._loaded_fixtures[1].id
+        attempt1_checksum = self._loaded_fixtures[1].package_checksum
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        attempt2_id = self._loaded_fixtures[2].id
+        attempt2_checksum = self._loaded_fixtures[2].package_checksum
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/attempts/?offset=1')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "package_checksum": "20132df0as89dds73as9362", "resource_uri": "/api/v1/attempts/2/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "package_checksum": "20132df0as89dds73as9363", "resource_uri": "/api/v1/attempts/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"},
+                       "objects": [
+                         {"collection_uri": "",
+                          "filepath": "/tmp/watch/xxx.zip",
+                          "finished_at": null,
+                          "articlepkg_id": %s,
+                          "is_valid": true,
+                          "started_at": "2013-10-09 16:44:29.865787",
+                          "id": %s,
+                          "package_checksum": "%s",
+                          "resource_uri": "/api/v1/attempts/%s/"},
+                         {"collection_uri": "",
+                          "filepath": "/tmp/watch/xxx.zip",
+                          "finished_at": null,
+                          "articlepkg_id": %s,
+                          "is_valid": true,
+                          "started_at": "2013-10-09 16:44:29.865787",
+                          "id": %s,
+                          "package_checksum": "%s",
+                          "resource_uri": "/api/v1/attempts/%s/"}
+                        ]}''' % (articlepkg1_id, attempt1_id, attempt1_checksum, attempt1_id,
+                                 articlepkg2_id, attempt2_id, attempt2_checksum, attempt2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_attempts_with_param_offset_and_limit(self):
         res = self.testapp.get('/api/v1/attempts/?offset=4&limit=78')
+        expected = '{"meta": {"previous": null, "next": null, "total": 3, "limit": 78, "offset": "4"}, "objects": []}'
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 78, "offset": "4"}, "objects": []}'))
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_attempts_with_param_low_limit(self):
+        attempt0_id = self._loaded_fixtures[0].id
+        attempt0_checksum = self._loaded_fixtures[0].package_checksum
+        articlepkg0_id = self._loaded_fixtures[0].articlepkg.id
+
+        attempt1_id = self._loaded_fixtures[1].id
+        attempt1_checksum = self._loaded_fixtures[1].package_checksum
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
         res = self.testapp.get('/api/v1/attempts/?limit=2')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": "/api/v1/attempts/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "package_checksum": "20132df0as89dds73as9361", "resource_uri": "/api/v1/attempts/1/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "package_checksum": "20132df0as89dds73as9362", "resource_uri": "/api/v1/attempts/2/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": "/api/v1/attempts/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0},
+                       "objects": [
+                         {"collection_uri": "",
+                          "filepath": "/tmp/watch/xxx.zip",
+                          "finished_at": null,
+                          "articlepkg_id": %s,
+                          "is_valid": true,
+                          "started_at": "2013-10-09 16:44:29.865787",
+                          "id": %s,
+                          "package_checksum": "%s",
+                          "resource_uri": "/api/v1/attempts/%s/"},
+                         {"collection_uri": "",
+                          "filepath": "/tmp/watch/xxx.zip",
+                          "finished_at": null,
+                          "articlepkg_id": %s,
+                          "is_valid": true,
+                          "started_at": "2013-10-09 16:44:29.865787",
+                          "id": %s,
+                          "package_checksum": "%s",
+                          "resource_uri": "/api/v1/attempts/%s/"}
+                        ]}''' % (articlepkg0_id, attempt0_id, attempt0_checksum, attempt0_id,
+                                 articlepkg1_id, attempt1_id, attempt1_checksum, attempt1_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_attempts_with_param_low_offset_and_limit(self):
+        attempt1_id = self._loaded_fixtures[1].id
+        attempt1_checksum = self._loaded_fixtures[1].package_checksum
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        attempt2_id = self._loaded_fixtures[2].id
+        attempt2_checksum = self._loaded_fixtures[2].package_checksum
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/attempts/?limit=2&offset=1')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": "/api/v1/attempts/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "package_checksum": "20132df0as89dds73as9362", "resource_uri": "/api/v1/attempts/2/"}, {"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "package_checksum": "20132df0as89dds73as9363", "resource_uri": "/api/v1/attempts/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": "/api/v1/attempts/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"},
+                       "objects": [
+                           {"collection_uri": "",
+                            "filepath": "/tmp/watch/xxx.zip",
+                            "finished_at": null,
+                            "articlepkg_id": %s,
+                            "is_valid": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "package_checksum": "%s",
+                            "resource_uri": "/api/v1/attempts/%s/"},
+                           {"collection_uri": "",
+                            "filepath": "/tmp/watch/xxx.zip",
+                            "finished_at": null,
+                            "articlepkg_id": %s,
+                            "is_valid": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "package_checksum": "%s",
+                            "resource_uri": "/api/v1/attempts/%s/"}
+                         ]}'''% (articlepkg1_id, attempt1_id, attempt1_checksum, attempt1_id,
+                                 articlepkg2_id, attempt2_id, attempt2_checksum, attempt2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_attempts_with_param_low_limit_and_offset(self):
+        attempt2_id = self._loaded_fixtures[2].id
+        attempt2_checksum = self._loaded_fixtures[2].package_checksum
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/attempts/?limit=1&offset=2')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": "/api/v1/attempts/?limit=1&offset=1", "next": "/api/v1/attempts/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"}, "objects": [{"collection_uri": "http://www.scielo.br", "filepath": "/tmp/watch/xxx.zip", "finished_at": null, "articlepkg_id": 1, "is_valid": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "package_checksum": "20132df0as89dds73as9363", "resource_uri": "/api/v1/attempts/3/"}]}'))
+        expected = '''{"meta": {"previous": "/api/v1/attempts/?limit=1&offset=1", "next": "/api/v1/attempts/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"},
+                       "objects": [
+                           {"collection_uri": "",
+                            "filepath": "/tmp/watch/xxx.zip",
+                            "finished_at": null,
+                            "articlepkg_id": %s,
+                            "is_valid": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "package_checksum": "%s",
+                            "resource_uri": "/api/v1/attempts/%s/"}
+                         ]}''' % (articlepkg2_id, attempt2_id, attempt2_checksum, attempt2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
 
 class TicketFunctionalAPITest(unittest.TestCase):
 
     def setUp(self):
-        _init_test_DB()
-        _load_fixtures(self._makeList())
+        self._loaded_fixtures = [self._makeOne() for i in range(3)]
+        models.ScopedSession.flush()
 
-        self.session = models.ScopedSession
         self.config = testing.setUp()
-        engine = create_engine('sqlite://')
-
-        app = main(ConfigStub(), engine)
+        app = gateway_server.main(ConfigStub(), global_engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
-        self.session.remove()
         testing.tearDown()
+        self._clean_session()
 
-    def _makeOne(self, id=1):
+    def _clean_session(self):
+        transaction.abort()
+        models.ScopedSession.remove()
+
+    def _makeOne(self):
         import datetime
-        ticket = models.Ticket(id=id,
-                    started_at=datetime.datetime(2013, 10, 9, 16, 44, 29, 865787),
-                    finished_at=None,
-                    articlepkg_id=1,
-                    title="Erro no pacote xxx",
-                    author="Aberlado Barbosa")
-
+        ticket = modelfactories.TicketFactory.create()
         ticket.started_at = datetime.datetime(2013, 10, 9, 16, 44, 29, 865787)
-
         return ticket
-
-    def _makeList(self):
-        return [self._makeOne(), self._makeOne(2), self._makeOne(3)]
 
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/tickets/', status=200)
 
     def test_GET_to_one_ticket(self):
-        res = self.testapp.get('/api/v1/tickets/1/')
+        ticket1_id = self._loaded_fixtures[1].id
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
 
-        self.assertEqual(json.loads(res.body), json.loads('{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "resource_uri": "/api/v1/tickets/1/"}'))
+        res = self.testapp.get('/api/v1/tickets/%s/' % ticket1_id)
+        expected = '''{"title": "Erro no pacote xxx",
+                       "finished_at": null,
+                       "author": "Aberlado Barbosa",
+                       "articlepkg_id": %s,
+                       "comments": [],
+                       "is_open": true,
+                       "started_at": "2013-10-09 16:44:29.865787",
+                       "id": %s,
+                       "resource_uri": "/api/v1/tickets/%s/"}''' % (articlepkg1_id, ticket1_id, ticket1_id)
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets(self):
+        ticket0_id = self._loaded_fixtures[0].id
+        articlepkg0_id = self._loaded_fixtures[0].articlepkg.id
+
+        ticket1_id = self._loaded_fixtures[1].id
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        ticket2_id = self._loaded_fixtures[2].id
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/tickets/')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": 0}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "resource_uri": "/api/v1/tickets/1/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "resource_uri": "/api/v1/tickets/2/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "resource_uri": "/api/v1/tickets/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": 0},
+                       "objects": [
+                          {"title": "Erro no pacote xxx",
+                           "finished_at": null,
+                           "author": "Aberlado Barbosa",
+                           "articlepkg_id": %s,
+                           "comments": [],
+                           "is_open": true,
+                           "started_at": "2013-10-09 16:44:29.865787",
+                           "id": %s,
+                           "resource_uri": "/api/v1/tickets/%s/"},
+                          {"title": "Erro no pacote xxx",
+                           "finished_at": null,
+                           "author": "Aberlado Barbosa",
+                           "articlepkg_id": %s,
+                           "comments": [],
+                           "is_open": true,
+                           "started_at": "2013-10-09 16:44:29.865787",
+                           "id": %s,
+                           "resource_uri": "/api/v1/tickets/%s/"},
+                          {"title": "Erro no pacote xxx",
+                           "finished_at": null,
+                           "author": "Aberlado Barbosa",
+                           "articlepkg_id": %s,
+                           "comments": [],
+                           "is_open": true,
+                           "started_at": "2013-10-09 16:44:29.865787",
+                           "id": %s,
+                           "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg0_id, ticket0_id, ticket0_id,
+                             articlepkg1_id, ticket1_id, ticket1_id,
+                             articlepkg2_id, ticket2_id, ticket2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets_with_param_limit(self):
+        ticket0_id = self._loaded_fixtures[0].id
+        articlepkg0_id = self._loaded_fixtures[0].articlepkg.id
+
+        ticket1_id = self._loaded_fixtures[1].id
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        ticket2_id = self._loaded_fixtures[2].id
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/tickets/?limit=45')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 45, "offset": 0}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "resource_uri": "/api/v1/tickets/1/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "resource_uri": "/api/v1/tickets/2/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "resource_uri": "/api/v1/tickets/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 45, "offset": 0},
+                       "objects": [
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"},
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"},
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg0_id, ticket0_id, ticket0_id,
+                             articlepkg1_id, ticket1_id, ticket1_id,
+                             articlepkg2_id, ticket2_id, ticket2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets_with_param_offset(self):
+        ticket1_id = self._loaded_fixtures[1].id
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        ticket2_id = self._loaded_fixtures[2].id
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/tickets/?offset=1')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "resource_uri": "/api/v1/tickets/2/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "resource_uri": "/api/v1/tickets/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"},
+                       "objects": [
+                          {"title": "Erro no pacote xxx",
+                           "finished_at": null,
+                           "author": "Aberlado Barbosa",
+                           "articlepkg_id": %s,
+                           "comments": [],
+                           "is_open": true,
+                           "started_at": "2013-10-09 16:44:29.865787",
+                           "id": %s,
+                           "resource_uri": "/api/v1/tickets/%s/"},
+                          {"title": "Erro no pacote xxx",
+                           "finished_at": null,
+                           "author": "Aberlado Barbosa",
+                           "articlepkg_id": %s,
+                           "comments": [],
+                           "is_open": true,
+                           "started_at": "2013-10-09 16:44:29.865787",
+                           "id": %s,
+                           "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg1_id, ticket1_id, ticket1_id,
+                             articlepkg2_id, ticket2_id, ticket2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets_with_param_offset_and_limit(self):
         res = self.testapp.get('/api/v1/tickets/?offset=4&limit=78')
@@ -197,24 +509,99 @@ class TicketFunctionalAPITest(unittest.TestCase):
         self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 78, "offset": "4"}, "objects": []}'))
 
     def test_GET_to_tickets_with_param_low_limit(self):
-        res = self.testapp.get('/api/v1/tickets/?limit=2')
+        ticket0_id = self._loaded_fixtures[0].id
+        articlepkg0_id = self._loaded_fixtures[0].articlepkg.id
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": "/api/v1/tickets/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 1, "resource_uri": "/api/v1/tickets/1/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "resource_uri": "/api/v1/tickets/2/"}]}'))
+        ticket1_id = self._loaded_fixtures[1].id
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        res = self.testapp.get('/api/v1/tickets/?limit=2')
+        expected = '''{"meta": {"previous": null, "next": "/api/v1/tickets/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0},
+                       "objects": [
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"},
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg0_id, ticket0_id, ticket0_id,
+                             articlepkg1_id, ticket1_id, ticket1_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets_with_param_low_offset_and_limit(self):
+        ticket1_id = self._loaded_fixtures[1].id
+        articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
+
+        ticket2_id = self._loaded_fixtures[2].id
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/tickets/?limit=2&offset=1')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": "/api/v1/tickets/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 2, "resource_uri": "/api/v1/tickets/2/"}, {"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "resource_uri": "/api/v1/tickets/3/"}]}'))
+        expected = '''{"meta": {"previous": null, "next": "/api/v1/tickets/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"},
+                       "objects": [
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"},
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg1_id, ticket1_id, ticket1_id,
+                             articlepkg2_id, ticket2_id, ticket2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_tickets_with_param_low_limit_and_offset(self):
+        ticket2_id = self._loaded_fixtures[2].id
+        articlepkg2_id = self._loaded_fixtures[2].articlepkg.id
+
         res = self.testapp.get('/api/v1/tickets/?limit=1&offset=2')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": "/api/v1/tickets/?limit=1&offset=1", "next": "/api/v1/tickets/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"}, "objects": [{"title": "Erro no pacote xxx", "finished_at": null, "author": "Aberlado Barbosa", "articlepkg_id": 1, "comments": [], "is_open": true, "started_at": "2013-10-09 16:44:29.865787", "id": 3, "resource_uri": "/api/v1/tickets/3/"}]}'))
+        expected = '''{"meta": {"previous": "/api/v1/tickets/?limit=1&offset=1", "next": "/api/v1/tickets/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"},
+                       "objects": [
+                           {"title": "Erro no pacote xxx",
+                            "finished_at": null,
+                            "author": "Aberlado Barbosa",
+                            "articlepkg_id": %s,
+                            "comments": [],
+                            "is_open": true,
+                            "started_at": "2013-10-09 16:44:29.865787",
+                            "id": %s,
+                            "resource_uri": "/api/v1/tickets/%s/"}
+                    ]}''' % (articlepkg2_id, ticket2_id, ticket2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_POST_to_create_ticket_without_message(self):
+        articlepkg_id = self._loaded_fixtures[0].articlepkg.id
+
         res = self.testapp.post('/api/v1/tickets/',
                 {
-                 'articlepkg_id': 1,
+                 'articlepkg_id': articlepkg_id,
                  'title': 'Article about xxx',
                  'ticket_author': 'Aberlado Barbosa',
                 })
@@ -222,9 +609,11 @@ class TicketFunctionalAPITest(unittest.TestCase):
         self.assertEqual(res.status_code, 201)
 
     def test_POST_to_create_ticket_with_message(self):
+        articlepkg_id = self._loaded_fixtures[0].articlepkg.id
+
         res = self.testapp.post('/api/v1/tickets/',
                 {
-                 'articlepkg_id': 1,
+                 'articlepkg_id': articlepkg_id,
                  'title': 'Article about xxx',
                  'ticket_author': 'Aberlado Barbosa',
                  'message': 'Error on validation....'
@@ -233,7 +622,8 @@ class TicketFunctionalAPITest(unittest.TestCase):
         self.assertEqual(res.status_code, 201)
 
     def test_POST_to_update_ticket_with_different_params(self):
-        res_post = self.testapp.post('/api/v1/tickets/3/',
+        ticket_id = self._loaded_fixtures[2].id
+        res_post = self.testapp.post('/api/v1/tickets/%s/' % ticket_id,
                 {
                  'message': 'Error on validation....',
                  'is_open': 1,
@@ -242,7 +632,7 @@ class TicketFunctionalAPITest(unittest.TestCase):
 
         self.assertEqual(res_post.status_code, 202)
 
-        res_get = self.testapp.get('/api/v1/tickets/3/')
+        res_get = self.testapp.get('/api/v1/tickets/%s/' % ticket_id)
 
         res_json = json.loads(res_get.body)
 
@@ -262,58 +652,192 @@ class TicketFunctionalAPITest(unittest.TestCase):
 class PackageFunctionalAPITest(unittest.TestCase):
 
     def setUp(self):
-        _init_test_DB()
-        _load_fixtures(self._makeList())
+        self._loaded_fixtures = [self._makeOne() for i in range(3)]
+        models.ScopedSession.flush()
 
-        self.session = models.ScopedSession
         self.config = testing.setUp()
-        engine = create_engine('sqlite://')
-
-        app = main(ConfigStub(), engine)
+        app = gateway_server.main(ConfigStub(), global_engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
-        self.session.remove()
+        transaction.abort()
+        models.ScopedSession.remove()
         testing.tearDown()
 
-    def _makeOne(self, id=1):
-        article = models.ArticlePkg(id=id,
-                    journal_title='Associa... Brasileira',
-                    article_title='Construction of a recombinant adenovirus...',
-                    journal_pissn='0100-879X',
-                    journal_eissn='0100-879X',
-                    issue_year=1995,
-                    issue_volume='67',
-                    issue_number='8',
-                    issue_suppl_volume=None,
-                    issue_suppl_number=None)
+    def _makeOne(self):
+        article = modelfactories.ArticlePkgFactory.create()
         return article
-
-    def _makeList(self):
-        return [self._makeOne(), self._makeOne(2), self._makeOne(3)]
 
     def test_GET_to_available_resource(self):
         self.testapp.get('/api/v1/packages/', status=200)
 
     def test_GET_to_one_package(self):
-        res = self.testapp.get('/api/v1/packages/1/')
+        articlepkg_id = self._loaded_fixtures[0].id
 
-        self.assertEqual(json.loads(res.body), json.loads('{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}'))
+        res = self.testapp.get('/api/v1/packages/%s/' % articlepkg_id)
+
+        expected = '''{"article_title": "Construction of a recombinant adenovirus...",
+                       "tickets": [],
+                       "issue_year": 1995,
+                       "journal_title": "Associa... Brasileira",
+                       "journal_pissn": "0100-879X",
+                       "journal_eissn": "0100-879X",
+                       "issue_suppl_number": null,
+                       "attempts": [],
+                       "issue_suppl_volume": null,
+                       "issue_volume": "67",
+                       "resource_uri": "/api/v1/packages/%s/",
+                       "id": %s,
+                       "issue_number": "8"}''' % (articlepkg_id, articlepkg_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_packages(self):
+        articlepkg0_id = self._loaded_fixtures[0].id
+        articlepkg1_id = self._loaded_fixtures[1].id
+        articlepkg2_id = self._loaded_fixtures[2].id
+
         res = self.testapp.get('/api/v1/packages/')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": 0}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/2/", "id": 2, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/3/", "id": 3, "issue_number": "8"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": 0},
+                       "objects": [
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"},
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"},
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"}
+                    ]}''' % (articlepkg0_id, articlepkg0_id,
+                             articlepkg1_id, articlepkg1_id,
+                             articlepkg2_id, articlepkg2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_packages_with_param_limit(self):
+        articlepkg0_id = self._loaded_fixtures[0].id
+        articlepkg1_id = self._loaded_fixtures[1].id
+        articlepkg2_id = self._loaded_fixtures[2].id
+
         res = self.testapp.get('/api/v1/packages/?limit=82')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 82, "offset": 0}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/2/", "id": 2, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/3/", "id": 3, "issue_number": "8"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 82, "offset": 0},
+                       "objects": [
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"},
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"},
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"}
+                    ]}''' % (articlepkg0_id, articlepkg0_id,
+                             articlepkg1_id, articlepkg1_id,
+                             articlepkg2_id, articlepkg2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_packages_with_param_offset(self):
+        articlepkg1_id = self._loaded_fixtures[1].id
+        articlepkg2_id = self._loaded_fixtures[2].id
+
         res = self.testapp.get('/api/v1/packages/?offset=1')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/2/", "id": 2, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/3/", "id": 3, "issue_number": "8"}]}'))
+        expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"},
+                       "objects": [
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"},
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"}
+                    ]}''' % (articlepkg1_id, articlepkg1_id,
+                             articlepkg2_id, articlepkg2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_packages_with_param_offset_and_limit(self):
         res = self.testapp.get('/api/v1/packages/?offset=4&limit=78')
@@ -321,19 +845,106 @@ class PackageFunctionalAPITest(unittest.TestCase):
         self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": null, "total": 3, "limit": 78, "offset": "4"}, "objects": []}'))
 
     def test_GET_to_packages_with_param_low_limit(self):
+        articlepkg0_id = self._loaded_fixtures[0].id
+        articlepkg1_id = self._loaded_fixtures[1].id
+
         res = self.testapp.get('/api/v1/packages/?limit=2')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": "/api/v1/packages/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/1/", "id": 1, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/2/", "id": 2, "issue_number": "8"}]}'))
+        expected = '''{"meta": {"previous": null, "next": "/api/v1/packages/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0},
+                       "objects": [
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"},
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"}
+                    ]}''' % (articlepkg0_id, articlepkg0_id,
+                             articlepkg1_id, articlepkg1_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_packages_with_param_low_offset_and_limit(self):
+        articlepkg1_id = self._loaded_fixtures[1].id
+        articlepkg2_id = self._loaded_fixtures[2].id
+
         res = self.testapp.get('/api/v1/packages/?limit=2&offset=1')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": null, "next": "/api/v1/packages/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/2/", "id": 2, "issue_number": "8"}, {"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/3/", "id": 3, "issue_number": "8"}]}'))
+        expected = '''{"meta": {"previous": null, "next": "/api/v1/packages/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"},
+                       "objects": [
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"},
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"}
+                    ]}''' % (articlepkg1_id, articlepkg1_id,
+                             articlepkg2_id, articlepkg2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_packages_with_param_low_limit_and_offset(self):
+        articlepkg2_id = self._loaded_fixtures[2].id
+
         res = self.testapp.get('/api/v1/packages/?limit=1&offset=2')
 
-        self.assertEqual(json.loads(res.body), json.loads('{"meta": {"previous": "/api/v1/packages/?limit=1&offset=1", "next": "/api/v1/packages/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"}, "objects": [{"article_title": "Construction of a recombinant adenovirus...", "tickets": [], "issue_year": 1995, "journal_title": "Associa... Brasileira", "journal_pissn": "0100-879X", "journal_eissn": "0100-879X", "issue_suppl_number": null, "attempts": [], "issue_suppl_volume": null, "issue_volume": "67", "resource_uri": "/api/v1/packages/3/", "id": 3, "issue_number": "8"}]}'))
+        expected = '''{"meta": {"previous": "/api/v1/packages/?limit=1&offset=1", "next": "/api/v1/packages/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"},
+                       "objects": [
+                           {"article_title": "Construction of a recombinant adenovirus...",
+                            "tickets": [],
+                            "issue_year": 1995,
+                            "journal_title": "Associa... Brasileira",
+                            "journal_pissn": "0100-879X",
+                            "journal_eissn": "0100-879X",
+                            "issue_suppl_number": null,
+                            "attempts": [],
+                            "issue_suppl_volume": null,
+                            "issue_volume": "67",
+                            "resource_uri": "/api/v1/packages/%s/",
+                            "id": %s,
+                            "issue_number": "8"}
+                    ]}''' % (articlepkg2_id, articlepkg2_id)
+
+        self.assertEqual(json.loads(res.body), json.loads(expected))
 
 
 class AttemptsAPITest(unittest.TestCase):

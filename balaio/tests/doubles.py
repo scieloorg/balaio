@@ -292,3 +292,6 @@ class DummyRoutesMapper:
     def get_route(self, route_name):
         return self.route
 
+
+class SessionStub(object):
+    pass

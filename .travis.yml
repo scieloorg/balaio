@@ -5,3 +5,5 @@ install:
   - pip install -r requirements.txt --use-mirrors
 script:
   - python setup.py nosetests
+before_script:
+  - psql -c 'create database app_balaio_tests;' -U postgres
