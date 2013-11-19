@@ -291,7 +291,7 @@ class Checkpoint(Base):
     attempt = relationship('Attempt',
                            backref=backref('checkpoint'))
 
-    def __init__(self, point):
+    def __init__(self, point, **kwargs):
         """
         Represents a time delta of a checkpoint execution.
 
@@ -301,6 +301,8 @@ class Checkpoint(Base):
 
         :param point: a known checkpoint, represented as :class:`Point`.
         """
+        super(Checkpoint, self).__init__(**kwargs)
+
         if point not in Point:
             raise ValueError('point must be %s' % ','.join(str(pt) for pt in Point))
 

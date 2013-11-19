@@ -43,7 +43,6 @@ class Notifier(object):
         if self.checkpoint not in self.db_session:
             self.db_session.add(self.checkpoint)
 
-
     def tell(self, message, status, label=None):
         """
         Adds the notice on checkpoint, and sends a notification to
@@ -57,13 +56,34 @@ class Notifier(object):
 
     def start(self):
         self.checkpoint.start()
+        if self.checkpoint.point is models.Point.checkin:
+            self._send_checkin_notification()
 
     def end(self):
         self.checkpoint.end()
 
+    def _send_checkin_notification(self):
+        """
+        Sends a checkin notification to SciELO Manager.
+        Only checkpoints of type checkin can send call this method.
+        """
+        assert self.checkpoint.point is models.Point.checkin, 'only `checkin` checkpoint can send this notification.'
+
+        data = {
+                 'articlepkg_ref': self.checkpoint.attempt.articlepkg.id,
+                 'attempt_ref': self.checkpoint.attempt.id,
+                 'article_title': self.checkpoint.attempt.articlepkg.article_title,
+                 'journal_title': self.checkpoint.attempt.articlepkg.journal_title,
+                 'issue_label': '##',
+                 'package_name': self.checkpoint.attempt.filepath,
+                 'uploaded_at': self.checkpoint.attempt.started_at,
+               }
+        self.scieloapi.checkins.post(data)
+
 
 def create_checkpoint_notifier(config, point):
-    scieloapi_client = None  # scieloapi.Client('some.user', 'some.key')
+    scieloapi_client = scieloapi.Client(config.get('manager', 'api_username'),
+                                        config.get('manager', 'api_key'))
 
     def _checkin_notifier_factory(attempt, session):
         try:

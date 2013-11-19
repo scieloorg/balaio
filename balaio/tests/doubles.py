@@ -294,4 +294,12 @@ class DummyRoutesMapper:
 
 
 class SessionStub(object):
-    pass
+    def __init__(self):
+        self._items = []
+
+    def __contains__(self, item):
+        return item in self._items
+
+    def add(self, item):
+        self._items.append(item)
+
