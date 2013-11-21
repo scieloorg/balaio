@@ -5,6 +5,7 @@ import Queue
 import logging
 import sys
 import zipfile
+import socket
 
 import pyinotify
 import transaction
@@ -32,6 +33,16 @@ class Monitor(object):
         self.CheckinNotifier = notifier.checkin_notifier_factory(self.config)
         self.Session = models.Session
         self.Session.configure(bind=models.create_engine_from_config(self.config))
+
+        while True:
+            try:
+                self.stream = utils.get_writable_socket()
+                break
+            except socket.error as e:
+                logger.info('Trying to estabilish connection with module `validator`. Please wait...')
+                time.sleep(0.5)
+            finally:
+                logger.info('Connection estabilished with `validator`.')
 
 
         self.running_workers = []
@@ -63,7 +74,7 @@ class Monitor(object):
                     logger.debug('The file is gone before marked as duplicated. %s' % e)
 
             else:
-                utils.send_message(sys.stdout, attempt, utils.make_digest)
+                utils.send_message(self.stream, attempt, utils.make_digest)
                 logging.debug('Message sent for %s: %s, %s' % (filepath,
                     repr(attempt), repr(utils.make_digest)))
 

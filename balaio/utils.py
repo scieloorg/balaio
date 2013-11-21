@@ -7,6 +7,7 @@ import requests
 import threading
 import logging, logging.handlers
 from ConfigParser import SafeConfigParser
+import socket, _socket
 
 try:
     import cPickle as pickle
@@ -133,6 +134,9 @@ def send_message(stream, message, digest, pickle_dep=pickle):
     ``digest`` is a callable that generates a hash in order to avoid
     data transmission corruptions.
     """
+    if hasattr(stream, 'getsockname'):
+        stream = FileLikeSocket(stream)
+
     if not callable(digest):
         raise ValueError('digest must be callable')
 
@@ -161,10 +165,17 @@ def recv_messages(stream, digest, pickle_dep=pickle):
     ``digest`` is a callable that generates a hash in order to avoid
     data transmission corruptions.
     """
+
     if not callable(digest):
         raise ValueError('digest must be callable')
 
     while True:
+
+        # check if it is a socket, and adapt it
+        if hasattr(stream, 'getsockname'):
+            stream, _ = stream.accept()
+            stream = FileLikeSocket(stream)
+
         header = stream.readline()
 
         if not header:
@@ -370,3 +381,53 @@ def issue_identification(volume, number, supplement):
     volume_suppl, number_suppl = supplement_type(volume, number, suppl)
 
     return (volume, volume_suppl, number, number_suppl)
+
+
+class FileLikeSocket(object):
+    def __init__(self, sock):
+        self.sock = sock
+
+    def readline(self):
+        chars = []
+        while True:
+            char = self.sock.recv(1)
+            if char != '\n':
+                chars.append(char)
+            else:
+                break
+
+        return ''.join(chars)
+
+    def read(self, len):
+        return self.sock.recv(len)
+
+    def write(self, bytes):
+        self.sock.sendall(bytes)
+
+    def flush(self):
+        pass
+
+
+SOCK_PATH = 'balaio.sock'
+def remove_unix_socket():
+    # Make sure the socket does not already exist
+    try:
+        os.unlink(SOCK_PATH)
+    except OSError:
+        if os.path.exists(SOCK_PATH):
+            raise
+
+def get_readable_socket(fresh=True):
+    if fresh:
+        remove_unix_socket()
+
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.bind(SOCK_PATH)
+    sock.listen(1)
+    return sock
+
+def get_writable_socket():
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.connect(SOCK_PATH)
+    return sock
+
