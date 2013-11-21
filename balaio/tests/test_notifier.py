@@ -72,3 +72,41 @@ class NotifierTests(mocker.MockerTestCase):
         notifier = self._makeOne(checkpoint=checkpoint, scieloapi=mock_scieloapi)
         self.assertIsNone(notifier._send_checkin_notification())
 
+    def test_send_notice_notification_on_checkin_points(self):
+        checkpoint = modelfactories.CheckpointFactory(point=models.Point.checkin)
+        notifier = self._makeOne(checkpoint=checkpoint)
+
+        mock_notifier = self.mocker.patch(notifier)
+
+        mock_notifier._send_checkin_notification()
+        self.mocker.result(None)
+
+        mock_notifier._send_notice_notification('foo', models.Status.ok, label='bar')
+        self.mocker.result(None)
+
+        self.mocker.replay()
+
+        notifier.start()
+        notifier.tell('foo', models.Status.ok, label='bar')
+
+    def test_send_notice_notification_payload(self):
+        checkpoint = modelfactories.CheckpointFactory(point=models.Point.validation)
+        checkpoint.attempt.checkin_uri = '/api/v1/checkins/1/'
+
+        expected = {
+            'checkin': '/api/v1/checkins/1/',
+            'stage': 'bar',
+            'checkpoint': 'validation',
+            'message': 'foo',
+            'status': 'ok',
+        }
+
+        mock_scieloapi = self.mocker.mock()
+        mock_scieloapi.notices.post(expected)
+        self.mocker.result(None)
+        self.mocker.replay()
+
+        notifier = self._makeOne(checkpoint=checkpoint, scieloapi=mock_scieloapi)
+        self.assertIsNone(notifier._send_notice_notification(
+            'foo', models.Status.ok, label='bar'))
+

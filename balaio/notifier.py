@@ -53,6 +53,7 @@ class Notifier(object):
         :param label: (optional)
         """
         self.checkpoint.tell(message, status, label=label)
+        self._send_notice_notification(message, status, label=label)
 
     def start(self):
         self.checkpoint.start()
@@ -65,7 +66,11 @@ class Notifier(object):
     def _send_checkin_notification(self):
         """
         Sends a checkin notification to SciELO Manager.
+
         Only checkpoints of type checkin can send call this method.
+        As a side effect of creating a new checkin on SciELO Manager,
+        the attribute `self._checkin_resource_uri` is bound to its
+        resource uri.
         """
         assert self.checkpoint.point is models.Point.checkin, 'only `checkin` checkpoint can send this notification.'
 
@@ -78,7 +83,20 @@ class Notifier(object):
                  'package_name': self.checkpoint.attempt.filepath,
                  'uploaded_at': self.checkpoint.attempt.started_at,
                }
-        self.scieloapi.checkins.post(data)
+        resource_uri = '/api/v1/checkins/%s/'
+        resource_id = self.scieloapi.checkins.post(data)
+        self.checkpoint.attempt.checkin_uri = resource_uri % resource_id
+
+    def _send_notice_notification(self, message, status, label=None):
+
+        data = {
+            'checkin': self.checkpoint.attempt.checkin_uri,
+            'stage': label,
+            'checkpoint': self.checkpoint.point.name,
+            'message': message,
+            'status': status.name,
+        }
+        self.scieloapi.notices.post(data)
 
 
 def create_checkpoint_notifier(config, point):

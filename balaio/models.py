@@ -62,6 +62,7 @@ class Attempt(Base):
     collection_uri = Column(String)
     filepath = Column(String)
     is_valid = Column(Boolean)
+    checkin_uri = Column(String(length=64), nullable=True)
 
     articlepkg = relationship('ArticlePkg',
                               backref=backref('attempts',
