@@ -6,6 +6,7 @@ import subprocess
 import atexit
 import time
 import logging
+import socket
 
 import utils
 import models
@@ -70,8 +71,10 @@ def main():
     """
     Set up the processes and run indefinitely.
     """
-    monitor = run_monitor()
-    validator = run_validator(stdin=monitor.stdout)
+    sock_one, sock_two = socket.socketpair()
+
+    monitor = run_monitor(stdout=sock_one)
+    validator = run_validator(stdin=sock_two)
 
     procs = [monitor, validator]
 

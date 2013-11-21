@@ -7,6 +7,7 @@ import requests
 import threading
 import logging, logging.handlers
 from ConfigParser import SafeConfigParser
+import socket, _socket
 
 try:
     import cPickle as pickle
@@ -133,6 +134,9 @@ def send_message(stream, message, digest, pickle_dep=pickle):
     ``digest`` is a callable that generates a hash in order to avoid
     data transmission corruptions.
     """
+    if isinstance(stream, _socket.socket):
+        stream = FileLikeSocket(stream)
+
     if not callable(digest):
         raise ValueError('digest must be callable')
 
@@ -161,6 +165,9 @@ def recv_messages(stream, digest, pickle_dep=pickle):
     ``digest`` is a callable that generates a hash in order to avoid
     data transmission corruptions.
     """
+    if isinstance(stream, _socket.socket):
+        stream = FileLikeSocket(stream)
+
     if not callable(digest):
         raise ValueError('digest must be callable')
 
@@ -370,3 +377,29 @@ def issue_identification(volume, number, supplement):
     volume_suppl, number_suppl = supplement_type(volume, number, suppl)
 
     return (volume, volume_suppl, number, number_suppl)
+
+
+class FileLikeSocket(object):
+    def __init__(self, sock):
+        self.sock = sock
+
+    def readline(self):
+        chars = []
+        while True:
+            char = self.sock.recv(1)
+            if char != '\n':
+                chars.append(char)
+            else:
+                break
+
+        return ''.join(chars)
+
+    def read(self, len):
+        return self.sock.recv(len)
+
+    def write(self, bytes):
+        self.sock.sendall(bytes)
+
+    def flush(self):
+        pass
+
