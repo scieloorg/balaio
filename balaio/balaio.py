@@ -71,10 +71,8 @@ def main():
     """
     Set up the processes and run indefinitely.
     """
-    sock_one, sock_two = socket.socketpair()
-
-    monitor = run_monitor(stdout=sock_one)
-    validator = run_validator(stdin=sock_two)
+    monitor = run_monitor()
+    validator = run_validator()
 
     procs = [monitor, validator]
 

@@ -134,7 +134,7 @@ def send_message(stream, message, digest, pickle_dep=pickle):
     ``digest`` is a callable that generates a hash in order to avoid
     data transmission corruptions.
     """
-    if isinstance(stream, _socket.socket):
+    if hasattr(stream, 'getsockname'):
         stream = FileLikeSocket(stream)
 
     if not callable(digest):
@@ -165,13 +165,17 @@ def recv_messages(stream, digest, pickle_dep=pickle):
     ``digest`` is a callable that generates a hash in order to avoid
     data transmission corruptions.
     """
-    if isinstance(stream, _socket.socket):
-        stream = FileLikeSocket(stream)
 
     if not callable(digest):
         raise ValueError('digest must be callable')
 
     while True:
+
+        # check if it is a socket, and adapt it
+        if hasattr(stream, 'getsockname'):
+            stream, _ = stream.accept()
+            stream = FileLikeSocket(stream)
+
         header = stream.readline()
 
         if not header:
@@ -402,4 +406,28 @@ class FileLikeSocket(object):
 
     def flush(self):
         pass
+
+
+SOCK_PATH = 'balaio.sock'
+def remove_unix_socket():
+    # Make sure the socket does not already exist
+    try:
+        os.unlink(SOCK_PATH)
+    except OSError:
+        if os.path.exists(SOCK_PATH):
+            raise
+
+def get_readable_socket(fresh=True):
+    if fresh:
+        remove_unix_socket()
+
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.bind(SOCK_PATH)
+    sock.listen(1)
+    return sock
+
+def get_writable_socket():
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.connect(SOCK_PATH)
+    return sock
 
