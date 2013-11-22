@@ -7,11 +7,15 @@ import requests
 import threading
 import logging, logging.handlers
 from ConfigParser import SafeConfigParser
+import socket
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+from requests.exceptions import Timeout, RequestException
+
 
 logger = logging.getLogger('balaio.utils')
 stdout_lock = threading.Lock()
@@ -133,6 +137,9 @@ def send_message(stream, message, digest, pickle_dep=pickle):
     ``digest`` is a callable that generates a hash in order to avoid
     data transmission corruptions.
     """
+    if hasattr(stream, 'getsockname'):
+        stream = FileLikeSocket(stream)
+
     if not callable(digest):
         raise ValueError('digest must be callable')
 
@@ -161,10 +168,22 @@ def recv_messages(stream, digest, pickle_dep=pickle):
     ``digest`` is a callable that generates a hash in order to avoid
     data transmission corruptions.
     """
+
     if not callable(digest):
         raise ValueError('digest must be callable')
 
     while True:
+
+        # check if it is a socket, and adapt it
+        if hasattr(stream, 'getsockname'):
+            try:
+                stream, _ = stream.accept()
+            except socket.error:
+                logger.debug('%s stream is not listening. Trying to read it anyway.' % stream)
+
+            stream = FileLikeSocket(stream)
+
+        # handling stream as a file-object
         header = stream.readline()
 
         if not header:
@@ -232,7 +251,6 @@ def is_valid_doi(doi):
     Validate URL: ``http://dx.doi.org/<DOI>``
     Raise any connection and timeout error
     """
-    from requests.exceptions import Timeout, RequestException
 
     try:
         req = requests.get('http://dx.doi.org/%s' % doi, timeout=2.5)
@@ -370,3 +388,75 @@ def issue_identification(volume, number, supplement):
     volume_suppl, number_suppl = supplement_type(volume, number, suppl)
 
     return (volume, volume_suppl, number, number_suppl)
+
+
+class FileLikeSocket(object):
+    """
+    Adapts socket instances to file-like objects.
+
+    This adapters are used on :func:`send_message` and
+    :func:`recv_messages`.
+    """
+    def __init__(self, sock):
+        self.sock = sock
+
+    def readline(self):
+        chars = []
+        while True:
+            char = self.sock.recv(1)
+            if char != '\n':
+                chars.append(char)
+            else:
+                break
+
+        return ''.join(chars)
+
+    def read(self, len):
+        return self.sock.recv(len)
+
+    def write(self, bytes):
+        self.sock.sendall(bytes)
+
+    def flush(self):
+        pass
+
+
+def remove_unix_socket(sock_path):
+    """
+    Cleanup existing sockets on filesystem.
+    """
+    try:
+        os.unlink(sock_path)
+    except OSError:
+        if os.path.exists(sock_path):
+            raise
+
+
+def get_readable_socket(sock_path, fresh=True):
+    """
+    Gets a new socket server.
+
+    :param sock_path: filepath to the unix socket.
+    :param fresh: if the socket file should be removed before the new is created.
+    :returns: instance of socket.
+    """
+    if fresh:
+        remove_unix_socket(sock_path)
+
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.bind(sock_path)
+    sock.listen(1)
+    return sock
+
+
+def get_writable_socket(sock_path):
+    """
+    Gets a new socket client.
+
+    :param sock_path: filepath to the unix socket.
+    :returns: instance of socket.
+    """
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.connect(sock_path)
+    return sock
+
