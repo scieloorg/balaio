@@ -36,12 +36,12 @@ class Monitor(object):
 
         while True:
             try:
-                self.stream = utils.get_writable_socket()
+                self.stream = utils.get_writable_socket(config.get('app', 'socket'))
                 break
             except socket.error as e:
                 logger.info('Trying to estabilish connection with module `validator`. Please wait...')
                 time.sleep(0.5)
-            finally:
+            else:
                 logger.info('Connection estabilished with `validator`.')
 
 

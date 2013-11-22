@@ -7,12 +7,15 @@ import requests
 import threading
 import logging, logging.handlers
 from ConfigParser import SafeConfigParser
-import socket, _socket
+import socket
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+from requests.exceptions import Timeout, RequestException
+
 
 logger = logging.getLogger('balaio.utils')
 stdout_lock = threading.Lock()
@@ -173,9 +176,14 @@ def recv_messages(stream, digest, pickle_dep=pickle):
 
         # check if it is a socket, and adapt it
         if hasattr(stream, 'getsockname'):
-            stream, _ = stream.accept()
+            try:
+                stream, _ = stream.accept()
+            except socket.error:
+                logger.debug('%s stream is not listening. Trying to read it anyway.' % stream)
+
             stream = FileLikeSocket(stream)
 
+        # handling stream as a file-object
         header = stream.readline()
 
         if not header:
@@ -243,7 +251,6 @@ def is_valid_doi(doi):
     Validate URL: ``http://dx.doi.org/<DOI>``
     Raise any connection and timeout error
     """
-    from requests.exceptions import Timeout, RequestException
 
     try:
         req = requests.get('http://dx.doi.org/%s' % doi, timeout=2.5)
@@ -384,6 +391,12 @@ def issue_identification(volume, number, supplement):
 
 
 class FileLikeSocket(object):
+    """
+    Adapts socket instances to file-like objects.
+
+    This adapters are used on :func:`send_message` and
+    :func:`recv_messages`.
+    """
     def __init__(self, sock):
         self.sock = sock
 
@@ -408,26 +421,42 @@ class FileLikeSocket(object):
         pass
 
 
-SOCK_PATH = 'balaio.sock'
-def remove_unix_socket():
-    # Make sure the socket does not already exist
+def remove_unix_socket(sock_path):
+    """
+    Cleanup existing sockets on filesystem.
+    """
     try:
-        os.unlink(SOCK_PATH)
+        os.unlink(sock_path)
     except OSError:
-        if os.path.exists(SOCK_PATH):
+        if os.path.exists(sock_path):
             raise
 
-def get_readable_socket(fresh=True):
+
+def get_readable_socket(sock_path, fresh=True):
+    """
+    Gets a new socket server.
+
+    :param sock_path: filepath to the unix socket.
+    :param fresh: if the socket file should be removed before the new is created.
+    :returns: instance of socket.
+    """
     if fresh:
-        remove_unix_socket()
+        remove_unix_socket(sock_path)
 
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.bind(SOCK_PATH)
+    sock.bind(sock_path)
     sock.listen(1)
     return sock
 
-def get_writable_socket():
+
+def get_writable_socket(sock_path):
+    """
+    Gets a new socket client.
+
+    :param sock_path: filepath to the unix socket.
+    :returns: instance of socket.
+    """
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.connect(SOCK_PATH)
+    sock.connect(sock_path)
     return sock
 
