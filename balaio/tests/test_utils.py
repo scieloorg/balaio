@@ -142,6 +142,10 @@ class MakeDigestFunctionTests(mocker.MockerTestCase):
 
 
 class SendMessageFunctionTests(mocker.MockerTestCase):
+    sock_path = 'balaio-tests.sock'
+
+    def tearDown(self):
+        utils.remove_unix_socket(self.sock_path)
 
     def test_stream_is_flushed(self):
         mock_stream = self.mocker.mock()
@@ -203,9 +207,63 @@ class SendMessageFunctionTests(mocker.MockerTestCase):
             len('serialized-data-byte-string')
         )
 
+    def test_socket_stream_support(self):
+        import socket
+        sock_one, sock_two = socket.socketpair()
+
+        mock_digest = self.mocker.mock()
+        mock_pickle = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
+
+        mock_pickle.HIGHEST_PROTOCOL
+        self.mocker.result('foo')
+
+        mock_pickle.dumps(mocker.ANY, mocker.ANY)
+        self.mocker.result('serialized-data-byte-string')
+
+        self.mocker.replay()
+
+        utils.send_message(sock_one, 'message', mock_digest, pickle_dep=mock_pickle)
+        self.assertEqual(
+            int(sock_two.recv(1024).split('\n')[0].split(' ')[1]),
+            len('serialized-data-byte-string')
+        )
+
+    def test_unix_socket_stream_support(self):
+        import socket
+
+        mock_digest = self.mocker.mock()
+        mock_pickle = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
+
+        mock_pickle.HIGHEST_PROTOCOL
+        self.mocker.result('foo')
+
+        mock_pickle.dumps(mocker.ANY, mocker.ANY)
+        self.mocker.result('serialized-data-byte-string')
+
+        self.mocker.replay()
+
+        out_stream = utils.get_readable_socket(self.sock_path)
+        out_stream.setblocking(1)  # avoid blocking
+        in_stream = utils.get_writable_socket(self.sock_path)
+
+        utils.send_message(in_stream, 'message', mock_digest, pickle_dep=mock_pickle)
+        conn, _ = out_stream.accept()
+        self.assertEqual(
+            int(conn.recv(1024).split('\n')[0].split(' ')[1]),
+            len('serialized-data-byte-string')
+        )
+
 
 class RecvMessageFunctionTests(mocker.MockerTestCase):
     serialized_message = 'e5fcf4f4606df6368779205e29b22e5851355de3 14\n\x80\x02U\x07messageq\x01.'
+    sock_path = 'balaio-tests.sock'
+
+    def tearDown(self):
+        utils.remove_unix_socket(self.sock_path)
 
     def test_valid_data_is_deserialized(self):
         mock_digest = self.mocker.mock()
@@ -234,6 +292,33 @@ class RecvMessageFunctionTests(mocker.MockerTestCase):
         messages = utils.recv_messages(in_stream, utils.make_digest)
 
         self.assertRaises(StopIteration, lambda: messages.next())
+
+    def test_socket_stream_support(self):
+        import socket
+        mock_digest = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
+        self.mocker.replay()
+
+        in_stream, out_stream = socket.socketpair()
+        in_stream.sendall(self.serialized_message)
+        messages = utils.recv_messages(out_stream, mock_digest)
+
+        self.assertEqual(messages.next(), 'message')
+
+    def test_unix_socket_stream_support(self):
+        mock_digest = self.mocker.mock()
+        mock_digest(mocker.ANY)
+        self.mocker.result('e5fcf4f4606df6368779205e29b22e5851355de3')
+        self.mocker.replay()
+
+        out_stream = utils.get_readable_socket(self.sock_path)
+        in_stream = utils.get_writable_socket(self.sock_path)
+
+        in_stream.sendall(self.serialized_message)
+        messages = utils.recv_messages(out_stream, mock_digest)
+
+        self.assertEqual(messages.next(), 'message')
 
 
 class ISSNFunctionsTest(unittest.TestCase):
@@ -418,3 +503,49 @@ class IssueIdentificationTests(unittest.TestCase):
 
     def test_issue_identification_number_and_suppl(self):
         self.assertEqual(utils.issue_identification(None, '4', '2'), (None, None, '4', '2'))
+
+
+class RemoveUnixSocketTests(unittest.TestCase):
+
+    def test_remove_socket(self):
+        import tempfile, os
+        tmp_file = tempfile.NamedTemporaryFile(delete=False)
+        file_name = tmp_file.name
+        tmp_file.close()
+
+        utils.remove_unix_socket(file_name)
+
+        self.assertFalse(os.path.exists(file_name))
+
+
+class FileLikeSocketAdaperTests(unittest.TestCase):
+
+    def setUp(self):
+        import socket
+        self.sock_one, self.sock_two = socket.socketpair()
+
+    def test_readline(self):
+        # without the last \n it will block forever
+        self.sock_one.sendall('only fluids, the doc said.\ngimme a beer!\n')
+
+        fsock = utils.FileLikeSocket(self.sock_two)
+        self.assertEquals(fsock.readline(), 'only fluids, the doc said.')
+        self.assertEquals(fsock.readline(), 'gimme a beer!')
+
+    def test_read(self):
+        self.sock_one.sendall('only fluids, the doc said.\ngimme a beer!\n')
+
+        fsock = utils.FileLikeSocket(self.sock_two)
+        self.assertEquals(fsock.read(4), 'only')
+
+    def test_write(self):
+        fsock = utils.FileLikeSocket(self.sock_one)
+        fsock.write('foo')
+
+        self.assertEquals(self.sock_two.recv(1024), 'foo')
+
+    def flush(self):
+        # does nothing, but must be present
+        fsock = utils.FileLikeSocket(self.sock_one)
+        self.assertTrue(hasattr(fsock, 'flush'))
+

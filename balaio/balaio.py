@@ -6,6 +6,7 @@ import subprocess
 import atexit
 import time
 import logging
+import socket
 
 import utils
 import models
@@ -71,7 +72,7 @@ def main():
     Set up the processes and run indefinitely.
     """
     monitor = run_monitor()
-    validator = run_validator(stdin=monitor.stdout)
+    validator = run_validator()
 
     procs = [monitor, validator]
 

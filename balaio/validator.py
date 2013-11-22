@@ -589,8 +589,9 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
 if __name__ == '__main__':
     utils.setup_logging()
     config = utils.Configuration.from_env()
+    input_stream = utils.get_readable_socket(config.get('app', 'socket'))
 
-    messages = utils.recv_messages(sys.stdin, utils.make_digest)
+    messages = utils.recv_messages(input_stream, utils.make_digest)
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
                                  config.get('manager', 'api_key'))
 
@@ -620,3 +621,4 @@ if __name__ == '__main__':
         results = [msg for msg in ppl.run(messages)]
     except KeyboardInterrupt:
         sys.exit(0)
+
