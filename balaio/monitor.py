@@ -142,8 +142,8 @@ if __name__ == '__main__':
 
     wm.add_watch(config.get('monitor', 'watch_path').split(','),
                  mask,
-                 rec=config.get('monitor', 'recursive'),
-                 auto_add=config.get('monitor', 'recursive'))
+                 rec=config.getboolean('monitor', 'recursive'),
+                 auto_add=config.getboolean('monitor', 'recursive'))
 
     logger.info('Watching %s' % config.get('monitor', 'watch_path'))
 

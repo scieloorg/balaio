@@ -1,9 +1,14 @@
 # coding: utf-8
+import logging
+
 import scieloapi
 import sqlalchemy
 import transaction
 
 import models
+
+
+logger = logging.getLogger(__name__)
 
 
 def auto_commit_or_rollback(method):
@@ -29,15 +34,18 @@ class Notifier(object):
     Acts as a broker to notifications.
     """
 
-    def __init__(self, checkpoint, scieloapi_client, db_session):
+    def __init__(self, checkpoint, scieloapi_client,
+                 db_session, manager_integration=True):
         """
         :param checkpoint: is a :class:`models.Checkpoint` instance.
         :param scieloapi_client: instance of `scieloapi.Client`.
-        :param db_session:
+        :param db_session: sqlalchemy session.
+        :param manager_integration: (optional) if notifications must be sent to manager.
         """
         self.scieloapi = scieloapi_client
         self.checkpoint = checkpoint
         self.db_session = db_session
+        self.manager_integration = manager_integration
 
         # make sure checkpoint is held by the session
         if self.checkpoint not in self.db_session:
@@ -72,6 +80,10 @@ class Notifier(object):
         the attribute `self._checkin_resource_uri` is bound to its
         resource uri.
         """
+        if not self.manager_integration:
+            logger.warning('Notifications to Manager are disabled. Skipping.')
+            return None
+
         assert self.checkpoint.point is models.Point.checkin, 'only `checkin` checkpoint can send this notification.'
 
         data = {
@@ -88,6 +100,12 @@ class Notifier(object):
         self.checkpoint.attempt.checkin_uri = resource_uri % resource_id
 
     def _send_notice_notification(self, message, status, label=None):
+        """
+        Sends notices notifications bound to the active checkin, to SciELO Manager.
+        """
+        if not self.manager_integration:
+            logger.warning('Notifications to Manager are disabled. Skipping.')
+            return None
 
         data = {
             'checkin': self.checkpoint.attempt.checkin_uri,
@@ -117,7 +135,8 @@ def create_checkpoint_notifier(config, point):
 
         return Notifier(checkpoint,
                         scieloapi_client,
-                        session)
+                        session,
+                        manager_integration=config.getboolean('manager', 'notifications'))
 
     return _checkin_notifier_factory
 
