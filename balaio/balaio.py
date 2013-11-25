@@ -21,27 +21,21 @@ def setenv(configfile):
     logger.debug('Environment variable BALAIO_SETTINGS_FILE set to %s' % abspath)
 
 
-def run_monitor(stdin=subprocess.PIPE, stdout=subprocess.PIPE):
+def run_monitor():
     """
     Runs the monitor process and returns a bound subprocess.Popen
     instance.
     """
     cmd = ['python', 'monitor.py']
-    monitor = subprocess.Popen(' '.join(cmd),
-                               shell=True,
-                               stdin=stdin,
-                               stdout=stdout)
+    monitor = subprocess.Popen(' '.join(cmd), shell=True)
 
     logger.debug('Monitor started under process %s' % monitor.pid)
     return monitor
 
 
-def run_validator(stdin=subprocess.PIPE, stdout=subprocess.PIPE):
+def run_validator():
     cmd = ['python', 'validator.py']
-    validator = subprocess.Popen(' '.join(cmd),
-                                 shell=True,
-                                 stdin=stdin,
-                                 stdout=stdout)
+    validator = subprocess.Popen(' '.join(cmd), shell=True)
 
     logger.debug('Validator started under process %s' % validator.pid)
     return validator
