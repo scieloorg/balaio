@@ -41,3 +41,12 @@ class TicketFactory(SQLAlchemyModelFactory):
     author = 'Aberlado Barbosa'
     articlepkg = factory.SubFactory(ArticlePkgFactory)
 
+
+class CheckpointFactory(SQLAlchemyModelFactory):
+    FACTORY_FOR = models.Checkpoint
+    FACTORY_SESSION = models.ScopedSession
+
+    id = factory.Sequence(lambda n: n)
+    point = models.Point.checkin
+    attempt = factory.SubFactory(AttemptFactory)
+
