@@ -55,13 +55,13 @@ class NotifierTests(mocker.MockerTestCase):
         checkpoint = modelfactories.CheckpointFactory(point=models.Point.checkin)
 
         expected = {
-             'articlepkg_ref': checkpoint.attempt.articlepkg.id,
-             'attempt_ref': checkpoint.attempt.id,
+             'articlepkg_ref': str(checkpoint.attempt.articlepkg.id),
+             'attempt_ref': str(checkpoint.attempt.id),
              'article_title': checkpoint.attempt.articlepkg.article_title,
              'journal_title': checkpoint.attempt.articlepkg.journal_title,
              'issue_label': '##',
              'package_name': checkpoint.attempt.filepath,
-             'uploaded_at': checkpoint.attempt.started_at,
+             'uploaded_at': str(checkpoint.attempt.started_at),
         }
 
         mock_scieloapi = self.mocker.mock()

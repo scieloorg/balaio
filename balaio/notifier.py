@@ -87,13 +87,13 @@ class Notifier(object):
         assert self.checkpoint.point is models.Point.checkin, 'only `checkin` checkpoint can send this notification.'
 
         data = {
-                 'articlepkg_ref': self.checkpoint.attempt.articlepkg.id,
-                 'attempt_ref': self.checkpoint.attempt.id,
+                 'articlepkg_ref': str(self.checkpoint.attempt.articlepkg.id),
+                 'attempt_ref': str(self.checkpoint.attempt.id),
                  'article_title': self.checkpoint.attempt.articlepkg.article_title,
                  'journal_title': self.checkpoint.attempt.articlepkg.journal_title,
                  'issue_label': '##',
                  'package_name': self.checkpoint.attempt.filepath,
-                 'uploaded_at': self.checkpoint.attempt.started_at,
+                 'uploaded_at': str(self.checkpoint.attempt.started_at),
                }
         resource_uri = '/api/v1/checkins/%s/'
         resource_id = self.scieloapi.checkins.post(data)
