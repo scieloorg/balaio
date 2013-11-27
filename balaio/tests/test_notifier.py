@@ -61,6 +61,8 @@ class NotifierTests(mocker.MockerTestCase):
              'journal_title': checkpoint.attempt.articlepkg.journal_title,
              'issue_label': '##',
              'package_name': checkpoint.attempt.filepath,
+             'pissn': checkpoint.attempt.articlepkg.journal_pissn,
+             'eissn': checkpoint.attempt.articlepkg.journal_eissn,
              'uploaded_at': str(checkpoint.attempt.started_at),
         }
 
