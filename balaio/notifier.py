@@ -93,6 +93,8 @@ class Notifier(object):
                  'journal_title': self.checkpoint.attempt.articlepkg.journal_title,
                  'issue_label': '##',
                  'package_name': self.checkpoint.attempt.filepath,
+                 'pissn': self.checkpoint.attempt.articlepkg.journal_pissn,
+                 'eissn': self.checkpoint.attempt.articlepkg.journal_eissn,
                  'uploaded_at': str(self.checkpoint.attempt.started_at),
                }
         resource_uri = '/api/v1/checkins/%s/'

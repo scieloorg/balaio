@@ -1,9 +1,9 @@
 #coding: utf-8
 import os
+import time
 import threading
 import Queue
 import logging
-import sys
 import zipfile
 import socket
 
@@ -38,7 +38,7 @@ class Monitor(object):
             try:
                 self.stream = utils.get_writable_socket(config.get('app', 'socket'))
                 break
-            except socket.error as e:
+            except socket.error:
                 logger.info('Trying to estabilish connection with module `validator`. Please wait...')
                 time.sleep(0.5)
             else:
@@ -74,6 +74,7 @@ class Monitor(object):
                     logger.debug('The file is gone before marked as duplicated. %s' % e)
 
             else:
+                #Send stream
                 utils.send_message(self.stream, attempt, utils.make_digest)
                 logging.debug('Message sent for %s: %s, %s' % (filepath,
                     repr(attempt), repr(utils.make_digest)))
