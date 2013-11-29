@@ -4,6 +4,7 @@ sqlalchemy
 enum34
 git+git://github.com/gustavofonseca/plumber.git#egg=plumber
 git+git://github.com/scieloorg/scieloapi.py.git#egg=scieloapi
+git+git://github.com/scieloorg/packtools.git#egg=packtools
 pyramid
 WebTest
 transaction
