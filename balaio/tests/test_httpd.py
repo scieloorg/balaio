@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from webtest import TestApp
 import transaction
 
-from balaio import models, gateway_server
+from balaio import models, httpd
 from .doubles import *
 from .utils import db_bootstrap
 from . import modelfactories
@@ -37,7 +37,7 @@ class FunctionalAPITest(unittest.TestCase):
 
     def setUp(self):
         self.config = testing.setUp()
-        app = gateway_server.main(ConfigStub(), global_engine)
+        app = httpd.main(ConfigStub(), global_engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
@@ -58,7 +58,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
         self._loaded_fixtures = [self._makeOne() for i in range(3)]
         self.config = testing.setUp()
 
-        app = gateway_server.main(ConfigStub(), global_engine)
+        app = httpd.main(ConfigStub(), global_engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
@@ -339,7 +339,7 @@ class TicketFunctionalAPITest(unittest.TestCase):
         models.ScopedSession.flush()
 
         self.config = testing.setUp()
-        app = gateway_server.main(ConfigStub(), global_engine)
+        app = httpd.main(ConfigStub(), global_engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
@@ -656,7 +656,7 @@ class PackageFunctionalAPITest(unittest.TestCase):
         models.ScopedSession.flush()
 
         self.config = testing.setUp()
-        app = gateway_server.main(ConfigStub(), global_engine)
+        app = httpd.main(ConfigStub(), global_engine)
         self.testapp = TestApp(app)
 
     def tearDown(self):
@@ -967,7 +967,7 @@ class AttemptsAPITest(unittest.TestCase):
         self.req.db.query.found = True
 
         self.assertEqual(
-            gateway_server.attempts(self.req),
+            httpd.attempts(self.req),
             expected)
 
     def test_view_attempts_no_result(self):
@@ -981,7 +981,7 @@ class AttemptsAPITest(unittest.TestCase):
         self.req.db.query.found = False
 
         self.assertEqual(
-            gateway_server.attempts(self.req),
+            httpd.attempts(self.req),
             expected)
 
     def test_view_attempt(self):
@@ -990,7 +990,7 @@ class AttemptsAPITest(unittest.TestCase):
         self.req.db.query.found = True
         self.req.matchdict = {'id': 1}
         self.assertEqual(
-            gateway_server.attempt(self.req),
+            httpd.attempt(self.req),
             expected)
 
     def test_view_attempt_no_result(self):
@@ -998,7 +998,7 @@ class AttemptsAPITest(unittest.TestCase):
         self.req.matchdict = {'id': 1}
 
         self.assertIsInstance(
-            gateway_server.attempt(self.req),
+            httpd.attempt(self.req),
             HTTPNotFound
         )
 
@@ -1023,7 +1023,7 @@ class ArticlePkgAPITest(unittest.TestCase):
         self.req.db.query.found = True
 
         self.assertEqual(
-            gateway_server.list_package(self.req),
+            httpd.list_package(self.req),
             expected)
 
     def test_view_packages_no_result(self):
@@ -1036,7 +1036,7 @@ class ArticlePkgAPITest(unittest.TestCase):
         self.req.db.query.found = False
 
         self.assertEqual(
-            gateway_server.list_package(self.req),
+            httpd.list_package(self.req),
             expected)
 
     def test_view_package(self):
@@ -1046,7 +1046,7 @@ class ArticlePkgAPITest(unittest.TestCase):
         self.req.matchdict = {'id': 1}
 
         self.assertEqual(
-            gateway_server.package(self.req),
+            httpd.package(self.req),
             expected)
 
     def test_view_package_no_result(self):
@@ -1054,7 +1054,7 @@ class ArticlePkgAPITest(unittest.TestCase):
         self.req.matchdict = {'id': 1}
 
         self.assertIsInstance(
-            gateway_server.attempt(self.req),
+            httpd.attempt(self.req),
             HTTPNotFound
         )
 
@@ -1081,7 +1081,7 @@ class TicketAPITest(unittest.TestCase):
         self.req.db.query.found = True
 
         self.assertEqual(
-            gateway_server.list_ticket(self.req),
+            httpd.list_ticket(self.req),
             expected)
 
     def test_view_tickets_no_result(self):
@@ -1095,7 +1095,7 @@ class TicketAPITest(unittest.TestCase):
         self.req.db.query.found = False
 
         self.assertEqual(
-            gateway_server.list_ticket(self.req),
+            httpd.list_ticket(self.req),
             expected)
 
     def test_view_ticket(self):
@@ -1105,7 +1105,7 @@ class TicketAPITest(unittest.TestCase):
         self.req.matchdict = {'id': 1}
 
         self.assertEqual(
-            gateway_server.ticket(self.req),
+            httpd.ticket(self.req),
             expected)
 
     def test_view_ticket_no_result(self):
@@ -1113,7 +1113,7 @@ class TicketAPITest(unittest.TestCase):
         self.req.matchdict = {'id': 1}
 
         self.assertIsInstance(
-            gateway_server.ticket(self.req),
+            httpd.ticket(self.req),
             HTTPNotFound
         )
 
@@ -1125,7 +1125,7 @@ class TicketAPITest(unittest.TestCase):
         }
 
         self.req.db.commit = lambda: None
-        result = gateway_server.new_ticket(self.req)
+        result = httpd.new_ticket(self.req)
 
         self.assertIsInstance(
             result,
@@ -1145,7 +1145,7 @@ class TicketAPITest(unittest.TestCase):
             'is_open': False,
         }
         self.assertIsInstance(
-            gateway_server.update_ticket(self.req),
+            httpd.update_ticket(self.req),
             HTTPNotFound
         )
 
@@ -1158,7 +1158,7 @@ class TicketAPITest(unittest.TestCase):
         }
 
         self.req.db.commit = lambda: None
-        result = gateway_server.new_ticket(self.req)
+        result = httpd.new_ticket(self.req)
 
         self.assertIsInstance(
             result,
@@ -1178,7 +1178,7 @@ class TicketAPITest(unittest.TestCase):
             'is_open': False,
         }
         self.assertIsInstance(
-            gateway_server.update_ticket(self.req),
+            httpd.update_ticket(self.req),
             HTTPAccepted
         )
 
@@ -1196,7 +1196,7 @@ class TicketAPITest(unittest.TestCase):
             'is_open': True,
         }
         self.assertIsInstance(
-            gateway_server.update_ticket(self.req),
+            httpd.update_ticket(self.req),
             HTTPAccepted
         )
 
@@ -1219,5 +1219,5 @@ class QueryFiltersTest(unittest.TestCase):
 
         self.assertEqual(
             expected,
-            gateway_server.get_query_filters(model, request_params)
+            httpd.get_query_filters(model, request_params)
         )
