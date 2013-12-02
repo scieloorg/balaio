@@ -18,7 +18,7 @@ def db_bootstrap():
 
     :returns: an instance of engine.
     """
-    engine = create_engine('postgresql+psycopg2://postgres:123@localhost:5432/%s' % DB_NAME, echo=False)
+    engine = create_engine('postgresql+psycopg2://postgres:@localhost/%s' % DB_NAME, echo=False)
     try:
         models.Base.metadata.drop_all(engine)
     except OperationalError as e:
