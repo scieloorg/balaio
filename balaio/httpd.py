@@ -204,7 +204,7 @@ def main(config, engine):
     config_pyrmd.registry.Session.configure(bind=engine)
     config_pyrmd.add_subscriber(bind_db, NewRequest)
 
-    config_pyrmd.scan('gateway_server')
+    config_pyrmd.scan('httpd')
 
     return config_pyrmd.make_wsgi_app()
 
