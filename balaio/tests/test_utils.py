@@ -504,6 +504,12 @@ class IssueIdentificationTests(unittest.TestCase):
     def test_issue_identification_number_and_suppl(self):
         self.assertEqual(utils.issue_identification(None, '4', '2'), (None, None, '4', '2'))
 
+    def test_number_is_lstripped(self):
+        self.assertEqual(utils.issue_identification(None, '01', None), (None, None, '1', None))
+
+    def test_volume_is_lstripped(self):
+        self.assertEqual(utils.issue_identification('031', None, None), ('31', None, None, None))
+
 
 class RemoveUnixSocketTests(unittest.TestCase):
 
