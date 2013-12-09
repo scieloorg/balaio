@@ -380,12 +380,17 @@ def issue_identification(volume, number, supplement):
     """
     # issue can have contents like: 2, Suppl, 3 Suppl 1, Suppl 1
     number, label, suppl = parse_issue_tag(number)
-    if label:
-        if not suppl:
-            suppl = label
+    if label and not suppl:
+        suppl = label
     else:
         suppl = supplement
     volume_suppl, number_suppl = supplement_type(volume, number, suppl)
+
+    if volume is not None:
+        volume = volume.lstrip('0')
+
+    if number is not None:
+        number = number.lstrip('0')
 
     return (volume, volume_suppl, number, number_suppl)
 
