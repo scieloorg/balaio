@@ -593,7 +593,8 @@ if __name__ == '__main__':
 
     messages = utils.recv_messages(input_stream, utils.make_digest)
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
-                                 config.get('manager', 'api_key'))
+                                 config.get('manager', 'api_key'),
+                                 api_uri=config.get('manager', 'api_url'))
 
     notifier_dep = notifier.validation_notifier_factory(config)
 

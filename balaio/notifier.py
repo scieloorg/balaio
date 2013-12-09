@@ -121,7 +121,8 @@ class Notifier(object):
 
 def create_checkpoint_notifier(config, point):
     scieloapi_client = scieloapi.Client(config.get('manager', 'api_username'),
-                                        config.get('manager', 'api_key'))
+                                        config.get('manager', 'api_key'),
+                                        api_uri=config.get('manager', 'api_url'))
 
     def _checkin_notifier_factory(attempt, session):
         try:
