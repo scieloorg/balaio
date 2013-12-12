@@ -1,0 +1,9 @@
+# coding:utf-8
+
+deploy_envs = {
+    'homolog': {
+        'installation_path': '/var/www/balaio_scielo_org',
+        'venv_path': '/var/www/balaio_scielo_org/balaio-env',
+    },
+}
+
