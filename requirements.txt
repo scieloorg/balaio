@@ -2,8 +2,8 @@ requests
 pyinotify
 sqlalchemy
 enum34
-git+git://github.com/gustavofonseca/plumber.git#egg=plumber
-git+git://github.com/scieloorg/scieloapi.py.git#egg=scieloapi
+-e git+git://github.com/gustavofonseca/plumber.git#egg=plumber
+-e git+git://github.com/scieloorg/scieloapi.py.git#egg=scieloapi
 -e git+git://github.com/scieloorg/packtools.git#egg=packtools
 pyramid
 WebTest
