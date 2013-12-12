@@ -12,7 +12,7 @@ test: clean
 	@python setup.py test -q
 
 dbsetup:
-	@python $(WORKING_DIR)/balaio.py config.ini --syncdb
+	@python $(WORKING_DIR)/balaio.py -c config.ini --syncdb
 
 setup: deps dbsetup test 
 
