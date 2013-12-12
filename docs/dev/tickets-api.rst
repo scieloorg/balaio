@@ -30,6 +30,15 @@ Optional Parameters:
 
     *String* of the **e-mail** of the user who created the ticket
 
+  **id**
+
+    *id* of the **id** of the user who created the ticket
+
+  **title**
+
+    *title* of the **title** of the user who created the ticket
+
+
 Response::
 
   {
@@ -106,7 +115,7 @@ Response::
         },
       ]
   }
-  
+
 
 Open a ticket
 -------------
@@ -127,7 +136,7 @@ Optional Parameters:
     *String* of the callback identifier to be returned when using JSONP.
 
 Payload::
-  
+
   {
       "articlepkg_id": 1,
       "message": "comment",
@@ -136,10 +145,10 @@ Payload::
   }
 
   where **message** is optional
-  
+
 
 Response::
-  
+
   HTTP STATUS CODE
 
   201 Created
@@ -175,9 +184,9 @@ Payload::
 
 
 Response::
-  
+
   HTTP STATUS CODE
 
-  202 Accepted 
+  202 Accepted
 
 

@@ -35,6 +35,17 @@ Optional Parameters:
 
     *Boolean* of the **is valid** to be used as a filter param.
 
+  **package_checksum**
+
+    *String* of the **package_checksum** to be used as a filter param.
+
+  **id**
+
+    *integer* of the **id** to be used as a filter param.
+
+  **articlepkg_id**
+
+    *articlepkg_id* of the **articlepkg_id** to be used as a filter param.
 
 Response::
 
