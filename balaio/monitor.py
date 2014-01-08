@@ -74,10 +74,6 @@ class Monitor(object):
                     logger.debug('The file is gone before marked as duplicated. %s' % e)
 
             else:
-                #Send stream
-                utils.send_message(self.stream, attempt, utils.make_digest)
-                logging.debug('Message sent for %s: %s, %s' % (filepath,
-                    repr(attempt), repr(utils.make_digest)))
 
                 # Create a notification to keep track of the checkin process
                 session = self.Session()
@@ -95,6 +91,11 @@ class Monitor(object):
                 checkin_notifier.end()
 
                 transaction.commit()
+
+                #Send stream
+                utils.send_message(self.stream, attempt, utils.make_digest)
+                logging.debug('Message sent for %s: %s, %s' % (filepath,
+                    repr(attempt), repr(utils.make_digest)))
 
     def trigger_event(self, filepath):
         self.job_queue.put(filepath)
