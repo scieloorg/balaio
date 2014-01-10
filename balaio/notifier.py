@@ -98,8 +98,13 @@ class Notifier(object):
                  'uploaded_at': str(self.checkpoint.attempt.started_at),
                }
         resource_uri = '/api/v1/checkins/%s/'
-        resource_id = self.scieloapi.checkins.post(data)
-        self.checkpoint.attempt.checkin_uri = resource_uri % resource_id
+
+        try:
+            resource_id = self.scieloapi.checkins.post(data)
+        except scieloapi.exceptions.APIError as e:
+            logger.error('Error posting data to Manager. Message: %s' % e)
+        else:
+            self.checkpoint.attempt.checkin_uri = resource_uri % resource_id
 
     def _send_notice_notification(self, message, status, label=None):
         """
@@ -116,7 +121,11 @@ class Notifier(object):
             'message': message,
             'status': status.name,
         }
-        self.scieloapi.notices.post(data)
+
+        try:
+            self.scieloapi.notices.post(data)
+        except scieloapi.exceptions.APIError as e:
+            logger.error('Error posting data to Manager. Message: %s' % e)
 
 
 def create_checkpoint_notifier(config, point):
