@@ -450,7 +450,9 @@ def get_readable_socket(sock_path, fresh=True):
 
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.bind(sock_path)
-    sock.listen(1)
+    # can enqueue half the total connections the kernel supports,
+    # close to 64 connections, but this value may vary according to the kernel.
+    sock.listen(socket.SOMAXCONN / 2)
     return sock
 
 
