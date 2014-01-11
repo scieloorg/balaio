@@ -18,7 +18,15 @@ from requests.exceptions import Timeout, RequestException
 
 
 logger = logging.getLogger('balaio.utils')
+
+# stdout_lock is used by send_messages func to sincronize
+# writes to the data stream
 stdout_lock = threading.Lock()
+
+# stdin_lock is used by recv_messages func to sincronize
+# reads to the data stream
+stdin_lock = threading.Lock()
+
 # flag to indicate if the process have
 # already defined a logger handler.
 has_logger = False
@@ -172,25 +180,26 @@ def recv_messages(stream, digest, pickle_dep=pickle):
     if not callable(digest):
         raise ValueError('digest must be callable')
 
+    # check if stream is a socket, and adapt it to
+    # be handled as a file-object
+    if hasattr(stream, 'getsockname'):
+        try:
+            stream, _ = stream.accept()
+        except socket.error:
+            logger.debug('%s stream is not listening. Trying to read it anyway.' % stream)
+
+        stream = FileLikeSocket(stream)
+
     while True:
+        # locking to prevent the message frame from being
+        # corrupted
+        with stdin_lock:
+            header = stream.readline()
+            if not header:
+                raise StopIteration()
 
-        # check if it is a socket, and adapt it
-        if hasattr(stream, 'getsockname'):
-            try:
-                stream, _ = stream.accept()
-            except socket.error:
-                logger.debug('%s stream is not listening. Trying to read it anyway.' % stream)
-
-            stream = FileLikeSocket(stream)
-
-        # handling stream as a file-object
-        header = stream.readline()
-
-        if not header:
-            raise StopIteration()
-
-        in_digest, in_length = header.split(' ')
-        in_message = stream.read(int(in_length))
+            in_digest, in_length = header.split(' ')
+            in_message = stream.read(int(in_length))
 
         logger.debug('Received message header: %s message: %s' % (header, in_message))
 
@@ -401,6 +410,9 @@ class FileLikeSocket(object):
 
     This adapters are used on :func:`send_message` and
     :func:`recv_messages`.
+
+    It is important to note that instances are not
+    thread-safe.
     """
     def __init__(self, sock):
         self.sock = sock
