@@ -24,13 +24,23 @@ class Asset(object):
 
 
 def load_module(name):
+    """
+    Try to load the module known by `name`.
+
+    If the module is not found, `None` is returned.
+    :param name: is a string of the module name.
+    """
     # return the already loaded module, if it is the case.
     try:
         return sys.modules[name]
     except KeyError:
         pass
 
-    file, pathname, description = imp.find_module(name)
+    try:
+        file, pathname, description = imp.find_module(name)
+    except ImportError:
+        return None
+
     try:
         return imp.load_module(name, file, pathname, description)
     finally:
@@ -53,8 +63,25 @@ class BlobBackend(object):
             requires = dict.get('requires')
             if requires:
                 dict['_modules'] = {name:load_module(name) for name in requires}
+            else:
+                dict['_modules'] = {}
 
-            return type.__new__(cls, name, bases, dict)
+            instance = type.__new__(cls, name, bases, dict)
+
+            # Decorate __init__ to make sure the backend is enabled
+            # during instantiation.
+            def init_wrapper(method):
+                def assert_enabled(*args, **kwargs):
+                    if not instance.enabled():
+                        deps = ', '.join([k for k, v in instance._modules.items() if v])
+                        raise ValueError('Missing dependencies: %s' % deps)
+                    else:
+                        method(*args, **kwargs)
+                return assert_enabled
+
+            instance.__init__ = init_wrapper(instance.__init__)
+            return instance
+
 
     def connect(self):
         """
@@ -82,4 +109,11 @@ class BlobBackend(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.cleanup()
+
+    @classmethod
+    def enabled(cls):
+        """
+        If all required modules are available.
+        """
+        return all(cls._modules.values())
 
