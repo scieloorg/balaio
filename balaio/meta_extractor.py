@@ -5,7 +5,6 @@ from lxml import etree
 
 import plumber
 
-
 class SetupPipe(plumber.Pipe):
 
     def transform(self, xml):
@@ -19,7 +18,8 @@ class TitlePipe(plumber.Pipe):
         xml, dict_data = item
         title_group = xml.find('.//title-group')
 
-        titles[title_group.find('article-title').attrib.get('{http://www.w3.org/XML/1998/namespace}lang')] = title_group.findtext('article-title')
+        if title_group.find('article-title') is not None:
+            titles[title_group.find('article-title').attrib.get('{http://www.w3.org/XML/1998/namespace}lang')] = title_group.findtext('article-title')
 
         for trans_title in title_group.findall('.//trans-title-group'):
             titles[trans_title.attrib.get('{http://www.w3.org/XML/1998/namespace}lang')] = trans_title.findtext('trans-title')
@@ -33,9 +33,9 @@ class AbbrevJournalTitlePipe(plumber.Pipe):
 
     def transform(self, item):
         xml, dict_data = item
-        journal_title_group = xml.find('.//journal-title-group')
 
-        dict_data['abbrev-journal-title'] = journal_title_group.findtext('.//abbrev-journal-title[@abbrev-type="publisher"]')
+        if xml.findtext('.//journal-title-group/abbrev-journal-title[@abbrev-type="publisher"]') is not None:
+            dict_data['abbrev-journal-title'] = xml.findtext('.//abbrev-journal-title[@abbrev-type="publisher"]')
 
         return (xml, dict_data)
 
@@ -47,10 +47,11 @@ class AbstractPipe(plumber.Pipe):
         xml, dict_data = item
         abstract_group = xml.find('.//article-meta')
 
-        abstracts[abstract_group.find('.//abstract').attrib.get('{http://www.w3.org/XML/1998/namespace}lang')] = abstract_group.findtext('.//abstract')
+        if  xml.find('.//article-meta/abstract') is not None:
+            abstracts[abstract_group.find('.//abstract').attrib.get('{http://www.w3.org/XML/1998/namespace}lang')] = abstract_group.findtext('.//abstract').strip()
 
         for trans_abstract in abstract_group.findall('.//trans-abstract'):
-            abstracts[trans_abstract.attrib.get('{http://www.w3.org/XML/1998/namespace}lang')] = trans_abstract.text
+            abstracts[trans_abstract.attrib.get('{http://www.w3.org/XML/1998/namespace}lang')] = trans_abstract.text.strip()
 
         dict_data['abstract'] = abstracts
 
@@ -63,7 +64,8 @@ class JournalIDPipe(plumber.Pipe):
         xml, dict_data = item
         journal_meta = xml.find('.//journal-meta')
 
-        dict_data['journal-id'] = journal_meta.find('.//journal-id[@journal-id-type="nlm-ta"]').text
+        if xml.find('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]') is not None:
+            dict_data['journal-id'] = journal_meta.find('.//journal-id[@journal-id-type="nlm-ta"]').text
 
         return (xml, dict_data)
 
@@ -74,7 +76,8 @@ class LpagePipe(plumber.Pipe):
         xml, dict_data = item
         article_meta = xml.find('.//article-meta')
 
-        dict_data['lpage'] = article_meta.findtext('.//lpage')
+        if xml.find('.//article-meta/lpage') is not None:
+            dict_data['lpage'] = article_meta.findtext('.//lpage')
 
         return (xml, dict_data)
 
@@ -85,7 +88,8 @@ class FpagePipe(plumber.Pipe):
         xml, dict_data = item
         article_meta = xml.find('.//article-meta')
 
-        dict_data['fpage'] = article_meta.findtext('.//fpage')
+        if xml.find('.//article-meta/fpage') is not None:
+            dict_data['fpage'] = article_meta.findtext('.//fpage')
 
         return (xml, dict_data)
 
@@ -96,7 +100,8 @@ class JournalTitlePipe(plumber.Pipe):
         xml, dict_data = item
         journal_title_group = xml.find('.//journal-title-group')
 
-        dict_data['journal-title'] = journal_title_group.findtext('journal-title')
+        if xml.find('.//journal-title-group/journal-title') is not None:
+            dict_data['journal-title'] = journal_title_group.findtext('journal-title')
 
         return (xml, dict_data)
 
@@ -111,9 +116,9 @@ class AuthorPipe(plumber.Pipe):
         contrib_group = xml.find('.//contrib-group')
 
         for contrib in contrib_group.findall('.//contrib[@contrib-type="author"]'):
-            list_author.append({'given-names':contrib.findtext('.//surname'),
-                                'surname':contrib.findtext('.//given-names'),
-                                'affiliations':[ref.attrib['rid'] for ref in contrib.findall('.//xref')]})
+            list_author.append({'given-names':contrib.findtext('.//given-names'),
+                                'surname':contrib.findtext('.//surname'),
+                                'affiliations':[ref.attrib['rid'] for ref in contrib.findall('.//xref') if ref is not None]})
 
         contribs['authors'] = list_author
         dict_data['contrib-group'] = contribs
@@ -128,10 +133,11 @@ class AffiliationPipe(plumber.Pipe):
 
         xml, dict_data = item
 
-        for aff in xml.findall('.//article-meta/aff'):
-            list_aff.append({'ref': aff.attrib['id'],
-                             'institution': aff.findtext('../institution[@content-type="orgname"]'),
-                             'country': aff.findtext('./country')})
+        if xml.findall('.//article-meta/aff') is not None:
+            for aff in xml.findall('.//article-meta/aff'):
+                list_aff.append({'ref': aff.attrib['id'],
+                                 'institution': aff.findtext('.//institution[@content-type="orgname"]'),
+                                 'country': aff.findtext('./country')})
 
         dict_data['affiliations'] = list_aff
 
