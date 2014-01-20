@@ -685,6 +685,7 @@ class PackageFunctionalAPITest(unittest.TestCase):
 
     def test_GET_to_one_package(self):
         articlepkg_id = self._loaded_fixtures[0].id
+        articlepkg_aid = self._loaded_fixtures[0].aid
 
         res = self.testapp.get('/api/v1/packages/%s/' % articlepkg_id)
 
@@ -700,7 +701,8 @@ class PackageFunctionalAPITest(unittest.TestCase):
                        "issue_volume": "67",
                        "resource_uri": "/api/v1/packages/%s/",
                        "id": %s,
-                       "issue_number": "8"}''' % (articlepkg_id, articlepkg_id)
+                       "aid": "%s",
+                       "issue_number": "8"}''' % (articlepkg_id, articlepkg_id, articlepkg_aid)
 
         self.assertEqual(json.loads(res.body), json.loads(expected))
 
@@ -708,6 +710,10 @@ class PackageFunctionalAPITest(unittest.TestCase):
         articlepkg0_id = self._loaded_fixtures[0].id
         articlepkg1_id = self._loaded_fixtures[1].id
         articlepkg2_id = self._loaded_fixtures[2].id
+
+        articlepkg0_aid = self._loaded_fixtures[0].aid
+        articlepkg1_aid = self._loaded_fixtures[1].aid
+        articlepkg2_aid = self._loaded_fixtures[2].aid
 
         res = self.testapp.get('/api/v1/packages/')
 
@@ -725,6 +731,7 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
                             "tickets": [],
@@ -738,6 +745,7 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
                             "tickets": [],
@@ -751,10 +759,11 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"}
-                    ]}''' % (articlepkg0_id, articlepkg0_id,
-                             articlepkg1_id, articlepkg1_id,
-                             articlepkg2_id, articlepkg2_id)
+                    ]}''' % (articlepkg0_id, articlepkg0_id, articlepkg0_aid,
+                             articlepkg1_id, articlepkg1_id, articlepkg1_aid,
+                             articlepkg2_id, articlepkg2_id, articlepkg2_aid)
 
         self.assertEqual(json.loads(res.body), json.loads(expected))
 
@@ -762,6 +771,10 @@ class PackageFunctionalAPITest(unittest.TestCase):
         articlepkg0_id = self._loaded_fixtures[0].id
         articlepkg1_id = self._loaded_fixtures[1].id
         articlepkg2_id = self._loaded_fixtures[2].id
+
+        articlepkg0_aid = self._loaded_fixtures[0].aid
+        articlepkg1_aid = self._loaded_fixtures[1].aid
+        articlepkg2_aid = self._loaded_fixtures[2].aid
 
         res = self.testapp.get('/api/v1/packages/?limit=82')
 
@@ -779,6 +792,7 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
                             "tickets": [],
@@ -792,6 +806,7 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
                             "tickets": [],
@@ -805,16 +820,20 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"}
-                    ]}''' % (articlepkg0_id, articlepkg0_id,
-                             articlepkg1_id, articlepkg1_id,
-                             articlepkg2_id, articlepkg2_id)
+                    ]}''' % (articlepkg0_id, articlepkg0_id, articlepkg0_aid,
+                             articlepkg1_id, articlepkg1_id, articlepkg1_aid,
+                             articlepkg2_id, articlepkg2_id, articlepkg2_aid)
 
         self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_packages_with_param_offset(self):
         articlepkg1_id = self._loaded_fixtures[1].id
         articlepkg2_id = self._loaded_fixtures[2].id
+
+        articlepkg1_aid = self._loaded_fixtures[1].aid
+        articlepkg2_aid = self._loaded_fixtures[2].aid
 
         res = self.testapp.get('/api/v1/packages/?offset=1')
 
@@ -832,6 +851,7 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
                             "tickets": [],
@@ -845,9 +865,10 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"}
-                    ]}''' % (articlepkg1_id, articlepkg1_id,
-                             articlepkg2_id, articlepkg2_id)
+                    ]}''' % (articlepkg1_id, articlepkg1_id, articlepkg1_aid,
+                             articlepkg2_id, articlepkg2_id, articlepkg2_aid)
 
         self.assertEqual(json.loads(res.body), json.loads(expected))
 
@@ -859,6 +880,9 @@ class PackageFunctionalAPITest(unittest.TestCase):
     def test_GET_to_packages_with_param_low_limit(self):
         articlepkg0_id = self._loaded_fixtures[0].id
         articlepkg1_id = self._loaded_fixtures[1].id
+
+        articlepkg0_aid = self._loaded_fixtures[0].aid
+        articlepkg1_aid = self._loaded_fixtures[1].aid
 
         res = self.testapp.get('/api/v1/packages/?limit=2')
 
@@ -876,6 +900,7 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
                             "tickets": [],
@@ -889,15 +914,19 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"}
-                    ]}''' % (articlepkg0_id, articlepkg0_id,
-                             articlepkg1_id, articlepkg1_id)
+                    ]}''' % (articlepkg0_id, articlepkg0_id, articlepkg0_aid,
+                             articlepkg1_id, articlepkg1_id, articlepkg1_aid)
 
         self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_packages_with_param_low_offset_and_limit(self):
         articlepkg1_id = self._loaded_fixtures[1].id
         articlepkg2_id = self._loaded_fixtures[2].id
+
+        articlepkg1_aid = self._loaded_fixtures[1].aid
+        articlepkg2_aid = self._loaded_fixtures[2].aid
 
         res = self.testapp.get('/api/v1/packages/?limit=2&offset=1')
 
@@ -915,6 +944,7 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
                             "tickets": [],
@@ -928,14 +958,16 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"}
-                    ]}''' % (articlepkg1_id, articlepkg1_id,
-                             articlepkg2_id, articlepkg2_id)
+                    ]}''' % (articlepkg1_id, articlepkg1_id, articlepkg1_aid,
+                             articlepkg2_id, articlepkg2_id, articlepkg2_aid)
 
         self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_packages_with_param_low_limit_and_offset(self):
         articlepkg2_id = self._loaded_fixtures[2].id
+        articlepkg2_aid = self._loaded_fixtures[2].aid
 
         res = self.testapp.get('/api/v1/packages/?limit=1&offset=2')
 
@@ -953,8 +985,9 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "issue_volume": "67",
                             "resource_uri": "/api/v1/packages/%s/",
                             "id": %s,
+                            "aid": "%s",
                             "issue_number": "8"}
-                    ]}''' % (articlepkg2_id, articlepkg2_id)
+                    ]}''' % (articlepkg2_id, articlepkg2_id, articlepkg2_aid)
 
         self.assertEqual(json.loads(res.body), json.loads(expected))
 

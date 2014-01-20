@@ -58,6 +58,9 @@ Optional Parameters:
 
      *Integer* of the **id**  to be used as a filter param.
 
+  **aid**
+
+     *String* of the **article-id**  to be used as a filter param.
 
 Response::
 
@@ -86,6 +89,7 @@ Response::
             ],
             issue_suppl_volume: "1",
             issue_volume: "1",
+            aid: "yp4529bp8g",
             resource_uri: "/api/v1/packages/3/",
             id: 3,
             issue_number: "1"
@@ -106,6 +110,7 @@ Response::
             ],
             issue_suppl_volume: "7",
             issue_volume: "11",
+            aid: "jp4599bq8g",
             resource_uri: "/api/v1/packages/4/",
             id: 4,
             issue_number: "3"
@@ -150,6 +155,7 @@ Response::
       ],
       issue_suppl_volume: "1",
       issue_volume: "1",
+      aid: "yp4529bp8g",
       resource_uri: "/api/v1/packages/3/",
       id: 3,
       issue_number: "1"
