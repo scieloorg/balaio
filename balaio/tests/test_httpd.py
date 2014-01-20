@@ -6,13 +6,14 @@ import unittest
 
 from pyramid import testing
 from pyramid.httpexceptions import HTTPNotFound,HTTPAccepted, HTTPCreated
+from sqlalchemy.exc import OperationalError
 from sqlalchemy import create_engine
 from webtest import TestApp
 import transaction
 
 from balaio import models, httpd
 from .doubles import *
-from .utils import db_bootstrap
+from .utils import db_bootstrap, DB_READY
 from . import modelfactories
 
 
@@ -25,7 +26,13 @@ def setUpModule():
     Initialize the database.
     """
     global global_engine
-    global_engine = db_bootstrap()
+    try:
+        global_engine = db_bootstrap()
+    except OperationalError:
+        # global_engine remains None, all db-bound testcases
+        # need to test for DB_READY before run.
+        pass
+
 
 def _load_fixtures(obj_list):
 
@@ -33,6 +40,7 @@ def _load_fixtures(obj_list):
         models.ScopedSession.add_all(obj_list)
 
 
+@unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
 class FunctionalAPITest(unittest.TestCase):
 
     def setUp(self):
@@ -52,6 +60,7 @@ class FunctionalAPITest(unittest.TestCase):
         self.testapp.get('/api/v1/lokmshin/', status=404)
 
 
+@unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
 class AttemptFunctionalAPITest(unittest.TestCase):
 
     def setUp(self):
@@ -332,6 +341,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
         self.assertEqual(json.loads(res.body), json.loads(expected))
 
 
+@unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
 class TicketFunctionalAPITest(unittest.TestCase):
 
     def setUp(self):
@@ -649,6 +659,8 @@ class TicketFunctionalAPITest(unittest.TestCase):
                  'comment_author': 'bla bla'
                 }, status=404)
 
+
+@unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
 class PackageFunctionalAPITest(unittest.TestCase):
 
     def setUp(self):

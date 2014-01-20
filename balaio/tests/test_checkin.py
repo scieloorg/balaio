@@ -8,7 +8,7 @@ import unittest
 import transaction
 
 from balaio import checkin, models, excepts, utils
-from .utils import db_bootstrap
+from .utils import db_bootstrap, DB_READY
 
 
 class PackageAnalyzerTests(mocker.MockerTestCase):
@@ -225,6 +225,7 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
         self.assertFalse(pkg.is_valid_schema())
 
 
+@unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
 class CheckinTests(unittest.TestCase):
 
     def setUp(self):
