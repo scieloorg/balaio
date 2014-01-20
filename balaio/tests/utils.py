@@ -18,11 +18,8 @@ def db_bootstrap():
 
     :returns: an instance of engine.
     """
-    engine = create_engine('postgresql+psycopg2://postgres:123@localhost:5432/%s' % DB_NAME, echo=False)
-    try:
-        models.Base.metadata.drop_all(engine)
-    except OperationalError as e:
-        exit('You DB is not properly configured. Make sure the db `%s` exists. Traceback: %s' % (DB_NAME, e))
+    engine = create_engine('postgresql+psycopg2://postgres:@localhost/%s' % DB_NAME, echo=False)
+    models.Base.metadata.drop_all(engine)
     models.init_database(engine)
 
     # patch the module function
@@ -31,4 +28,15 @@ def db_bootstrap():
     models.ScopedSession.configure(bind=engine)
 
     return engine
+
+# Boolean constant to skip or execute tests that needs a running db.
+try:
+    DB_READY = bool(db_bootstrap())
+except OperationalError:
+    print u'''
+    ##################################################################
+    Testing DB is not properly configured. Many tests will be skipped.
+    ##################################################################
+    '''
+    DB_READY = False
 

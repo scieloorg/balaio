@@ -18,7 +18,6 @@ import notifier
 
 __all__ = ['PackageAnalyzer', 'get_attempt']
 logger = logging.getLogger('balaio.checkin')
-utils.setup_logging()
 
 
 class PackageAnalyzer(xray.SPSPackage):

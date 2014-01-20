@@ -15,6 +15,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import utils
 import models
+import health
 
 
 def get_query_filters(model, request_params):
@@ -172,6 +173,19 @@ def update_ticket(request):
         return HTTPNotFound()
 
 
+@view_config(route_name='status', request_method='GET', renderer='json')
+def health_status(request):
+    """
+    Display the health status of the system.
+    """
+    health_status = request.registry.health_status
+    report = health_status.latest_report
+    items = {k.__class__.__name__: v for k, v in report.items()}
+
+    return {'meta': {'last_refresh': health_status.since()},
+            'results': items}
+
+
 def main(config, engine):
     """
     Returns a pyramid app.
@@ -182,8 +196,13 @@ def main(config, engine):
     def bind_db(event):
         event.request.db = event.request.registry.Session()
 
+    def update_health_status(event):
+        event.request.registry.health_status.update()
+
+
     config_pyrmd = Configurator(settings=dict(config.items()))
     config_pyrmd.add_route('index', '/')
+    config_pyrmd.add_route('status', '/status/')
 
     # get
     config_pyrmd.add_route('ArticlePkg', '/api/v1/packages/{id}/')
@@ -203,6 +222,15 @@ def main(config, engine):
     config_pyrmd.registry.Session = models.ScopedSession
     config_pyrmd.registry.Session.configure(bind=engine)
     config_pyrmd.add_subscriber(bind_db, NewRequest)
+
+    # Health check is available globally on the application
+    # at `request.registry.health_check` and is updated
+    # periodically.
+    check_list = health.CheckList(refresh=1)
+    check_list.add_check(health.DBConnection(engine))
+
+    config_pyrmd.registry.health_status = check_list
+    config_pyrmd.add_subscriber(update_health_status, NewRequest)
 
     config_pyrmd.scan('httpd')
 
