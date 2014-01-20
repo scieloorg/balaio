@@ -135,9 +135,18 @@ class AffiliationPipe(plumber.Pipe):
 
         if xml.findall('.//article-meta/aff') is not None:
             for aff in xml.findall('.//article-meta/aff'):
-                list_aff.append({'ref': aff.attrib['id'],
-                                 'institution': aff.findtext('.//institution[@content-type="orgname"]'),
-                                 'country': aff.findtext('./country')})
+                dict_aff = {}
+
+                if aff.findtext('.//institution[@content-type="orgname"]'):
+                    dict_aff['institution'] = aff.findtext('.//institution[@content-type="orgname"]')
+
+                if aff.get('id'):
+                    dict_aff['ref'] =  aff.get('id')
+
+                if aff.findtext('.//country'):
+                    dict_aff['country'] =  aff.findtext('.//country')
+
+                list_aff.append(dict_aff)
 
         dict_data['affiliations'] = list_aff
 
@@ -151,7 +160,7 @@ class KeywordPipe(plumber.Pipe):
         xml, dict_data = item
 
         for kwd in xml.findall('.//article-meta/kwd-group'):
-            keywords[kwd.attrib.get('{http://www.w3.org/XML/1998/namespace}lang')] = [k.text for k in kwd.findall('.//kwd')]
+            keywords[kwd.attrib.get('{http://www.w3.org/XML/1998/namespace}lang')] = [k.text for k in kwd.findall('.//kwd') if k.text]
 
         dict_data['keyword-group'] = keywords
 
@@ -163,9 +172,11 @@ class DefaultLanguagePipe(plumber.Pipe):
     def transform(self, item):
         xml, dict_data = item
 
-        dict_data['default-language'] = xml.getroot().attrib.get('{http://www.w3.org/XML/1998/namespace}lang')
+        if xml.getroot().attrib.get('{http://www.w3.org/XML/1998/namespace}lang') is not None:
+            dict_data['default-language'] = xml.getroot().attrib.get('{http://www.w3.org/XML/1998/namespace}lang')
 
         return (xml, dict_data)
+
 
 class VolumePipe(plumber.Pipe):
 
@@ -173,7 +184,8 @@ class VolumePipe(plumber.Pipe):
         xml, dict_data = item
         article_meta = xml.find('.//article-meta')
 
-        dict_data['volume'] = article_meta.findtext('.//volume')
+        if article_meta.find('.//volume') is not None:
+            dict_data['volume'] = article_meta.findtext('.//volume')
 
         return (xml, dict_data)
 
@@ -184,7 +196,8 @@ class NumberPipe(plumber.Pipe):
         xml, dict_data = item
         article_meta = xml.find('.//article-meta')
 
-        dict_data['number'] = article_meta.findtext('.//issue')
+        if article_meta.find('.//issue') is not None:
+            dict_data['number'] = article_meta.findtext('.//issue')
 
         return (xml, dict_data)
 
@@ -196,7 +209,8 @@ class PubDatePipe(plumber.Pipe):
         xml, dict_data = item
 
         for date in xml.findall('.//pub-date/'):
-            dates[date.tag] = date.text
+            if date.tag and date.text:
+                dates[date.tag] = date.text
 
         dict_data['pub-date'] = dates
 
@@ -209,7 +223,8 @@ class ISSNPipe(plumber.Pipe):
         xml, dict_data = item
         article_meta = xml.find('.//journal-meta')
 
-        dict_data['issn'] = article_meta.findtext('.//issn[@pub-type="epub"]')
+        if article_meta.find('.//issn[@pub-type="epub"]') is not None:
+            dict_data['issn'] = article_meta.findtext('.//issn[@pub-type="epub"]')
 
         return (xml, dict_data)
 
@@ -220,7 +235,8 @@ class PublisherNamePipe(plumber.Pipe):
         xml, dict_data = item
         article_meta = xml.find('.//journal-meta')
 
-        dict_data['publisher-name'] = article_meta.findtext('.//publisher/publisher-name')
+        if article_meta.find('.//publisher/publisher-name') is not None:
+            dict_data['publisher-name'] = article_meta.findtext('.//publisher/publisher-name')
 
         return (xml, dict_data)
 
@@ -233,7 +249,8 @@ class SubjectPipe(plumber.Pipe):
         subject_group = xml.findall('.//article-meta/article-categories/subj-group')
 
         for sub_subject in subject_group:
-            subjects[sub_subject.attrib['subj-group-type']] = [subject.text for subject in sub_subject]
+            if sub_subject.get('subj-group-type'):
+                subjects[sub_subject.attrib['subj-group-type']] = [subject.text for subject in sub_subject if subject.text]
 
         dict_data['subjects'] = subjects
 
@@ -248,7 +265,8 @@ class PublisherIDPipe(plumber.Pipe):
         article_meta = xml.find('.//article-meta')
 
         for article_id in article_meta.findall('.//article-id'):
-            article_ids[article_id.attrib['pub-id-type']] = article_id.text
+            if article_id.get('pub-id-type') and article_id.text:
+                article_ids[article_id.get('pub-id-type')] = article_id.text
 
         dict_data['article-ids'] = article_ids
 
@@ -285,7 +303,7 @@ if __name__ == '__main__':
                            TearDownPipe())
 
     xml = etree.parse(open('0034-8910-rsp-47-04-0647.xml', 'rb'))
-    transformed_data = ppl.run([xml])
+    data = ppl.run([xml])
 
-    for td in transformed_data:
-        print td
+    for dt in data:
+        print dt
