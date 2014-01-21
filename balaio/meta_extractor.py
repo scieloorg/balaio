@@ -34,8 +34,10 @@ class AbbrevJournalTitlePipe(plumber.Pipe):
     def transform(self, item):
         xml, dict_data = item
 
-        if xml.findtext('.//journal-title-group/abbrev-journal-title[@abbrev-type="publisher"]') is not None:
-            dict_data['abbrev-journal-title'] = xml.findtext('.//abbrev-journal-title[@abbrev-type="publisher"]')
+        abbrev_journal_title = xml.findtext('.//journal-title-group/abbrev-journal-title[@abbrev-type="publisher"]')
+
+        if abbrev_journal_title is not None:
+            dict_data['abbrev-journal-title'] = abbrev_journal_title
 
         return (xml, dict_data)
 
@@ -47,7 +49,7 @@ class AbstractPipe(plumber.Pipe):
         xml, dict_data = item
         abstract_group = xml.find('.//article-meta')
 
-        if  xml.find('.//article-meta/abstract') is not None:
+        if xml.find('.//article-meta/abstract') is not None:
             abstracts[abstract_group.find('.//abstract').attrib.get('{http://www.w3.org/XML/1998/namespace}lang')] = abstract_group.findtext('.//abstract').strip()
 
         for trans_abstract in abstract_group.findall('.//trans-abstract'):
@@ -62,10 +64,11 @@ class JournalIDPipe(plumber.Pipe):
 
     def transform(self, item):
         xml, dict_data = item
-        journal_meta = xml.find('.//journal-meta')
 
-        if xml.find('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]') is not None:
-            dict_data['journal-id'] = journal_meta.find('.//journal-id[@journal-id-type="nlm-ta"]').text
+        journal_id = xml.find('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
+
+        if journal_id is not None:
+            dict_data['journal-id'] = journal_id.text
 
         return (xml, dict_data)
 
@@ -74,10 +77,10 @@ class LpagePipe(plumber.Pipe):
 
     def transform(self, item):
         xml, dict_data = item
-        article_meta = xml.find('.//article-meta')
+        lpage = xml.find('.//article-meta/lpage')
 
-        if xml.find('.//article-meta/lpage') is not None:
-            dict_data['lpage'] = article_meta.findtext('.//lpage')
+        if lpage is not None:
+            dict_data['lpage'] = lpage.text
 
         return (xml, dict_data)
 
@@ -86,10 +89,10 @@ class FpagePipe(plumber.Pipe):
 
     def transform(self, item):
         xml, dict_data = item
-        article_meta = xml.find('.//article-meta')
+        fpage = xml.find('.//article-meta/fpage')
 
-        if xml.find('.//article-meta/fpage') is not None:
-            dict_data['fpage'] = article_meta.findtext('.//fpage')
+        if fpage is not None:
+            dict_data['fpage'] = fpage.text
 
         return (xml, dict_data)
 
@@ -98,10 +101,10 @@ class JournalTitlePipe(plumber.Pipe):
 
     def transform(self, item):
         xml, dict_data = item
-        journal_title_group = xml.find('.//journal-title-group')
+        journal_title = xml.find('.//journal-title-group/journal-title')
 
-        if xml.find('.//journal-title-group/journal-title') is not None:
-            dict_data['journal-title'] = journal_title_group.findtext('journal-title')
+        if journal_title is not None:
+            dict_data['journal-title'] = journal_title.text
 
         return (xml, dict_data)
 
@@ -113,9 +116,8 @@ class AuthorPipe(plumber.Pipe):
         list_author = []
 
         xml, dict_data = item
-        contrib_group = xml.find('.//contrib-group')
 
-        for contrib in contrib_group.findall('.//contrib[@contrib-type="author"]'):
+        for contrib in xml.findall('.//contrib-group/contrib[@contrib-type="author"]'):
             list_author.append({'given-names':contrib.findtext('.//given-names'),
                                 'surname':contrib.findtext('.//surname'),
                                 'affiliations':[ref.attrib['rid'] for ref in contrib.findall('.//xref') if ref is not None]})
@@ -133,18 +135,24 @@ class AffiliationPipe(plumber.Pipe):
 
         xml, dict_data = item
 
-        if xml.findall('.//article-meta/aff') is not None:
-            for aff in xml.findall('.//article-meta/aff'):
+        affiliations = xml.findall('.//article-meta/aff')
+
+        if affiliations is not None:
+
+            for aff in affiliations:
+                ref_id = aff.get('id')
+                institution = aff.findtext('.//institution[@content-type="orgname"]')
+                country = aff.findtext('.//country')
                 dict_aff = {}
 
-                if aff.findtext('.//institution[@content-type="orgname"]'):
-                    dict_aff['institution'] = aff.findtext('.//institution[@content-type="orgname"]')
+                if institution:
+                    dict_aff['institution'] = institution
 
-                if aff.get('id'):
-                    dict_aff['ref'] =  aff.get('id')
+                if ref_id:
+                    dict_aff['ref'] = ref_id
 
-                if aff.findtext('.//country'):
-                    dict_aff['country'] =  aff.findtext('.//country')
+                if country:
+                    dict_aff['country'] = country
 
                 list_aff.append(dict_aff)
 
@@ -182,10 +190,10 @@ class VolumePipe(plumber.Pipe):
 
     def transform(self, item):
         xml, dict_data = item
-        article_meta = xml.find('.//article-meta')
+        volume = xml.find('.//article-meta/volume')
 
-        if article_meta.find('.//volume') is not None:
-            dict_data['volume'] = article_meta.findtext('.//volume')
+        if volume is not None:
+            dict_data['volume'] = volume.text
 
         return (xml, dict_data)
 
@@ -194,10 +202,10 @@ class NumberPipe(plumber.Pipe):
 
     def transform(self, item):
         xml, dict_data = item
-        article_meta = xml.find('.//article-meta')
+        number = xml.find('.//article-meta/issue')
 
-        if article_meta.find('.//issue') is not None:
-            dict_data['number'] = article_meta.findtext('.//issue')
+        if number is not None:
+            dict_data['number'] = number.text
 
         return (xml, dict_data)
 
@@ -221,10 +229,10 @@ class ISSNPipe(plumber.Pipe):
 
     def transform(self, item):
         xml, dict_data = item
-        article_meta = xml.find('.//journal-meta')
+        issn = xml.find('.//journal-meta/issn[@pub-type="epub"]')
 
-        if article_meta.find('.//issn[@pub-type="epub"]') is not None:
-            dict_data['issn'] = article_meta.findtext('.//issn[@pub-type="epub"]')
+        if issn is not None:
+            dict_data['issn'] = issn.text
 
         return (xml, dict_data)
 
@@ -233,10 +241,10 @@ class PublisherNamePipe(plumber.Pipe):
 
     def transform(self, item):
         xml, dict_data = item
-        article_meta = xml.find('.//journal-meta')
+        publisher_name = xml.find('.//journal-meta/publisher/publisher-name')
 
-        if article_meta.find('.//publisher/publisher-name') is not None:
-            dict_data['publisher-name'] = article_meta.findtext('.//publisher/publisher-name')
+        if publisher_name is not None:
+            dict_data['publisher-name'] = publisher_name.text
 
         return (xml, dict_data)
 
@@ -246,9 +254,8 @@ class SubjectPipe(plumber.Pipe):
     def transform(slef, item):
         subjects = {}
         xml, dict_data = item
-        subject_group = xml.findall('.//article-meta/article-categories/subj-group')
 
-        for sub_subject in subject_group:
+        for sub_subject in xml.findall('.//article-meta/article-categories/subj-group'):
             if sub_subject.get('subj-group-type'):
                 subjects[sub_subject.attrib['subj-group-type']] = [subject.text for subject in sub_subject if subject.text]
 
@@ -262,9 +269,8 @@ class PublisherIDPipe(plumber.Pipe):
     def transform(self, item):
         article_ids = {}
         xml, dict_data = item
-        article_meta = xml.find('.//article-meta')
 
-        for article_id in article_meta.findall('.//article-id'):
+        for article_id in xml.findall('.//article-meta/article-id'):
             if article_id.get('pub-id-type') and article_id.text:
                 article_ids[article_id.get('pub-id-type')] = article_id.text
 
@@ -302,7 +308,7 @@ if __name__ == '__main__':
                            PublisherIDPipe(),
                            TearDownPipe())
 
-    xml = etree.parse(open('0034-8910-rsp-47-04-0647.xml', 'rb'))
+    xml = etree.parse(open('<FILELIKEOBJECT>', 'rb'))
     data = ppl.run([xml])
 
     for dt in data:
