@@ -9,6 +9,7 @@ class ArticlePkgFactory(SQLAlchemyModelFactory):
     FACTORY_SESSION = models.ScopedSession
 
     id = factory.Sequence(lambda n: n)
+    aid = factory.Sequence(lambda n: 'as36%s' % n)
     article_title = 'Construction of a recombinant adenovirus...'
     journal_pissn = '0100-879X'
     journal_eissn = '0100-879X'
