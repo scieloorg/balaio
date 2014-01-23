@@ -13,6 +13,7 @@ from sqlalchemy import (
     String,
     Boolean,
     Table,
+    event,
 )
 from sqlalchemy.orm import (
     relationship,
@@ -123,10 +124,6 @@ class ArticlePkg(Base):
     issue_number = Column(String, nullable=True)
     issue_suppl_volume = Column(String, nullable=True)
     issue_suppl_number = Column(String, nullable=True)
-
-    def __init__(self, *args, **kwargs):
-        super(ArticlePkg, self).__init__(*args, **kwargs)
-        self.aid = self.get_aid()
 
     def get_aid(self):
         """
@@ -366,4 +363,29 @@ class Checkpoint(Base):
                     finished_at=str(self.ended_at),
                     notices=[n.to_dict() for n in self.messages]
                         )
+
+
+@event.listens_for(Session, 'before_flush')
+def before_flush(session, flush_context, instances):
+    # ArticlePkg.aid must be generated automaticaly while
+    # a new instance is being saved.
+    for obj in session.new:
+        if isinstance(obj, ArticlePkg):
+            # obj.aid must be unique, so we are checking for its absence
+            # before assigning. This is not quite reliable by the lack
+            # of atomicity over both the operations (query+assignment).
+            for trial_no in range(10):
+                aid = obj.get_aid()
+                try:
+                    session.query(ArticlePkg).filter_by(aid=aid).one()
+                except NoResultFound:
+                    break
+                else:
+                    logger.error("Conflict while generating ArticlePkg.aid attribute")
+                    continue
+            else:
+                logger.error("Max attempts to generate an unique ArticlePkg.aid has expired. Giving up.")
+                aid = None
+
+            obj.aid = aid
 
