@@ -19,5 +19,6 @@ setup: deps dbsetup test
 reload:
 	@circusctl reload logging_server --waiting
 	@circusctl reload httpd --waiting
-	@circusctl reload balaio --waiting
+	@circusctl reload validator --waiting
+	@circusctl reload monitor --waiting
         

@@ -1,5 +1,6 @@
 [env]
 virtualenv_path = /home/gustavo/.virtualenvs/balaio
+BALAIO_SETTINGS_FILE = /home/gustavo/prj/github/balaio/config.ini
 
 
 [circus]
@@ -30,9 +31,20 @@ copy_env = True
 virtualenv = $(circus.env.virtualenv_path)
 
 
-[watcher:balaio]
+[watcher:validator]
 cmd = python
-args = balaio.py -c ../config.ini
+args = validator.py
+numprocesses = 1
+working_dir = balaio
+graceful_timeout = 10
+priority = 1
+copy_env = True
+virtualenv = $(circus.env.virtualenv_path)
+
+
+[watcher:monitor]
+cmd = python
+args = monitor.py
 numprocesses = 1
 working_dir = balaio
 graceful_timeout = 10
