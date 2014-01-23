@@ -13,6 +13,7 @@ from sqlalchemy import (
     String,
     Boolean,
     Table,
+    event,
 )
 from sqlalchemy.orm import (
     relationship,
@@ -24,6 +25,8 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from zope.sqlalchemy import ZopeTransactionExtension
+
+from base28 import genbase
 
 
 logger = logging.getLogger(__name__)
@@ -111,6 +114,7 @@ class ArticlePkg(Base):
     __tablename__ = 'articlepkg'
 
     id = Column(Integer, primary_key=True)
+    aid = Column(String, nullable=False, index=True, unique=True)
     article_title = Column(String, nullable=False)
     journal_pissn = Column(String, nullable=True)
     journal_eissn = Column(String, nullable=True)
@@ -121,8 +125,15 @@ class ArticlePkg(Base):
     issue_suppl_volume = Column(String, nullable=True)
     issue_suppl_number = Column(String, nullable=True)
 
+    def get_aid(self):
+        """
+        Produce a fresh `aid` only for instances not yet persisted.
+        """
+        return self.aid if (self.id and self.aid) else genbase(10)
+
     def to_dict(self):
         return dict(id=self.id,
+                    aid=self.aid,
                     article_title=self.article_title,
                     journal_pissn=self.journal_pissn,
                     journal_eissn=self.journal_eissn,
@@ -352,4 +363,29 @@ class Checkpoint(Base):
                     finished_at=str(self.ended_at),
                     notices=[n.to_dict() for n in self.messages]
                         )
+
+
+@event.listens_for(Session, 'before_flush')
+def before_flush(session, flush_context, instances):
+    # ArticlePkg.aid must be generated automaticaly while
+    # a new instance is being saved.
+    for obj in session.new:
+        if isinstance(obj, ArticlePkg):
+            # obj.aid must be unique, so we are checking for its absence
+            # before assigning. This is not quite reliable by the lack
+            # of atomicity over both the operations (query+assignment).
+            for trial_no in range(10):
+                aid = obj.get_aid()
+                try:
+                    session.query(ArticlePkg).filter_by(aid=aid).one()
+                except NoResultFound:
+                    break
+                else:
+                    logger.error("Conflict while generating ArticlePkg.aid attribute")
+                    continue
+            else:
+                logger.error("Max attempts to generate an unique ArticlePkg.aid has expired. Giving up.")
+                aid = None
+
+            obj.aid = aid
 

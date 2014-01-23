@@ -122,7 +122,12 @@ class TearDownPipe(vpipes.Pipe):
         try:
             attempt, pkg_analyzer, __, db_session = item
         except TypeError:
+            # when a message is broken since the beginning in ways
+            # it couldn't be processed by the SetupPipe, this
+            # unpacking will fail as only an attempt instance is
+            # referenced by `item`.
             attempt = item
+            db_session = models.Session()
 
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
 
