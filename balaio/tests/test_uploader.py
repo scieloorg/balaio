@@ -1,5 +1,7 @@
 import unittest
 
+import mocker
+
 from balaio import uploader
 
 
@@ -17,6 +19,9 @@ class LoadModuleTests(unittest.TestCase):
 
 class BlobBackendTests(unittest.TestCase):
 
+    def setUp(self):
+        uploader.Asset._backends = {}
+
     def test_enabled_when_nothing_is_required(self):
         self.assertTrue(uploader.BlobBackend.enabled())
 
@@ -25,7 +30,6 @@ class BlobBackendTests(unittest.TestCase):
             requires = ['json']
 
             def connect(self): pass
-            def set_target(self, path): pass
             def cleanup(self): pass
 
         self.assertTrue(Foo.enabled())
@@ -35,7 +39,6 @@ class BlobBackendTests(unittest.TestCase):
             requires = ['bacon']
 
             def connect(self): pass
-            def set_target(self, path): pass
             def cleanup(self): pass
 
         self.assertFalse(Foo.enabled())
@@ -45,7 +48,6 @@ class BlobBackendTests(unittest.TestCase):
             requires = ['bacon']
 
             def connect(self): pass
-            def set_target(self, path): pass
             def cleanup(self): pass
 
         self.assertRaises(ValueError, lambda: Foo())
@@ -55,8 +57,53 @@ class BlobBackendTests(unittest.TestCase):
             requires = ['json']
 
             def connect(self): pass
-            def set_target(self, path): pass
             def cleanup(self): pass
 
         self.assertIsInstance(Foo(), Foo)
+
+    def test_backends_are_registered_on_asset_catalog(self):
+        class Foo(uploader.BlobBackend):
+            requires = ['json']
+
+            def connect(self): pass
+            def cleanup(self): pass
+
+        self.assertTrue('Foo' in uploader.Asset._backends)
+
+    def test_invalid_backends_arent_registered_on_asset_catalog(self):
+        class Foo(uploader.BlobBackend):
+            requires = ['bacon']
+
+            def connect(self): pass
+            def cleanup(self): pass
+
+        self.assertFalse('Foo' in uploader.Asset._backends)
+
+
+class StaticScieloBackendTests(mocker.MockerTestCase):
+
+    def test_get_fqpath(self):
+        st = uploader.StaticScieloBackend(u'some.user', u'some.pass',
+            u'/var/www/journals')
+        self.assertEqual(st._get_fqpath(u'/art1/foo.pdf'),
+            u'/var/www/journals/art1/foo.pdf')
+
+    def test_ensure_parent_dir(self):
+        st = uploader.StaticScieloBackend(u'some.user', u'some.pass',
+            u'/var/www/journals')
+
+        mock_st = self.mocker.patch(st, spec=False)
+        mock_st.sftp.mkdir(mocker.ANY)
+        self.mocker.result(None)
+        self.mocker.count(4)
+        self.mocker.replay()
+
+        st._ensure_parent_dir(u'/var/www/journals/art1/foo.pdf')
+
+    def test_get_resource_uri(self):
+        st = uploader.StaticScieloBackend(u'some.user', u'some.pass',
+            u'/var/www/')
+
+        self.assertEqual(st._get_resource_uri(u'/journals/art1/foo.pdf'),
+            u'http://static.scielo.org/journals/art1/foo.pdf')
 
