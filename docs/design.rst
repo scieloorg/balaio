@@ -48,3 +48,38 @@ httpd
 
 Disponibiliza uma interface HTTP para acesso e manipulação dos dados.
 
+
+uploader
+--------
+
+Abstrai os backends de persistência de arquivos estáticos, por meio da 
+superclasse :class:`uploader.BlobBackend`.
+
+Classes concretas de :class:`uploader.BlobBackend` devem implementar os 
+métodos *connect(self)* e *cleanup(self)*. Ambos os métodos não devem 
+receber argumentos, que devem ser passados na inicialização da instância
+quando necessário.
+
+
+:class:`uploader.StaticScieloBackend`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Classe concreta para a persistência de arquivos no servidores de ativos estáticos
+do SciELO. A comunicação é realizada via protocolo SFTP, e depende das credenciais
+de um usuário apto a realizar a ação.
+
+Exemplo::
+
+    >>> from uploader import StaticScieloBackend
+    >>> with StaticScieloBackend(u'some.user', u'some.pass', u'/base/path/') as backend:
+    ...     backend.send(open(u'article.pdf', 'rb'), u'/abc/article.pdf')
+    ...
+    u'http://static.scielo.org/abc/article.pdf'
+
+
+.. note::
+
+    É importante que diferentes aplicações, que manipulam *base paths* distintos, 
+    possuam usuários com as devidas restrições de acesso, para evitar perda de 
+    dados acidental.
+

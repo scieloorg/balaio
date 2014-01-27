@@ -19,9 +19,6 @@ class LoadModuleTests(unittest.TestCase):
 
 class BlobBackendTests(unittest.TestCase):
 
-    def setUp(self):
-        uploader.Asset._backends = {}
-
     def test_enabled_when_nothing_is_required(self):
         self.assertTrue(uploader.BlobBackend.enabled())
 
@@ -60,24 +57,6 @@ class BlobBackendTests(unittest.TestCase):
             def cleanup(self): pass
 
         self.assertIsInstance(Foo(), Foo)
-
-    def test_backends_are_registered_on_asset_catalog(self):
-        class Foo(uploader.BlobBackend):
-            requires = ['json']
-
-            def connect(self): pass
-            def cleanup(self): pass
-
-        self.assertTrue('Foo' in uploader.Asset._backends)
-
-    def test_invalid_backends_arent_registered_on_asset_catalog(self):
-        class Foo(uploader.BlobBackend):
-            requires = ['bacon']
-
-            def connect(self): pass
-            def cleanup(self): pass
-
-        self.assertFalse('Foo' in uploader.Asset._backends)
 
 
 class StaticScieloBackendTests(mocker.MockerTestCase):

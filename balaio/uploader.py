@@ -5,45 +5,6 @@ import sys
 from balaio import utils
 
 
-class Asset(object):
-    """
-    Remote object allocated in a backend.
-    """
-    _backends = {}
-
-    def __init__(self, backend, path, **kwargs):
-        """
-        :param backend: String indicating the backend to use.
-        :param path: Relative path, e.g. u'/journals/pdf/bjmbr-v1n1-01.pdf'.
-        """
-        self.location = None
-        self.path = path
-        try:
-            self.backend = self._backends[backend](**kwargs)
-        except KeyError:
-            raise ValueError(u'Unknown backend %s' % backend)
-
-    def send(self, fp):
-        """
-        Upload `fp` to the remote backend.
-
-        :param fp: file-object.
-        """
-        with self.backend as backend:
-            self.location = backend.send(fp, self.path)
-
-    @classmethod
-    def register_backend(cls, name, backend):
-        """
-        Register only enabled backends to be used by instances of Asset.
-
-        :param name: The name of the backend.
-        :param backend: Backend class object.
-        """
-        if backend.enabled():
-            cls._backends[name] = backend
-
-
 def load_module(name):
     """
     Try to load the module known by `name`.
@@ -89,9 +50,6 @@ class BlobBackend(object):
 
             instance = type.__new__(cls, name, bases, dict)
 
-            # Make the backend available for Asset instances
-            Asset.register_backend(name, instance)
-
             # Decorate __init__ to make sure the backend is enabled
             # during instantiation.
             def init_wrapper(method):
@@ -134,6 +92,9 @@ class BlobBackend(object):
         return all(cls._modules.values())
 
 
+####
+# Custom backends
+####
 class StaticScieloBackend(BlobBackend):
     """
     Stores data in static.scielo.org.
