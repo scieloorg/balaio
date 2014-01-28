@@ -1,7 +1,6 @@
 # coding: utf-8
 
 import json
-from lxml import etree
 
 import plumber
 
@@ -286,7 +285,7 @@ class TearDownPipe(plumber.Pipe):
         return json.dumps(dict_data, indent=2)
 
 
-if __name__ == '__main__':
+def get_meta_ppl():
     ppl = plumber.Pipeline(SetupPipe(),
                            TitlePipe(),
                            AbbrevJournalTitlePipe(),
@@ -308,8 +307,4 @@ if __name__ == '__main__':
                            PublisherIDPipe(),
                            TearDownPipe())
 
-    xml = etree.parse(open('<FILELIKEOBJECT>', 'rb'))
-    data = ppl.run([xml])
-
-    for dt in data:
-        print dt
+    return ppl
