@@ -1,6 +1,7 @@
 #coding: utf-8
 import datetime
 import logging
+import os
 
 import enum
 
@@ -52,6 +53,19 @@ def init_database(engine):
     Creates the database structure for the application.
     """
     Base.metadata.create_all(engine)
+
+    # Load the Alembic configuration, and generate the version
+    # table "stamping" it with the most recent revision.
+    from alembic.config import Config
+    from alembic import command
+
+    here = os.path.abspath(os.path.dirname(__file__))
+    config_path = os.path.join(here, u'..', u'alembic.ini')
+    try:
+        alembic_cfg = Config(config_path)
+        command.stamp(alembic_cfg, "head")
+    except IOError:
+        logger.error('Could not find alembic config file at %s' % config_path)
 
 
 class Attempt(Base):
