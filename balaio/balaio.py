@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     if args.syncdb:
         logger.info('The database infrastructure will be created')
-        config = utils.Configuration.from_env()
+        config = utils.balaio_config_from_env()
         engine = models.create_engine_from_config(config)
         models.init_database(engine)
 
