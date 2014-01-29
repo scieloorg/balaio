@@ -1,6 +1,7 @@
 #coding: utf-8
 import datetime
 import logging
+import os
 
 import enum
 
@@ -52,6 +53,22 @@ def init_database(engine):
     Creates the database structure for the application.
     """
     Base.metadata.create_all(engine)
+
+    # Load the Alembic configuration, and generate the version
+    # table "stamping" it with the most recent revision.
+    from alembic.config import Config
+    from alembic import command
+
+    try:
+        config_path = os.environ['BALAIO_ALEMBIC_SETTINGS_FILE']
+    except KeyError:
+        logger.error('Missing BALAIO_ALEMBIC_SETTINGS_FILE env variable.')
+    else:
+        try:
+            alembic_cfg = Config(config_path)
+            command.stamp(alembic_cfg, "head")
+        except IOError:
+            logger.error('Could not find alembic config file at %s' % config_path)
 
 
 class Attempt(Base):

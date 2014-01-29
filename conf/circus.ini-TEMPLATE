@@ -2,6 +2,7 @@
 ;---- absolute paths only
 virtualenv_path =
 BALAIO_SETTINGS_FILE =
+BALAIO_ALEMBIC_SETTINGS_FILE =
 app_working_dir = 
 
 

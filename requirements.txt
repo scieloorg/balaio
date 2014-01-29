@@ -13,3 +13,5 @@ psycopg2
 lxml
 factory_boy
 paramiko
+alembic
+
