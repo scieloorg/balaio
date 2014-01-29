@@ -95,6 +95,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                        "filepath": "/tmp/watch/xxx.zip",
                        "finished_at": null,
                        "articlepkg_id": %s,
+                       "proceed_to_checkout": false,
+                       "checkout_started_at": null,
+                       "pending_checkout": null,
+                       "queued_checkout": null,
                        "is_valid": true,
                        "started_at": "2013-10-09 16:44:29.865787",
                        "id": %s,
@@ -128,6 +132,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
                             "package_checksum": "%s",
+                            "proceed_to_checkout": false,
+                            "checkout_started_at": null,
+                            "pending_checkout": null,
+                            "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"},
                            {"collection_uri": "",
                             "filepath": "/tmp/watch/xxx.zip",
@@ -137,6 +145,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
                             "package_checksum": "%s",
+                            "proceed_to_checkout": false,
+                            "checkout_started_at": null,
+                            "pending_checkout": null,
+                            "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"},
                            {"collection_uri": "",
                             "filepath": "/tmp/watch/xxx.zip",
@@ -146,6 +158,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
                             "package_checksum": "%s",
+                            "proceed_to_checkout": false,
+                            "checkout_started_at": null,
+                            "pending_checkout": null,
+                            "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"}
                         ]
                     }''' % (articlepkg0_id, attempt0_id, attempt0_checksum, attempt0_id,
@@ -179,6 +195,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
                             "package_checksum": "%s",
+                            "proceed_to_checkout": false,
+                            "checkout_started_at": null,
+                            "pending_checkout": null,
+                            "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"},
                            {"collection_uri": "",
                             "filepath": "/tmp/watch/xxx.zip",
@@ -188,6 +208,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
                             "package_checksum": "%s",
+                            "proceed_to_checkout": false,
+                            "checkout_started_at": null,
+                            "pending_checkout": null,
+                            "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"},
                            {"collection_uri": "",
                             "filepath": "/tmp/watch/xxx.zip",
@@ -197,6 +221,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
                             "package_checksum": "%s",
+                            "proceed_to_checkout": false,
+                            "checkout_started_at": null,
+                            "pending_checkout": null,
+                            "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"}
                     ]}'''% (articlepkg0_id, attempt0_id, attempt0_checksum, attempt0_id,
                             articlepkg1_id, attempt1_id, attempt1_checksum, attempt1_id,
@@ -205,6 +233,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
         self.assertEqual(json.loads(res.body), json.loads(expected))
 
     def test_GET_to_attempts_with_param_offset(self):
+        self.maxDiff = None
         attempt1_id = self._loaded_fixtures[1].id
         attempt1_checksum = self._loaded_fixtures[1].package_checksum
         articlepkg1_id = self._loaded_fixtures[1].articlepkg.id
@@ -225,6 +254,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                           "started_at": "2013-10-09 16:44:29.865787",
                           "id": %s,
                           "package_checksum": "%s",
+                          "proceed_to_checkout": false,
+                          "checkout_started_at": null,
+                          "pending_checkout": null,
+                          "queued_checkout": null,
                           "resource_uri": "/api/v1/attempts/%s/"},
                          {"collection_uri": "",
                           "filepath": "/tmp/watch/xxx.zip",
@@ -234,6 +267,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                           "started_at": "2013-10-09 16:44:29.865787",
                           "id": %s,
                           "package_checksum": "%s",
+                          "proceed_to_checkout": false,
+                          "checkout_started_at": null,
+                          "pending_checkout": null,
+                          "queued_checkout": null,
                           "resource_uri": "/api/v1/attempts/%s/"}
                         ]}''' % (articlepkg1_id, attempt1_id, attempt1_checksum, attempt1_id,
                                  articlepkg2_id, attempt2_id, attempt2_checksum, attempt2_id)
@@ -267,6 +304,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                           "started_at": "2013-10-09 16:44:29.865787",
                           "id": %s,
                           "package_checksum": "%s",
+                          "proceed_to_checkout": false,
+                          "checkout_started_at": null,
+                          "pending_checkout": null,
+                          "queued_checkout": null,
                           "resource_uri": "/api/v1/attempts/%s/"},
                          {"collection_uri": "",
                           "filepath": "/tmp/watch/xxx.zip",
@@ -276,6 +317,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                           "started_at": "2013-10-09 16:44:29.865787",
                           "id": %s,
                           "package_checksum": "%s",
+                          "proceed_to_checkout": false,
+                          "checkout_started_at": null,
+                          "pending_checkout": null,
+                          "queued_checkout": null,
                           "resource_uri": "/api/v1/attempts/%s/"}
                         ]}''' % (articlepkg0_id, attempt0_id, attempt0_checksum, attempt0_id,
                                  articlepkg1_id, attempt1_id, attempt1_checksum, attempt1_id)
@@ -303,6 +348,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
                             "package_checksum": "%s",
+                            "proceed_to_checkout": false,
+                            "checkout_started_at": null,
+                            "pending_checkout": null,
+                            "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"},
                            {"collection_uri": "",
                             "filepath": "/tmp/watch/xxx.zip",
@@ -312,6 +361,10 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
                             "package_checksum": "%s",
+                            "proceed_to_checkout": false,
+                            "checkout_started_at": null,
+                            "pending_checkout": null,
+                            "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"}
                          ]}'''% (articlepkg1_id, attempt1_id, attempt1_checksum, attempt1_id,
                                  articlepkg2_id, attempt2_id, attempt2_checksum, attempt2_id)
@@ -331,10 +384,18 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "filepath": "/tmp/watch/xxx.zip",
                             "finished_at": null,
                             "articlepkg_id": %s,
+                            "proceed_to_checkout": false,
+                            "checkout_started_at": null,
+                            "pending_checkout": null,
+                            "queued_checkout": null,
                             "is_valid": true,
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
                             "package_checksum": "%s",
+                            "proceed_to_checkout": false,
+                            "checkout_started_at": null,
+                            "pending_checkout": null,
+                            "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"}
                          ]}''' % (articlepkg2_id, attempt2_id, attempt2_checksum, attempt2_id)
 

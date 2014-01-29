@@ -66,6 +66,10 @@ class Attempt(Base):
     filepath = Column(String)
     is_valid = Column(Boolean)
     checkin_uri = Column(String(length=64), nullable=True)
+    proceed_to_checkout = Column(Boolean, nullable=False)
+    checkout_started_at = Column(DateTime)
+    pending_checkout = Column(Boolean)
+    queued_checkout = Column(Boolean)
 
     articlepkg = relationship('ArticlePkg',
                               backref=backref('attempts',
@@ -75,6 +79,7 @@ class Attempt(Base):
         super(Attempt, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
         self.is_valid = kwargs.get('is_valid', True)
+        self.proceed_to_checkout = kwargs.get('proceed_to_checkout', False)
 
     def to_dict(self):
 
@@ -87,7 +92,11 @@ class Attempt(Base):
                            finished_at=str(self.finished_at) if self.finished_at else None,
                            collection_uri=self.collection_uri,
                            filepath=self.filepath,
-                           is_valid=self.is_valid,)
+                           is_valid=self.is_valid,
+                           proceed_to_checkout=self.proceed_to_checkout,
+                           checkout_started_at=self.checkout_started_at,
+                           pending_checkout=self.pending_checkout,
+                           queued_checkout=self.queued_checkout)
 
         return checkpoints
 
