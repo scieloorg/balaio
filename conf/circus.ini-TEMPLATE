@@ -25,10 +25,10 @@ virtualenv = $(circus.env.virtualenv_path)
 [watcher:httpd]
 ;---- run directly as a python program 
 ;cmd = python
-;args = httpd.py
+;args = wsgiapp.py
 
 ;---- run with chaussette
-cmd = chaussette --fd $(circus.sockets.httpd) --backend waitress httpd.app
+cmd = chaussette --fd $(circus.sockets.httpd) --backend waitress wsgiapp.app
 use_sockets = True
 
 numprocesses = 1
