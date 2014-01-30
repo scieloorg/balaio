@@ -4,6 +4,9 @@ import sys
 import os
 import unittest
 
+# adding balaio package to path, to avoid some httpd imports to blow up.
+sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
+
 from pyramid import testing
 from pyramid.httpexceptions import HTTPNotFound,HTTPAccepted, HTTPCreated
 from sqlalchemy.exc import OperationalError
@@ -17,7 +20,6 @@ from .utils import db_bootstrap, DB_READY
 from . import modelfactories
 
 
-sys.path.append(os.path.dirname(__file__) + '/../')
 global_engine = None
 
 

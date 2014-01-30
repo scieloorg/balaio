@@ -7,3 +7,7 @@ script:
   - python setup.py nosetests
 before_script:
   - psql -c 'create database app_balaio_tests;' -U postgres
+  - cp ./conf/config.ini-TEMPLATE ./conf/config.ini
+env:
+  - BALAIO_SETTINGS_FILE = ./conf/config.ini
+  
