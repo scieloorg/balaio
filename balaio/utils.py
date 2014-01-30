@@ -63,20 +63,6 @@ class Configuration(SingletonMixin):
         self.conf.readfp(fp)
 
     @classmethod
-    def from_env(cls):
-        try:
-            filepath = os.environ['BALAIO_SETTINGS_FILE']
-        except KeyError:
-            if __debug__:
-                # load the test configurations
-                cwd = os.path.join(os.path.dirname(__file__))
-                filepath = os.path.join(cwd, '..', 'config-test.ini')
-            else:
-                raise ValueError('missing env variable BALAIO_SETTINGS_FILE')
-
-        return cls.from_file(filepath)
-
-    @classmethod
     def from_file(cls, filepath):
         """
         Returns an instance of Configuration
@@ -94,6 +80,32 @@ class Configuration(SingletonMixin):
         """
         return [(section, dict(self.conf.items(section))) for \
             section in [section for section in self.conf.sections()]]
+
+
+def balaio_config_from_env():
+    """
+    Returns an instance of Configuration.
+    """
+    try:
+        filepath = os.environ['BALAIO_SETTINGS_FILE']
+    except KeyError:
+        raise ValueError('missing env variable BALAIO_SETTINGS_FILE')
+
+    return Configuration.from_file(filepath)
+
+
+def alembic_config_from_env():
+    """
+    Returns an instance of Configuration.
+
+    Alembic is a DB migrations system for SqlAlchemy.
+    """
+    try:
+        filepath = os.environ['BALAIO_ALEMBIC_SETTINGS_FILE']
+    except KeyError:
+        raise ValueError('missing env variable BALAIO_ALEMBIC_SETTINGS_FILE')
+
+    return Configuration.from_file(filepath)
 
 
 def make_digest(message, secret='sekretz'):

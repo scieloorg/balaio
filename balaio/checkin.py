@@ -88,7 +88,7 @@ class PackageAnalyzer(xray.SPSPackage):
         self._is_locked = False
 
 
-def get_attempt(package):
+def get_attempt(package, Session=models.Session):
     """
     Returns a brand new models.Attempt instance, bound to a models.ArticlePkg
     instance.
@@ -105,19 +105,14 @@ def get_attempt(package):
     Case 4: Package is duplicated
             raises :class:`excepts.DuplicatedPackage`.
 
-    :param package: filesystem path to package
+    :param package: filesystem path to package.
+    :param Session: (optional) Reference to a Session class.
     """
-    config = utils.Configuration.from_env()
     logger.info('Analyzing package: %s' % package)
 
     with PackageAnalyzer(package) as pkg:
-        Session = models.Session
-        logger.debug('Binding a new sqlalchemy.engine')
-
-        Session.configure(bind=models.create_engine_from_config(config))
-        logger.debug('Creating a transactional session scope')
-
         try:
+            logger.debug('Creating a transactional session scope')
             session = Session()
 
             # Building a new Attempt
