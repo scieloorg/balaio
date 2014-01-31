@@ -1,15 +1,21 @@
-Instalação
-==========
+Guia de Instalação
+==================
 
 Guia de instalação do balaio e suas dependencias.
 
-.. toctree::
-   :maxdepth: 2
-   
-   requisitos
+Requisitos
+----------
+
+    * git
+    * circus
+    * chaussette
+    * postgres
+    * Linux
+    * virtualenv (opcional)
 
 
- .. note::
+Instalação
+----------
 
     Clonar o repositório: https://github.com/scieloorg/balaio
 
@@ -19,35 +25,19 @@ Instalar bibliotecas python::
 
 .. note::
     
-    É possível que durante a instalação do *psycopg2* ocorra um erro relacionado ao pg_config.
-
-    Solução:
-
-    Nesse certifique-se de ter instalado os headers do postgres.
+    É possível que durante a instalação do **psycopg2** ocorra um erro relacionado ao **pg_config**. Nesse caso certifique-se de ter instalado os headers do **postgresql**.
 
 .. note::
     
-    É possível que durante a instalação do *psycopg2* ocorra um erro relacionado ao python.h.
-
-    Solução:
-
-    Nesse certifique-se de ter instalado os headers do python.
+    É possível que durante a instalação do **psycopg2** ocorra um erro relacionado ao **python.h**. Nesse caso certifique-se de ter instalado os headers do **python**.
 
 .. note::
     
-    É possível que durante a instalação do *lxml* ocorra um erro relacionado ao libxml2.
-
-    Solução:
-
-    Nesse certifique-se de ter instalado os headers do libxml.
+    É possível que durante a instalação do **lxml** ocorra um erro relacionado ao **libxml2**. Nesse caso certifique-se de ter instalado os headers do **libxml**.
 
 .. note::
     
-    É possível que durante a instalação do *lxml* ocorra um erro relacionado ao libxslt.
-
-    Solução:
-
-    Nesse certifique-se de ter instalado os headers do libxslt.
+    É possível que durante a instalação do **lxml** ocorra um erro relacionado ao **libxslt**. Nesse caso certifique-se de ter instalado os headers do **libxslt**.
 
 Instalar aplicação::
 
@@ -76,15 +66,23 @@ Configurar aplicação
 
             [env]
             ;---- absolute paths only
-            virtualenv_path = /home/fabiobatalha/.virtualenvs/balaio
-            BALAIO_SETTINGS_FILE = /home/fabiobatalha/Trabalho/balaio/conf/config.ini
-            BALAIO_ALEMBIC_SETTINGS_FILE = /home/fabiobatalha/Trabalho/balaio/conf/alembic.ini
-            app_working_dir = /home/fabiobatalha/Trabalho/balaio
+            virtualenv_path = 
+            BALAIO_SETTINGS_FILE = 
+            BALAIO_ALEMBIC_SETTINGS_FILE = 
+            app_working_dir = 
+
+    Sincronizar banco de dados::
+
+        python balaio/balaio.py -c conf/config.ini --syncdb
 
 
+Testar aplicação
+----------------
 
+    Criar banco de dados de testes no postgresql. O banco deve se chamar **app_balaio_tests**
 
-Sincronizar banco de dados::
+    Executar testes::
+    
+        python setup.py nosetests
 
-    python balaio/balaio.py -c conf/config.ini --syncdb
 
