@@ -103,6 +103,10 @@ class Attempt(Base):
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
 
+    @property
+    def pending_checkout(self):
+        return self.proceed_to_checkout and not self.checkout_started_at
+
     @classmethod
     def get_from_package(cls, package):
         """
