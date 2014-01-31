@@ -22,3 +22,8 @@ reload:
 	@circusctl reload validator --waiting
 	@circusctl reload monitor --waiting
         
+dbupgrade:
+	@alembic --config conf/alembic.ini upgrade head
+
+upgrade: deps dbupgrade test
+
