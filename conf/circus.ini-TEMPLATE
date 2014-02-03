@@ -1,6 +1,9 @@
 [env]
-virtualenv_path = /home/gustavo/.virtualenvs/balaio
-BALAIO_SETTINGS_FILE = /home/gustavo/prj/github/balaio/config.ini
+;---- absolute paths only
+virtualenv_path =
+BALAIO_SETTINGS_FILE =
+BALAIO_ALEMBIC_SETTINGS_FILE =
+app_working_dir = 
 
 
 [circus]
@@ -12,7 +15,7 @@ httpd = 1
 cmd = python
 args = loggingserver.py
 numprocesses = 1
-working_dir = balaio
+working_dir = $(circus.env.app_working_dir)
 stop_children = True
 graceful_timeout = 10
 priority = 10
@@ -21,21 +24,33 @@ virtualenv = $(circus.env.virtualenv_path)
 
 
 [watcher:httpd]
-cmd = python
-args = httpd.py -c ../config.ini
+;---- run directly as a python program 
+;cmd = python
+;args = wsgiapp.py
+
+;---- run with chaussette
+cmd = chaussette --fd $(circus.sockets.httpd) --backend waitress wsgiapp.app
+use_sockets = True
+
 numprocesses = 1
-working_dir = balaio
+working_dir = $(circus.env.app_working_dir)
 graceful_timeout = 10
 priority = 5
 copy_env = True
 virtualenv = $(circus.env.virtualenv_path)
 
 
+[socket:httpd]
+;---- needed for running with chaussette
+host = 0.0.0.0
+port = 8086
+
+
 [watcher:validator]
 cmd = python
 args = validator.py
 numprocesses = 1
-working_dir = balaio
+working_dir = $(circus.env.app_working_dir)
 graceful_timeout = 10
 priority = 1
 copy_env = True
@@ -46,7 +61,7 @@ virtualenv = $(circus.env.virtualenv_path)
 cmd = python
 args = monitor.py
 numprocesses = 1
-working_dir = balaio
+working_dir = $(circus.env.app_working_dir)
 graceful_timeout = 10
 priority = 0
 copy_env = True

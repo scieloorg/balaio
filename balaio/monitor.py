@@ -25,18 +25,19 @@ mask = pyinotify.IN_CLOSE_WRITE | pyinotify.IN_MOVE_SELF | pyinotify.IN_MOVED_TO
 
 
 class Monitor(object):
-    def __init__(self, workers=None):
+    def __init__(self, config, workers=None):
         self.job_queue = Queue.Queue()
-        self.total_workers = workers if workers else 1
+        self.total_workers = workers or 1
+        self.config = config
 
-        self.config = utils.Configuration.from_env()
         self.CheckinNotifier = notifier.checkin_notifier_factory(self.config)
-        self.Session = models.Session
-        self.Session.configure(bind=models.create_engine_from_config(self.config))
+        self._setup_sock()
+        self._setup_workers()
 
+    def _setup_sock(self):
         while True:
             try:
-                self.stream = utils.get_writable_socket(config.get('app', 'socket'))
+                self.stream = utils.get_writable_socket(self.config.get('app', 'socket'))
                 break
             except socket.error:
                 logger.info('Trying to estabilish connection with module `validator`. Please wait...')
@@ -44,7 +45,7 @@ class Monitor(object):
             else:
                 logger.info('Connection estabilished with `validator`.')
 
-
+    def _setup_workers(self):
         self.running_workers = []
         for w in range(self.total_workers):
             thread = threading.Thread(target=self.handle_events, args=(self.job_queue,))
@@ -74,9 +75,8 @@ class Monitor(object):
                     logger.debug('The file is gone before marked as duplicated. %s' % e)
 
             else:
-
                 # Create a notification to keep track of the checkin process
-                session = self.Session()
+                session = models.Session()
                 checkin_notifier = self.CheckinNotifier(attempt, session)
                 checkin_notifier.start()
 
@@ -103,8 +103,13 @@ class Monitor(object):
 
 class EventHandler(pyinotify.ProcessEvent):
     def __init__(self, *args, **kwargs):
+        config = kwargs.pop('config', None)
         super(EventHandler, self).__init__(*args, **kwargs)
-        self.monitor = Monitor()
+
+        if not config:
+            raise TypeError(u'__init__() expects a config kwarg')
+
+        self.monitor = Monitor(config)
 
     def process_IN_CLOSE_WRITE(self, event):
         logger.debug('IN_CLOSE_WRITE event handler for %s' % event)
@@ -135,11 +140,15 @@ class EventHandler(pyinotify.ProcessEvent):
 
 
 if __name__ == '__main__':
-    config = utils.Configuration.from_env()
+    # App bootstrapping:
+    # Setting up the app configuration, logging and SqlAlchemy Session.
+    config = utils.balaio_config_from_env()
     utils.setup_logging()
+    models.Session.configure(bind=models.create_engine_from_config(config))
 
+    # Setting up PyInotify event watcher.
     wm = pyinotify.WatchManager()
-    handler = EventHandler()
+    handler = EventHandler(config=config)
     notifier = pyinotify.Notifier(wm, handler)
 
     wm.add_watch(config.get('monitor', 'watch_path').split(','),
