@@ -17,6 +17,7 @@ from uploader import StaticScieloBackend
 
 FILES_EXTENSION = ['xml', 'pdf',]
 IMAGES_EXTENSION = ['tif', 'eps']
+NAME_ZIP_FILE = 'images.zip'
 
 
 class CheckoutList(list):
@@ -49,7 +50,7 @@ def get_static_files(attempt, ext):
 
 def target_path(aid, arq_name):
     """
-    Produces the path to the static file based on file name and aid
+    Produces the path to the static file based on file ``name`` and ``aid``
     :param aid: Article ID
     :param arq_name: Name of file extracted from the zip file
     """
@@ -64,6 +65,7 @@ def upload_static_files(attempt, cfg):
     :param cfg: configuration file
     """
     uri_dict = {}
+    dict_img = {}
 
     with StaticScieloBackend(cfg.get('static_server', 'username'),
                              cfg.get('static_server', 'password'),
@@ -76,6 +78,16 @@ def upload_static_files(attempt, cfg):
                                   target_path(attempt.articlepkg.aid, stc.name))
 
                 uri_dict[ext] = uri
+
+        for ext in IMAGES_EXTENSION:
+            for stc in get_static_files(attempt, ext):
+                dict_img[stc.name] = stc.read()
+
+        compact_img = utils.zip_files(dict_img)
+        uri = static.send(compact_img,
+                     target_path(attempt.articlepkg.aid, NAME_ZIP_FILE))
+
+        uri_dict['img'] = uri
 
         return uri_dict
 
@@ -102,6 +114,7 @@ def upload_meta_front(attempt, cfg, uri_dict):
         'front': next(ppl.run(xml, rewrap=True)),
         'xml_url': uri_dict['xml'],
         'pdf_url': uri_dict['pdf'],
+        'images_url': uri_dict['img'],
     }
 
     client.articles.post(data)

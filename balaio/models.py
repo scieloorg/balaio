@@ -68,7 +68,6 @@ class Attempt(Base):
     checkin_uri = Column(String(length=64), nullable=True)
     proceed_to_checkout = Column(Boolean, nullable=False)
     checkout_started_at = Column(DateTime)
-    pending_checkout = Column(Boolean)
     queued_checkout = Column(Boolean)
 
     articlepkg = relationship('ArticlePkg',
@@ -95,7 +94,6 @@ class Attempt(Base):
                            is_valid=self.is_valid,
                            proceed_to_checkout=self.proceed_to_checkout,
                            checkout_started_at=self.checkout_started_at,
-                           pending_checkout=self.pending_checkout,
                            queued_checkout=self.queued_checkout)
 
         return checkpoints
@@ -103,9 +101,15 @@ class Attempt(Base):
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
 
+
     @property
     def pending_checkout(self):
+        """
+        Verify if the item is pending to checkout based on ``proceed_to_checkout``
+        and ``checkout_started_at``.
+        """
         return self.proceed_to_checkout and not self.checkout_started_at
+
 
     @classmethod
     def get_from_package(cls, package):

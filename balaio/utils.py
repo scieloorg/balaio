@@ -5,6 +5,8 @@ import weakref
 import hashlib
 import requests
 import threading
+import zipfile
+from StringIO import StringIO
 import logging, logging.handlers
 from ConfigParser import SafeConfigParser
 import socket
@@ -478,4 +480,23 @@ def get_writable_socket(sock_path):
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.connect(sock_path)
     return sock
+
+
+def zip_files(dict_bytes, compression=zipfile.ZIP_DEFLATED):
+    """
+    Compact dict itens passed by parameter and return a ZipFile object
+
+    :param dict_bytes: ``key``: name of file, ``value``: bytes
+    """
+    in_memory = StringIO()
+
+    with zipfile.ZipFile(in_memory, 'w', compression) as zf:
+        for kname, vbytes in dict_bytes.iteritems():
+            zf.writestr(kname, vbytes)
+
+    zf.close()
+
+    in_memory.seek(0)
+
+    return in_memory
 
