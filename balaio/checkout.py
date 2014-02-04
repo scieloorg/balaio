@@ -124,8 +124,7 @@ def checkout_procedure(item):
     attempt.queued_checkout = False
 
 
-if __name__ == '__main__':
-
+def main():
     cfg = utils.balaio_config_from_env()
 
     Session = models.Session
@@ -155,7 +154,7 @@ if __name__ == '__main__':
 
             try:
                 for attempt in attempts_checkout:
-                    # if attempt.pending_checkout:
+                    if attempt.pending_checkout:
                         checkout_lst.append((attempt, client, conn))
 
                 #Execute the checkout procedure for each item
@@ -169,3 +168,8 @@ if __name__ == '__main__':
         time.sleep(cfg.getint('checkout', 'time') * 5)
 
     pool.close
+
+
+if __name__ == '__main__':
+    main()
+
