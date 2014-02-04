@@ -166,6 +166,6 @@ if __name__ == '__main__':
                 transaction.abort()
                 raise
 
-        time.sleep(config.getint('checkout', 'time') * 5)
+        time.sleep(config.getint('checkout', 'time') * 60)
 
     pool.close
