@@ -165,7 +165,7 @@ def main():
                 transaction.abort()
                 raise
 
-        time.sleep(cfg.getint('checkout', 'time') * 5)
+        time.sleep(cfg.getint('checkout', 'time') * 60)
 
     pool.close
 
