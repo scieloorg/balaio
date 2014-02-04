@@ -5,6 +5,8 @@ import stat
 import zipfile
 import itertools
 import logging
+import shutil
+import uuid
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.exc import IntegrityError
@@ -88,6 +90,70 @@ class PackageAnalyzer(xray.SPSPackage):
         self._is_locked = False
 
 
+class SafePackage(object):
+    """
+    Represents a package that can be inspected safely.
+
+    The safety is obtained by copying the package to a
+    working directory managed only by the application.
+    """
+    def __init__(self, package, working_dir):
+        self.primary_path = package
+        self.path = None
+        self.working_dir = working_dir
+
+        self._move_to_working_dir()
+
+    def _gen_safe_path(self):
+        basedir = os.path.dirname(self.primary_path)
+        fname, fext = os.path.splitext(os.path.basename(self.primary_path))
+
+        packid = uuid.uuid4().hex
+        return os.path.join(self.working_dir, packid+fext)
+
+    def _move_to_working_dir(self):
+        new_path = self._gen_safe_path()
+        shutil.copy2(self.primary_path, new_path)
+        self.path = new_path
+
+    @property
+    def analyzer(self):
+        """
+        Returns a PackageAnalyzer instance bound to the package.
+        """
+        p_analyzer = getattr(self, '_analyzer', None)
+        if not p_analyzer:
+            self._analyzer = PackageAnalyzer(self.path)
+
+        return p_analyzer or self._analyzer
+
+    def mark_as_failed(self, silence=False):
+        """
+        Mark primary path as failed.
+
+        If the target file is gone, the error is logged
+        and the exception is silenced.
+        """
+        try:
+            utils.mark_as_failed(self.primary_path)
+        except OSError as e:
+            logger.debug('The file is gone before marked as failed. %s' % e)
+            if not silence: raise
+
+    def mark_as_duplicated(self, silence=False):
+        """
+        Mark primary path as duplicated.
+
+        If the target file if gone, the error is logged
+        and the exception is silenced.
+        """
+        try:
+            utils.mark_as_duplicated(self.primary_path)
+        except OSError as e:
+            logger.debug('The file is gone before marked as duplicated. %s' % e)
+            if not silence: raise
+
+
 def get_attempt(package, Session=models.Session):
     """
     Returns a brand new models.Attempt instance, bound to a models.ArticlePkg
@@ -105,12 +171,12 @@ def get_attempt(package, Session=models.Session):
     Case 4: Package is duplicated
             raises :class:`excepts.DuplicatedPackage`.
 
-    :param package: filesystem path to package.
+    :param package: Instance of SafePackage.
     :param Session: (optional) Reference to a Session class.
     """
     logger.info('Analyzing package: %s' % package)
 
-    with PackageAnalyzer(package) as pkg:
+    with package.analyzer as pkg:
         try:
             logger.debug('Creating a transactional session scope')
             session = Session()
