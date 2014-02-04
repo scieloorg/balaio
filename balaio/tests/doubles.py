@@ -174,6 +174,9 @@ class AttemptStub(object):
         self.filepath = '/tmp/foo/bar.zip'
         self.collection_uri = '/api/v1/collection/xxx/'
         self.package_checksum = 'ol9j27n3f52kne7hbn'
+        self.proceed_to_checkout = True,
+        self.checkout_started_at = '2011-09-01 14:11:04.129956',
+        self.queued_checkout = True,
         self.articlepkg = ArticlePkgStub()
 
     def to_dict(self):

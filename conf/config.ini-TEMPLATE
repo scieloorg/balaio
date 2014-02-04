@@ -10,10 +10,19 @@ recursive=True
 [manager]
 api_key=
 api_username=
-api_url=http://manager.scielo.org/api/v1/
+api_url=http://manager.scielo.org/api/
 notifications=False
 
 [http_server]
 ip=0.0.0.0
 port=8080
 
+[checkout]
+time=1
+thread_pool_size=2
+
+[static_server]
+host=
+username=
+password=
+path=

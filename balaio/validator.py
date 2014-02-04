@@ -592,11 +592,17 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
 
 
 if __name__ == '__main__':
+    # App bootstrapping:
+    # Setting up the app configuration, logging and SqlAlchemy Session.
+    config = utils.balaio_config_from_env()
     utils.setup_logging()
-    config = utils.Configuration.from_env()
-    input_stream = utils.get_readable_socket(config.get('app', 'socket'))
+    models.Session.configure(bind=models.create_engine_from_config(config))
 
+    # Setting up the messaging machinery.
+    input_stream = utils.get_readable_socket(config.get('app', 'socket'))
     messages = utils.recv_messages(input_stream, utils.make_digest)
+
+    # Setting up some pipe dependencies.
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
                                  config.get('manager', 'api_key'),
                                  api_uri=config.get('manager', 'api_url'))
@@ -624,7 +630,9 @@ if __name__ == '__main__':
     )
 
     try:
-        results = [msg for msg in ppl.run(messages)]
+        for msg in ppl.run(messages):
+            # nothing to do here...
+            pass
     except KeyboardInterrupt:
         sys.exit(0)
 
