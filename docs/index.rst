@@ -37,4 +37,5 @@ and design decisions.
    dev/gateway_http_api
    design
    domain
+   install
 

@@ -18,6 +18,7 @@ from uploader import StaticScieloBackend
 FILES_EXTENSION = ['xml', 'pdf',]
 IMAGES_EXTENSION = ['tif', 'eps']
 NAME_ZIP_FILE = 'images.zip'
+STATIC_PATH = 'articles'
 
 
 class CheckoutList(list):
@@ -37,7 +38,7 @@ class CheckoutList(list):
         super(CheckoutList, self).append(item)
 
 
-def get_static_files(attempt, ext):
+def get_static(attempt, ext):
     """
     Get the static files from the zip file
     Return a generator to a specific extension
@@ -46,15 +47,6 @@ def get_static_files(attempt, ext):
     pkg_analyzer = PackageAnalyzer(attempt.filepath)
 
     return pkg_analyzer.get_fps(ext)
-
-
-def target_path(aid, arq_name):
-    """
-    Produces the path to the static file based on file ``name`` and ``aid``
-    :param aid: Article ID
-    :param arq_name: Name of file extracted from the zip file
-    """
-    return '/articles/%s/%s' % (aid, os.path.basename(arq_name))
 
 
 def upload_static_files(attempt, cfg):
@@ -67,25 +59,28 @@ def upload_static_files(attempt, cfg):
     uri_dict = {}
     dict_img = {}
 
-    with StaticScieloBackend(cfg.get('static_server', 'username'),
-                             cfg.get('static_server', 'password'),
-                             cfg.get('static_server', 'path'),
-                             cfg.get('static_server', 'host')) as static:
+    conn_static = StaticScieloBackend(cfg.get('static_server', 'username'),
+                                      cfg.get('static_server', 'password'),
+                                      cfg.get('static_server', 'path'),
+                                      cfg.get('static_server', 'host'))
+
+    with conn_static as static:
 
         for ext in FILES_EXTENSION:
-            for stc in get_static_files(attempt, ext):
+            for stc in get_static(attempt, ext):
                 uri = static.send(StringIO(stc.read()),
-                                  target_path(attempt.articlepkg.aid, stc.name))
-
+                                  utils.get_static_path(STATIC_PATH,
+                                            attempt.articlepkg.aid, stc.name))
                 uri_dict[ext] = uri
 
         for ext in IMAGES_EXTENSION:
-            for stc in get_static_files(attempt, ext):
+            for stc in get_static(attempt, ext):
                 dict_img[stc.name] = stc.read()
 
-        compact_img = utils.zip_files(dict_img)
-        uri = static.send(compact_img,
-                     target_path(attempt.articlepkg.aid, NAME_ZIP_FILE))
+        comp_img = utils.zip_files(dict_img)
+        uri = static.send(comp_img,
+                    utils.get_static_path(STATIC_PATH, attempt.articlepkg.aid,
+                                           NAME_ZIP_FILE))
 
         uri_dict['img'] = uri
 
@@ -104,7 +99,6 @@ def upload_meta_front(attempt, cfg, uri_dict):
     client = scieloapi.Client(cfg.get('manager', 'api_username'),
                               cfg.get('manager', 'api_key'),
                               cfg.get('manager', 'api_url'), 'v1')
-
 
     ppl =  meta_extractor.get_meta_ppl()
 
@@ -125,6 +119,7 @@ def checkout_procedure(item):
     This function performs some operations related to the checkout
         - Upload static files to the backend
         - Upload the front metadata to the Manager
+        - Set queued_checkout = False
 
     :param attempt: item (Attempt, config)
     """
@@ -136,10 +131,12 @@ def checkout_procedure(item):
 
     upload_meta_front(attempt, config, uri_dict)
 
+    attempt.queued_checkout = False
+
 
 if __name__ == '__main__':
 
-    config = utils.Configuration.from_env()
+    config = utils.balaio_config_from_env()
 
     Session = models.Session
     Session.configure(bind=models.create_engine_from_config(config))

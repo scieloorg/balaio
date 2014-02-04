@@ -10,7 +10,7 @@ recursive=True
 [manager]
 api_key=
 api_username=
-api_url=http://manager.scielo.org/api/v1/
+api_url=http://manager.scielo.org/api/
 notifications=False
 
 [http_server]

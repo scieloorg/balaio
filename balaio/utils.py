@@ -494,16 +494,16 @@ def get_writable_socket(sock_path):
     return sock
 
 
-def zip_files(dict_bytes, compression=zipfile.ZIP_DEFLATED):
+def zip_files(dict_files, compression=zipfile.ZIP_DEFLATED):
     """
-    Compact dict itens passed by parameter and return a ZipFile object
+    Compact dict itens passed by parameter and return a file-like object
 
-    :param dict_bytes: ``key``: name of file, ``value``: bytes
+    :param dict_files: ``key``: name of file, ``value``: bytes
     """
     in_memory = StringIO()
 
     with zipfile.ZipFile(in_memory, 'w', compression) as zf:
-        for kname, vbytes in dict_bytes.iteritems():
+        for kname, vbytes in dict_files.iteritems():
             zf.writestr(kname, vbytes)
 
     zf.close()
@@ -512,3 +512,12 @@ def zip_files(dict_bytes, compression=zipfile.ZIP_DEFLATED):
 
     return in_memory
 
+
+def get_static_path(path, aid, filename):
+    """
+    Produces the path to the static file based on file ``name`` and ``aid``
+    :param path: path to the backend
+    :param aid: aid (article identify)
+    :param filename: name of the file
+    """
+    return os.path.join(path, aid, os.path.basename(filename))
