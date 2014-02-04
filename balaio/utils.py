@@ -515,7 +515,7 @@ def zip_files(dict_files, compression=zipfile.ZIP_DEFLATED):
 
 def get_static_path(path, aid, filename):
     """
-    Produces the path to the static file based on file ``name`` and ``aid``
+    Produces the path to the static file based on file ``path``, ``name`` and ``aid``
     :param path: path to the backend
     :param aid: aid (article identify)
     :param filename: name of the file

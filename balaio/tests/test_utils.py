@@ -588,13 +588,18 @@ class GetStaticPathTests(unittest.TestCase):
 
         self.assertEqual(path, 'articles/aid/images.zip')
 
-    def test_if_get_static_path_with_strange_arq_name(self):
+    def test_get_static_path_with_level_path(self):
+        path = utils.get_static_path("test/articles", 'aid', 'images.zip')
+
+        self.assertEqual(path, 'test/articles/aid/images.zip')
+
+    def test_get_static_path_with_level_aid(self):
+        path = utils.get_static_path("articles", 'test/aid', 'images.zip')
+
+        self.assertEqual(path, 'articles/test/aid/images.zip')
+
+    def test_if_get_static_path_with_level_arq_name(self):
         path = utils.get_static_path('articles', 'aid', 'test/images.zip')
 
         self.assertEqual(path, 'articles/aid/images.zip')
-
-
-
-
-
 
