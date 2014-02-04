@@ -5,6 +5,8 @@ import weakref
 import hashlib
 import requests
 import threading
+import zipfile
+from StringIO import StringIO
 import logging, logging.handlers
 from ConfigParser import SafeConfigParser
 import socket
@@ -491,3 +493,31 @@ def get_writable_socket(sock_path):
     sock.connect(sock_path)
     return sock
 
+
+def zip_files(dict_files, compression=zipfile.ZIP_DEFLATED):
+    """
+    Compact dict itens passed by parameter and return a file-like object
+
+    :param dict_files: ``key``: name of file, ``value``: bytes
+    """
+    in_memory = StringIO()
+
+    with zipfile.ZipFile(in_memory, 'w', compression) as zf:
+        for kname, vbytes in dict_files.iteritems():
+            zf.writestr(kname, vbytes)
+
+    zf.close()
+
+    in_memory.seek(0)
+
+    return in_memory
+
+
+def get_static_path(path, aid, filename):
+    """
+    Produces the path to the static file based on file ``path``, ``name`` and ``aid``
+    :param path: path to the backend
+    :param aid: aid (article identify)
+    :param filename: name of the file
+    """
+    return os.path.join(path, aid, os.path.basename(filename))

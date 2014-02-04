@@ -1,3 +1,4 @@
+#coding: utf-8
 import mocker
 import unittest
 import ConfigParser
@@ -554,4 +555,51 @@ class FileLikeSocketAdaperTests(unittest.TestCase):
         # does nothing, but must be present
         fsock = utils.FileLikeSocket(self.sock_one)
         self.assertTrue(hasattr(fsock, 'flush'))
+
+
+class ZipFilesUtilsTests(unittest.TestCase):
+
+    def setUp(self):
+        self.dict_files = {'text': 'Lorem Ipsum é ....',
+                           'img': 'fxx\nfnhjs\nksbhins'}
+
+    def test_if_zip_files_return_file_like_object(self):
+        fp = utils.zip_files(self.dict_files)
+
+        self.assertTrue(hasattr(fp, 'read'))
+
+    def test_zip_files_compress_with_deferent_deflate(self):
+        import zipfile
+
+        fp = utils.zip_files(self.dict_files, zipfile.ZIP_STORED)
+
+        self.assertTrue(fp)
+
+    def test_zip_files_allow_read_returned_file_like_object(self):
+        fp = utils.zip_files(self.dict_files)
+
+        self.assertIsInstance(fp.read(), str)
+
+
+class GetStaticPathTests(unittest.TestCase):
+
+    def test_get_static_path_with_normal_arq_name(self):
+        path = utils.get_static_path('articles', 'aid', 'images.zip')
+
+        self.assertEqual(path, 'articles/aid/images.zip')
+
+    def test_get_static_path_with_level_path(self):
+        path = utils.get_static_path("test/articles", 'aid', 'images.zip')
+
+        self.assertEqual(path, 'test/articles/aid/images.zip')
+
+    def test_get_static_path_with_level_aid(self):
+        path = utils.get_static_path("articles", 'test/aid', 'images.zip')
+
+        self.assertEqual(path, 'articles/test/aid/images.zip')
+
+    def test_if_get_static_path_with_level_arq_name(self):
+        path = utils.get_static_path('articles', 'aid', 'test/images.zip')
+
+        self.assertEqual(path, 'articles/aid/images.zip')
 

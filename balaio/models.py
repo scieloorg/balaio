@@ -83,6 +83,9 @@ class Attempt(Base):
     filepath = Column(String)
     is_valid = Column(Boolean)
     checkin_uri = Column(String(length=64), nullable=True)
+    proceed_to_checkout = Column(Boolean, nullable=False)
+    checkout_started_at = Column(DateTime)
+    queued_checkout = Column(Boolean)
 
     articlepkg = relationship('ArticlePkg',
                               backref=backref('attempts',
@@ -92,6 +95,7 @@ class Attempt(Base):
         super(Attempt, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
         self.is_valid = kwargs.get('is_valid', True)
+        self.proceed_to_checkout = kwargs.get('proceed_to_checkout', False)
 
     def to_dict(self):
 
@@ -104,12 +108,25 @@ class Attempt(Base):
                            finished_at=str(self.finished_at) if self.finished_at else None,
                            collection_uri=self.collection_uri,
                            filepath=self.filepath,
-                           is_valid=self.is_valid,)
+                           is_valid=self.is_valid,
+                           proceed_to_checkout=self.proceed_to_checkout,
+                           checkout_started_at=self.checkout_started_at,
+                           queued_checkout=self.queued_checkout)
 
         return checkpoints
 
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
+
+
+    @property
+    def pending_checkout(self):
+        """
+        Verify if the item is pending to checkout based on ``proceed_to_checkout``
+        and ``checkout_started_at``.
+        """
+        return self.proceed_to_checkout and not self.checkout_started_at
+
 
     @classmethod
     def get_from_package(cls, package):
