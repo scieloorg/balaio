@@ -70,6 +70,33 @@ class Notifier(object):
 
     def end(self):
         self.checkpoint.end()
+        if self.checkpoint.point is models.Point.checkout:
+            self._send_checkout_notification()
+
+    def _send_checkout_notification(self):
+        """
+        Sends a checkout notification to SciELO Manager.
+
+        Only checkpoints of type checkout can send call this method
+        """
+        if not self.manager_integration:
+            logger.warning('Notifications to Manager are disabled. Skipping.')
+            return None
+
+        assert self.checkpoint.point is models.Point.checkout, 'only `checkout` checkpoint can send this notification.'
+
+        data = {
+            'checkin': self.checkpoint.attempt.checkin_uri,
+            'stage': 'checkout',
+            'checkpoint': self.checkpoint.point.name,
+            'message': 'checkout finished',
+            'status': 'ok',
+        }
+
+        try:
+            self.scieloapi.notices.post(data)
+        except scieloapi.exceptions.APIError as e:
+            logger.error('Error posting data to Manager. Message: %s' % e)
 
     def _send_checkin_notification(self):
         """

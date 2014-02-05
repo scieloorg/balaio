@@ -60,6 +60,26 @@ class NotifierTests(mocker.MockerTestCase):
         notifier.start()
 
     @unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
+    def test_send_checkout_notification_payload(self):
+        checkpoint = modelfactories.CheckpointFactory(point=models.Point.checkout)
+
+        expected = {
+            'checkin': None,
+            'stage': 'checkout',
+            'checkpoint': 'checkout',
+            'message': 'checkout finished',
+            'status': 'ok',
+        }
+
+        mock_scieloapi = self.mocker.mock()
+        mock_scieloapi.notices.post(expected)
+        self.mocker.result(None)
+        self.mocker.replay()
+
+        notifier = self._makeOne(checkpoint=checkpoint, scieloapi=mock_scieloapi)
+        self.assertIsNone(notifier._send_checkout_notification())
+
+    @unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
     def test_send_checkin_notification_payload(self):
         checkpoint = modelfactories.CheckpointFactory(point=models.Point.checkin)
 
