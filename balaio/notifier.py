@@ -77,7 +77,7 @@ class Notifier(object):
         """
         Sends a checkout notification to SciELO Manager.
 
-        Only checkpoints of type checkout can send call this method.
+        Only checkpoints of type checkout can send call this method
         """
         if not self.manager_integration:
             logger.warning('Notifications to Manager are disabled. Skipping.')
