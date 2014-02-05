@@ -22,7 +22,9 @@ STATIC_PATH = 'articles'
 
 class CheckoutList(list):
     """
-    Child class adapted to have a specific behavior in append method.
+    Child class of list adapted to evaluate the type of the object when use the
+    method append, if it's a models.Attempt change the boolean value of the
+    attribute queued_checkout.
     """
 
     def append(self, item):
@@ -125,22 +127,22 @@ def checkout_procedure(item):
 
 
 def main():
-    cfg = utils.balaio_config_from_env()
+    config = utils.balaio_config_from_env()
 
     Session = models.Session
-    Session.configure(bind=models.create_engine_from_config(cfg))
+    Session.configure(bind=models.create_engine_from_config(config))
     session = Session()
 
-    client = scieloapi.Client(cfg.get('manager', 'api_username'),
-                              cfg.get('manager', 'api_key'),
-                              cfg.get('manager', 'api_url'), 'v1')
+    client = scieloapi.Client(config.get('manager', 'api_username'),
+                              config.get('manager', 'api_key'),
+                              config.get('manager', 'api_url'), 'v1')
 
-    conn = StaticScieloBackend(cfg.get('static_server', 'username'),
-                               cfg.get('static_server', 'password'),
-                               cfg.get('static_server', 'path'),
-                               cfg.get('static_server', 'host'))
+    conn = StaticScieloBackend(config.get('static_server', 'username'),
+                               config.get('static_server', 'password'),
+                               config.get('static_server', 'path'),
+                               config.get('static_server', 'host'))
 
-    pool = ThreadPool(cfg.getint('checkout', 'thread_pool_size'))
+    pool = ThreadPool(config.getint('checkout', 'thread_pool_size'))
 
     while True:
 
@@ -165,7 +167,7 @@ def main():
                 transaction.abort()
                 raise
 
-        time.sleep(cfg.getint('checkout', 'time') * 60)
+        time.sleep(config.getint('checkout', 'time') * 60)
 
     pool.close
 
