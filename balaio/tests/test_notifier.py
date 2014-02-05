@@ -64,19 +64,15 @@ class NotifierTests(mocker.MockerTestCase):
         checkpoint = modelfactories.CheckpointFactory(point=models.Point.checkout)
 
         expected = {
-             'articlepkg_ref': str(checkpoint.attempt.articlepkg.id),
-             'attempt_ref': str(checkpoint.attempt.id),
-             'article_title': checkpoint.attempt.articlepkg.article_title,
-             'journal_title': checkpoint.attempt.articlepkg.journal_title,
-             'issue_label': '##',
-             'package_name': checkpoint.attempt.filepath,
-             'pissn': checkpoint.attempt.articlepkg.journal_pissn,
-             'eissn': checkpoint.attempt.articlepkg.journal_eissn,
-             'uploaded_at': str(checkpoint.attempt.started_at),
+            'checkin': None,
+            'stage': 'checkout',
+            'checkpoint': 'checkout',
+            'message': 'checkout finished',
+            'status': 'ok',
         }
 
         mock_scieloapi = self.mocker.mock()
-        mock_scieloapi.checkins.post(expected)
+        mock_scieloapi.notices.post(expected)
         self.mocker.result(None)
         self.mocker.replay()
 

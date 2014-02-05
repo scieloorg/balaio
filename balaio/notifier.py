@@ -86,24 +86,17 @@ class Notifier(object):
         assert self.checkpoint.point is models.Point.checkout, 'only `checkout` checkpoint can send this notification.'
 
         data = {
-                 'articlepkg_ref': str(self.checkpoint.attempt.articlepkg.id),
-                 'attempt_ref': str(self.checkpoint.attempt.id),
-                 'article_title': self.checkpoint.attempt.articlepkg.article_title,
-                 'journal_title': self.checkpoint.attempt.articlepkg.journal_title,
-                 'issue_label': '##',
-                 'package_name': self.checkpoint.attempt.filepath,
-                 'pissn': self.checkpoint.attempt.articlepkg.journal_pissn,
-                 'eissn': self.checkpoint.attempt.articlepkg.journal_eissn,
-                 'uploaded_at': str(self.checkpoint.attempt.started_at),
-               }
-        resource_uri = '/api/v1/checkins/%s/'
+            'checkin': self.checkpoint.attempt.checkin_uri,
+            'stage': 'checkout',
+            'checkpoint': self.checkpoint.point.name,
+            'message': 'checkout finished',
+            'status': 'ok',
+        }
 
         try:
-            resource_id = self.scieloapi.checkins.post(data)
+            self.scieloapi.notices.post(data)
         except scieloapi.exceptions.APIError as e:
             logger.error('Error posting data to Manager. Message: %s' % e)
-        else:
-            self.checkpoint.attempt.checkin_uri = resource_uri % resource_id
 
     def _send_checkin_notification(self):
         """
