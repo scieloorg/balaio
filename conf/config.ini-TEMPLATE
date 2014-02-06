@@ -19,7 +19,6 @@ port=8080
 
 [checkout]
 time=1
-thread_pool_size=2
 
 [static_server]
 host=

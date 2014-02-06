@@ -63,15 +63,16 @@ def upload_static_files(attempt, conn_static):
     with conn_static as static:
 
         for ext in FILES_EXTENSION:
-            for stc in get_static(attempt, ext):
-                uri = static.send(StringIO(stc.read()),
+            for static_file in get_static(attempt, ext):
+                uri = static.send(StringIO(static_file.read()),
                                   utils.get_static_path(STATIC_PATH,
-                                            attempt.articlepkg.aid, stc.name))
+                                            attempt.articlepkg.aid,
+                                            static_file.name))
                 uri_dict[ext] = uri
 
         for ext in IMAGES_EXTENSION:
-            for stc in get_static(attempt, ext):
-                dict_img[stc.name] = stc.read()
+            for static_file in get_static(attempt, ext):
+                dict_img[static_file.name] = static_file.read()
 
         comp_img = utils.zip_files(dict_img)
         uri = static.send(comp_img,
@@ -126,8 +127,7 @@ def checkout_procedure(item):
     attempt.queued_checkout = False
 
 
-def main():
-    config = utils.balaio_config_from_env()
+def main(config):
 
     Session = models.Session
     Session.configure(bind=models.create_engine_from_config(config))
@@ -142,12 +142,13 @@ def main():
                                config.get('static_server', 'path'),
                                config.get('static_server', 'host'))
 
-    pool = ThreadPool(config.getint('checkout', 'thread_pool_size'))
+    pool = ThreadPool()
 
     while True:
 
         attempts_checkout = session.query(models.Attempt).filter_by(
-                                          proceed_to_checkout=True).all()
+                                          proceed_to_checkout=True,
+                                          pending_checkout=True).all()
 
         #Process only if exists itens
         if attempts_checkout:
@@ -156,8 +157,7 @@ def main():
 
             try:
                 for attempt in attempts_checkout:
-                    if attempt.pending_checkout:
-                        checkout_lst.append((attempt, client, conn))
+                    checkout_lst.append((attempt, client, conn))
 
                 #Execute the checkout procedure for each item
                 pool.map(checkout_procedure, checkout_lst)
@@ -173,5 +173,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    config = utils.balaio_config_from_env()
 
+    main(config)

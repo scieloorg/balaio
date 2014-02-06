@@ -119,7 +119,7 @@ class Attempt(Base):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
 
 
-    @property
+    @hybrid_property
     def pending_checkout(self):
         """
         Verify if the item is pending to checkout based on ``proceed_to_checkout``
