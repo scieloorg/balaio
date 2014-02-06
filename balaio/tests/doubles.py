@@ -3,6 +3,7 @@ from StringIO import StringIO
 import datetime
 from xml.etree.ElementTree import ElementTree
 import types
+import os
 
 
 class Patch(object):
@@ -83,6 +84,8 @@ class PackageAnalyzerStub(object):
             'journal_eissn': '1234-1234',
             'journal_pissn': '1234-4321',
             'article_title': 'foo',
+            'journal_title': 'Journal Of Oz',
+            'issue_year': 2013,
         }
 
     @property
@@ -98,6 +101,15 @@ class PackageAnalyzerStub(object):
 
     def is_valid_schema(self):
         return True
+
+    def is_valid_meta(self):
+        return True
+
+    def __enter__(self, *args, **kwargs):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        return
 
 
 def get_ScieloAPIToolbeltStubModule():
@@ -303,3 +315,49 @@ class SessionStub(object):
     def add(self, item):
         self._items.append(item)
 
+
+class SafePackageStub(object):
+    def __init__(self, package, working_dir):
+        self.primary_path = package
+        self.working_dir = working_dir
+        self.path = self._gen_safe_path()
+
+    def _gen_safe_path(self):
+        basedir = os.path.dirname(self.primary_path)
+        fname, fext = os.path.splitext(os.path.basename(self.primary_path))
+
+        packid = 'e7d0213c44ba4ed5adcde9e3fdf62963'
+        return os.path.join(self.working_dir, packid+fext)
+
+    @property
+    def analyzer(self):
+        """
+        Returns a PackageAnalyzer instance bound to the package.
+        """
+        return PackageAnalyzerStub()
+
+    def mark_as_failed(self, silence=False):
+        """
+        Mark primary path as failed.
+
+        If the target file is gone, the error is logged
+        and the exception is silenced.
+        """
+        try:
+            utils.mark_as_failed(self.primary_path)
+        except OSError as e:
+            logger.debug('The file is gone before marked as failed. %s' % e)
+            if not silence: raise
+
+    def mark_as_duplicated(self, silence=False):
+        """
+        Mark primary path as duplicated.
+
+        If the target file if gone, the error is logged
+        and the exception is silenced.
+        """
+        try:
+            utils.mark_as_duplicated(self.primary_path)
+        except OSError as e:
+            logger.debug('The file is gone before marked as duplicated. %s' % e)
+            if not silence: raise

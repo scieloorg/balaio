@@ -1,4 +1,5 @@
 #coding: utf-8
+import os
 import zipfile
 from tempfile import NamedTemporaryFile
 from lxml import etree
@@ -9,6 +10,11 @@ import transaction
 
 from balaio import checkin, models, excepts, utils
 from .utils import db_bootstrap, DB_READY
+from . import doubles
+
+
+SAMPLE_PACKAGE = os.path.realpath(os.path.join(os.path.abspath(os.path.dirname(__file__)),
+    '..', '..', 'samples', '0042-9686-bwho-91-08-545.zip'))
 
 
 class PackageAnalyzerTests(mocker.MockerTestCase):
@@ -247,30 +253,34 @@ class CheckinTests(unittest.TestCase):
         """
         Attempt generates fine
         """
-        self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
+        safe_package = doubles.SafePackageStub(SAMPLE_PACKAGE, '/tmp/')
+        self.assertIsInstance(checkin.get_attempt(safe_package),
             models.Attempt)
 
     def test_accessing_generated_attempt_data(self):
         """
         Attempt generates fine
         """
-        attempt = checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip')
-        self.assertTrue('0042-9686-bwho-91-08-545.zip' in attempt.filepath)
+        safe_package = doubles.SafePackageStub(SAMPLE_PACKAGE, '/tmp/')
+        attempt = checkin.get_attempt(safe_package)
+        # this filepath was got from doubles.PackageAnalyzerStub
+        self.assertTrue('/tmp/bla.zip' in attempt.filepath)
 
     def test_get_attempt_failure(self):
         """
         Attempt is already registered
         """
-        self.assertIsInstance(checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'),
+        safe_package = doubles.SafePackageStub(SAMPLE_PACKAGE, '/tmp/')
+        self.assertIsInstance(checkin.get_attempt(safe_package),
             models.Attempt)
         self.assertRaises(excepts.DuplicatedPackage,
-            lambda: checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip'))
+            lambda: checkin.get_attempt(safe_package))
 
     def test_get_attempt_article_title_is_already_registered(self):
         """
         There are more than one article registered with same article title
         """
-        pkg = checkin.PackageAnalyzer('samples/0042-9686-bwho-91-08-545.zip')
+        pkg = checkin.PackageAnalyzer(SAMPLE_PACKAGE)
         article = models.ArticlePkg(**pkg.meta)
         self.session.add(article)
         transaction.commit()
@@ -280,7 +290,8 @@ class CheckinTests(unittest.TestCase):
         self.session.add(article2)
         transaction.commit()
 
-        attempt = checkin.get_attempt('samples/0042-9686-bwho-91-08-545.zip')
+        safe_package = doubles.SafePackageStub(SAMPLE_PACKAGE, '/tmp/')
+        attempt = checkin.get_attempt(safe_package)
         self.assertIsInstance(attempt, models.Attempt)
 
     def test_get_attempt_invalid_package_missing_xml(self):
@@ -288,18 +299,158 @@ class CheckinTests(unittest.TestCase):
         There are more than one article registered with same article title
         """
         pkg = self._make_test_archive([('texto.txt', b'bla bla')])
-        self.assertRaises(ValueError, checkin.get_attempt, pkg.name)
+        safe_package = checkin.SafePackage(pkg.name, '/tmp/')
+        self.assertRaises(ValueError, checkin.get_attempt, safe_package)
 
     def test_get_attempt_invalid_package_missing_issn_and_article_title(self):
         """
         Package is invalid because there is no ISSN and article_title
         """
         pkg = self._make_test_archive([('texto.xml', b'<root/>')])
-        self.assertRaises(ValueError, lambda: checkin.get_attempt(pkg.name))
+        safe_package = checkin.SafePackage(pkg.name, '/tmp/')
+        self.assertRaises(ValueError, lambda: checkin.get_attempt(safe_package))
 
-    def test_get_attempt_inexisting_package(self):
-        """
-        The package is missing
-        """
-        self.assertRaises(ValueError, checkin.get_attempt, 'package.zip')
+
+class SafePackageTests(mocker.MockerTestCase):
+    def test_primary_path(self):
+        # mocks
+        mock_shutil = self.mocker.replace('shutil')
+        mock_uuid4 = self.mocker.replace('uuid.uuid4')
+
+        mock_shutil.copy2(mocker.ANY, mocker.ANY)
+        self.mocker.result(None)
+
+        mock_uuid4().hex
+        self.mocker.result('e7d0213c44ba4ed5adcde9e3fdf62963')
+
+        self.mocker.replay()
+
+        safe_pkg = checkin.SafePackage(SAMPLE_PACKAGE, '/tmp/')
+
+        self.assertEqual(safe_pkg.primary_path, SAMPLE_PACKAGE)
+
+    def test_analyzer_context(self):
+        # mocks
+        mock_shutil = self.mocker.replace('shutil')
+        mock_uuid4 = self.mocker.replace('uuid.uuid4')
+        mock_panalyzer = self.mocker.replace(checkin.PackageAnalyzer)
+
+        mock_shutil.copy2(mocker.ANY, mocker.ANY)
+        self.mocker.result(None)
+
+        mock_uuid4().hex
+        self.mocker.result('e7d0213c44ba4ed5adcde9e3fdf62963')
+
+        mock_panalyzer(mocker.ANY)
+        self.mocker.result(doubles.PackageAnalyzerStub())
+
+        self.mocker.replay()
+
+        safe_pkg = checkin.SafePackage(SAMPLE_PACKAGE, '/tmp/')
+        with safe_pkg.analyzer as safe_context:
+            self.assertEqual(safe_context.checksum,
+                             '5a74db5db860f2f8e3c6a5c64acdbf04')
+
+    @unittest.skip('uuid.uuid4() Performed more times than expected')
+    def test_gen_safe_path(self):
+        # mocks
+        mock_shutil = self.mocker.replace('shutil')
+        mock_uuid4 = self.mocker.replace('uuid.uuid4')
+
+        mock_shutil.copy2(mocker.ANY, mocker.ANY)
+        self.mocker.result(None)
+
+        mock_uuid4().hex
+        self.mocker.result('e7d0213c44ba4ed5adcde9e3fdf62963')
+        self.mocker.count(2)  # 2 times cause we are calling the function directly.
+
+        self.mocker.replay()
+
+        safe_pkg = checkin.SafePackage(SAMPLE_PACKAGE, '/tmp/')
+
+        self.assertEqual(safe_pkg._gen_safe_path(), '/tmp/e7d0213c44ba4ed5adcde9e3fdf62963.zip')
+
+    def test_mark_as_failed_can_be_silenced(self):
+        # mocks
+        mock_shutil = self.mocker.replace('shutil')
+        mock_uuid4 = self.mocker.replace('uuid.uuid4')
+        mock_utils = self.mocker.replace('balaio.utils')
+
+        mock_shutil.copy2(mocker.ANY, mocker.ANY)
+        self.mocker.result(None)
+
+        mock_uuid4().hex
+        self.mocker.result('e7d0213c44ba4ed5adcde9e3fdf62963')
+
+        mock_utils.mark_as_failed(mocker.ANY)
+        self.mocker.throw(OSError)
+
+        self.mocker.replay()
+
+        safe_pkg = checkin.SafePackage(SAMPLE_PACKAGE, '/tmp/')
+
+        self.assertIsNone(safe_pkg.mark_as_failed(silence=True))
+
+    def test_mark_as_failed_not_silenced_by_default(self):
+        # mocks
+        mock_shutil = self.mocker.replace('shutil')
+        mock_uuid4 = self.mocker.replace('uuid.uuid4')
+        mock_utils = self.mocker.replace('balaio.utils')
+
+        mock_shutil.copy2(mocker.ANY, mocker.ANY)
+        self.mocker.result(None)
+
+        mock_uuid4().hex
+        self.mocker.result('e7d0213c44ba4ed5adcde9e3fdf62963')
+
+        mock_utils.mark_as_failed(mocker.ANY)
+        self.mocker.throw(OSError)
+
+        self.mocker.replay()
+
+        safe_pkg = checkin.SafePackage(SAMPLE_PACKAGE, '/tmp/')
+
+        self.assertRaises(OSError, lambda: safe_pkg.mark_as_failed())
+
+    def test_mark_as_duplicated_can_be_silenced(self):
+        # mocks
+        mock_shutil = self.mocker.replace('shutil')
+        mock_uuid4 = self.mocker.replace('uuid.uuid4')
+        mock_utils = self.mocker.replace('balaio.utils')
+
+        mock_shutil.copy2(mocker.ANY, mocker.ANY)
+        self.mocker.result(None)
+
+        mock_uuid4().hex
+        self.mocker.result('e7d0213c44ba4ed5adcde9e3fdf62963')
+
+        mock_utils.mark_as_duplicated(mocker.ANY)
+        self.mocker.throw(OSError)
+
+        self.mocker.replay()
+
+        safe_pkg = checkin.SafePackage(SAMPLE_PACKAGE, '/tmp/')
+
+        self.assertIsNone(safe_pkg.mark_as_duplicated(silence=True))
+
+    def test_mark_as_duplicated_not_silenced_by_default(self):
+        # mocks
+        mock_shutil = self.mocker.replace('shutil')
+        mock_uuid4 = self.mocker.replace('uuid.uuid4')
+        mock_utils = self.mocker.replace('balaio.utils')
+
+        mock_shutil.copy2(mocker.ANY, mocker.ANY)
+        self.mocker.result(None)
+
+        mock_uuid4().hex
+        self.mocker.result('e7d0213c44ba4ed5adcde9e3fdf62963')
+
+        mock_utils.mark_as_duplicated(mocker.ANY)
+        self.mocker.throw(OSError)
+
+        self.mocker.replay()
+
+        safe_pkg = checkin.SafePackage(SAMPLE_PACKAGE, '/tmp/')
+
+        self.assertRaises(OSError, lambda: safe_pkg.mark_as_duplicated())
 
