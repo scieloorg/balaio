@@ -15,6 +15,7 @@ import checkin
 import models
 import excepts
 import notifier
+import package
 
 
 logger = logging.getLogger('balaio.monitor')
@@ -57,7 +58,7 @@ class Monitor(object):
             filepath = job_queue.get()
             logger.debug('Started handling event for %s' % filepath)
 
-            package = checkin.SafePackage(filepath, self.config.get('app', 'working_dir'))
+            package = package.SafePackage(filepath, self.config.get('app', 'working_dir'))
             try:
                 attempt = checkin.get_attempt(package)
 
