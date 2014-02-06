@@ -49,6 +49,14 @@ class PackageAnalyzer(xray.SPSPackage):
         """
         return tuple(self._errors)
 
+    def subzip(self, *members):
+        """
+        Returns a subset of the zip package according to a list of members/files.
+        """
+        dmembers = {member:self.get_fp(member).read() for member in members}
+
+        return utils.zip_files(dmembers)
+
     def lock_package(self):
         """
          - Removes the write permission for Owners and Others

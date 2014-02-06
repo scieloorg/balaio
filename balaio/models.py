@@ -28,6 +28,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from zope.sqlalchemy import ZopeTransactionExtension
 
 from base28 import genbase
+from package import PackageAnalyzer
 
 
 logger = logging.getLogger(__name__)
@@ -96,6 +97,17 @@ class Attempt(Base):
         self.started_at = datetime.datetime.now()
         self.is_valid = kwargs.get('is_valid', True)
         self.proceed_to_checkout = kwargs.get('proceed_to_checkout', False)
+
+    @property
+    def analyzer(self):
+        """
+        Returns a PackageAnalyzer instance bound to the package.
+        """
+        p_analyzer = getattr(self, '_analyzer', None)
+        if not p_analyzer:
+            self._analyzer = PackageAnalyzer(self.filepath)
+
+        return p_analyzer or self._analyzer
 
     def to_dict(self):
 
