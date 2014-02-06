@@ -3,7 +3,6 @@ from factory.alchemy import SQLAlchemyModelFactory
 
 from balaio import models
 
-
 class ArticlePkgFactory(SQLAlchemyModelFactory):
     FACTORY_FOR = models.ArticlePkg
     FACTORY_SESSION = models.ScopedSession
