@@ -10,7 +10,7 @@ import transaction
 
 import vpipes
 import utils
-import checkin
+import package
 import notifier
 import scieloapitoolbelt
 import models
@@ -165,7 +165,7 @@ class PublisherNameValidationPipe(vpipes.ValidationPipe):
         """
         Performs a validation to one `item` of data iterator.
 
-        :param item: a tuple (models.Attempt, checkin.PackageAnalyzer, a dict of journal issue data).
+        :param item: a tuple (models.Attempt, package.PackageAnalyzer, a dict of journal issue data).
         :returns: result of the validation in this format [status, description]
         """
         attempt, pkg_analyzer, journal_and_issue_data = item[:3]
@@ -477,7 +477,7 @@ class ArticleSectionValidationPipe(vpipes.ValidationPipe):
         Performs a validation to one `item` of data iterator.
 
         `item` is a tuple comprised of instances of models.Attempt, a
-        checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
+        package.PackageAnalyzer, a dict of journal data and a dict of issue.
         """
         attempt, pkg_analyzer, issue_data = item[:3]
 
@@ -548,7 +548,7 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
         Performs a validation to one `item` of data iterator.
 
         `item` is a tuple comprised of instances of models.Attempt, a
-        checkin.PackageAnalyzer, a dict of journal data and a dict of issue.
+        package.PackageAnalyzer, a dict of journal data and a dict of issue.
         """
         _months_by_name = {v: k for k, v in enumerate(calendar.month_abbr)}
         _month_abbrev_name = {k: v for k, v in enumerate(calendar.month_abbr)}
@@ -614,7 +614,7 @@ if __name__ == '__main__':
 
     ppl = vpipes.Pipeline(
         SetupPipe(notifier_dep, scieloapi, scieloapitoolbelt,
-            checkin.PackageAnalyzer, utils.is_valid_issn, Session),
+            package.PackageAnalyzer, utils.is_valid_issn, Session),
         PublisherNameValidationPipe(notifier_dep, utils.normalize_data),
         JournalAbbreviatedTitleValidationPipe(notifier_dep, utils.normalize_data),
         NLMJournalTitleValidationPipe(notifier_dep, utils.normalize_data),
