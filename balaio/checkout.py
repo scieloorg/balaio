@@ -10,7 +10,6 @@ import scieloapi
 import utils
 import models
 import meta_extractor
-from checkin import PackageAnalyzer
 from uploader import StaticScieloBackend
 
 
@@ -39,17 +38,6 @@ class CheckoutList(list):
         super(CheckoutList, self).append(item)
 
 
-def get_static(attempt, ext):
-    """
-    Get the static files from the zip file
-    Return a generator to a specific extension
-    """
-
-    pkg_analyzer = PackageAnalyzer(attempt.filepath)
-
-    return pkg_analyzer.get_fps(ext)
-
-
 def upload_static_files(attempt, conn_static):
     """
     Send the ``PDF``, ``XML`` files to the static server
@@ -58,26 +46,27 @@ def upload_static_files(attempt, conn_static):
     :param cfg: cfguration file
     """
     uri_dict = {}
-    dict_img = {}
+    filename_list = []
 
     with conn_static as static:
 
         for ext in FILES_EXTENSION:
-            for static_file in get_static(attempt, ext):
+            for static_file in attempt.analyzer.get_fps(ext):
                 uri = static.send(StringIO(static_file.read()),
                                   utils.get_static_path(STATIC_PATH,
-                                            attempt.articlepkg.aid,
-                                            static_file.name))
+                                                        attempt.articlepkg.aid,
+                                                        static_file.name))
                 uri_dict[ext] = uri
 
         for ext in IMAGES_EXTENSION:
-            for static_file in get_static(attempt, ext):
-                dict_img[static_file.name] = static_file.read()
+            filename_list += attempt.analyzer.get_ext(ext)
 
-        comp_img = utils.zip_files(dict_img)
-        uri = static.send(comp_img,
-                    utils.get_static_path(STATIC_PATH, attempt.articlepkg.aid,
-                                           NAME_ZIP_FILE))
+        subzip_img = attempt.analyzer.subzip(*filename_list)
+
+        static_path = utils.get_static_path(STATIC_PATH,
+                                            attempt.articlepkg.aid, NAME_ZIP_FILE)
+
+        uri = static.send(subzip_img, static_path)
 
         uri_dict['img'] = uri
 
@@ -95,7 +84,7 @@ def upload_meta_front(attempt, client, uri_dict):
 
     ppl =  meta_extractor.get_meta_ppl()
 
-    xml = PackageAnalyzer(attempt.filepath).xml
+    xml = attempt.analyzer.xml
 
     data = {
         'front': next(ppl.run(xml, rewrap=True)),
