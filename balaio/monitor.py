@@ -58,15 +58,15 @@ class Monitor(object):
             filepath = job_queue.get()
             logger.debug('Started handling event for %s' % filepath)
 
-            package = package.SafePackage(filepath, self.config.get('app', 'working_dir'))
+            pack = package.SafePackage(filepath, self.config.get('app', 'working_dir'))
             try:
-                attempt = checkin.get_attempt(package)
+                attempt = checkin.get_attempt(pack)
 
             except ValueError as e:
-                package.mark_as_failed(silence=True)
+                pack.mark_as_failed(silence=True)
 
             except excepts.DuplicatedPackage as e:
-                package.mark_as_duplicated(silence=True)
+                pack.mark_as_duplicated(silence=True)
 
             else:
                 # Create a notification to keep track of the checkin process

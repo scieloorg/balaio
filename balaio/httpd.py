@@ -2,12 +2,14 @@ import transaction
 
 from pyramid.response import Response
 from pyramid.config import Configurator
-from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted, HTTPCreated
+from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted, HTTPCreated, HTTPBadRequest
 from pyramid.view import notfound_view_config, view_config
 from pyramid.events import NewRequest
+from pyramid.settings import asbool
 
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import DataError
 
 import models
 import health
@@ -181,6 +183,69 @@ def health_status(request):
             'results': items}
 
 
+@view_config(route_name='list_attempt_members', request_method='GET', renderer='json')
+def list_files_from_attempt(request):
+    """
+    List all files bound to an Attempt.
+    """
+    attempt_id = request.matchdict.get('attempt_id', None)
+    try:
+        attempt = request.db.query(models.Attempt).get(attempt_id)
+    except DataError:
+        return HTTPNotFound()
+
+    if attempt is None:
+        return HTTPNotFound()
+
+    return attempt.analyzer.get_classified_members()
+
+
+@view_config(route_name='get_attempt_member', request_method='GET', renderer='json')
+def get_file_from_attempt(request):
+    """
+    Get a portion of a package bound to an Attempt.
+
+    Get a specific member, by name:
+    `/api/:api_id/files/:attempt_id/:target.zip/?file=:member`
+
+    Get more than one specific members, by name:
+    `/api/:api_id/files/:attempt_id/:target.zip/?file=:member&file=:member2`
+
+    Get the full package:
+    `/api/:api_id/files/:attempt_id/:target.zip/?full=true`
+    """
+    has_body = False
+
+    attempt_id = request.matchdict.get('attempt_id', None)
+    try:
+        attempt = request.db.query(models.Attempt).get(attempt_id)
+    except DataError:
+        return HTTPNotFound()
+
+    if attempt is None:
+        return HTTPNotFound()
+
+    response = Response(content_type='application/zip')
+
+    # Get the full package.
+    if asbool(request.GET.get('full', False)):
+       response.app_iter = open(attempt.filepath, 'rb')
+       has_body = True
+
+    else:
+        # Get partial portions of the package.
+        files = [member for attr, member in request.GET.items() if attr == 'file']
+
+        try:
+            if files:
+                response.app_iter = attempt.analyzer.subzip(*files)
+                has_body = True
+        except ValueError:
+            return HTTPBadRequest()
+
+    return response if has_body else HTTPBadRequest()
+
+
 def main(config, engine):
     """
     Returns a pyramid app.
@@ -211,6 +276,10 @@ def main(config, engine):
     # tickets new and update
     config_pyrmd.add_route('ticket', '/api/v1/tickets/')
 
+    # files
+    config_pyrmd.add_route('list_attempt_members', '/api/v1/files/{attempt_id}/')
+    config_pyrmd.add_route('get_attempt_member', '/api/v1/files/{attempt_id}/{target}/')
+
     config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
 
     #DB session bound to each request
@@ -227,7 +296,7 @@ def main(config, engine):
     config_pyrmd.registry.health_status = check_list
     config_pyrmd.add_subscriber(update_health_status, NewRequest)
 
-    config_pyrmd.scan(package='balaio.httpd')
+    config_pyrmd.scan(package='httpd')
 
     return config_pyrmd.make_wsgi_app()
 

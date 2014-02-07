@@ -20,6 +20,9 @@ from .utils import db_bootstrap, DB_READY
 from . import modelfactories
 
 
+SAMPLE_PACKAGE = os.path.realpath(os.path.join(os.path.abspath(os.path.dirname(__file__)),
+    '..', '..', 'samples', '0042-9686-bwho-91-08-545.zip'))
+
 global_engine = None
 
 
@@ -1314,3 +1317,99 @@ class QueryFiltersTest(unittest.TestCase):
             expected,
             httpd.get_query_filters(model, request_params)
         )
+
+
+@unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
+class FilesAPITests(unittest.TestCase):
+
+    def setUp(self):
+        self._loaded_fixtures = [self._makeOne() for i in range(3)]
+        self.config = testing.setUp()
+
+        app = httpd.main(ConfigStub(), global_engine)
+        self.testapp = TestApp(app)
+
+    def tearDown(self):
+        transaction.abort()
+        models.ScopedSession.remove()
+        testing.tearDown()
+
+    def _makeOne(self):
+        import datetime
+        attempt = modelfactories.AttemptFactory.create(filepath=SAMPLE_PACKAGE)
+        attempt.started_at = datetime.datetime(2013, 10, 9, 16, 44, 29, 865787)
+        return attempt
+
+    def test_GET_all_filenames(self):
+        attempt = self._makeOne()
+        self.testapp.get('/api/v1/files/%s/' % attempt.id, status=200)
+
+    def test_list_package_members(self):
+        attempt = self._makeOne()
+        response = self.testapp.get('/api/v1/files/%s/' % attempt.id)
+
+        self.assertEqual(response.body,
+            json.dumps({'xml': ['0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml'],
+                        'pdf': ['0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.pdf']}))
+
+    def test_non_integer_attempt_id(self):
+        response = self.testapp.get('/api/v1/files/nonid/', status=404)
+
+    def test_non_existing_attempt_id(self):
+        response = self.testapp.get('/api/v1/files/99999999/', status=404)
+
+    def test_GET_specific_member(self):
+        attempt = self._makeOne()
+
+        self.testapp.get(
+            '/api/v1/files/%s/target.zip/?file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml' % attempt.id,
+            status=200)
+
+    def test_GET_specific_member_content(self):
+        import zipfile
+        import StringIO
+        attempt = self._makeOne()
+
+        response = self.testapp.get(
+            '/api/v1/files/%s/target.zip/?file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml' % attempt.id,
+            status=200)
+
+        zip_res = zipfile.ZipFile(StringIO.StringIO(response.body))
+        self.assertEqual(zip_res.namelist(), ['0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml'])
+
+    def test_GET_many_members_contents(self):
+        import zipfile
+        import StringIO
+        attempt = self._makeOne()
+
+        response = self.testapp.get(
+            '/api/v1/files/%s/target.zip/?file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml&file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.pdf' % attempt.id,
+            status=200)
+
+        zip_res = zipfile.ZipFile(StringIO.StringIO(response.body))
+        self.assertEqual(sorted(zip_res.namelist()),
+            sorted(['0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml',
+             '0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.pdf']))
+
+    def test_GET_nonexisting_member(self):
+        import zipfile
+        import StringIO
+        attempt = self._makeOne()
+
+        response = self.testapp.get(
+            '/api/v1/files/%s/target.zip/?file=nonexisting.xml' % attempt.id,
+            status=400)
+
+    def test_GET_full_package(self):
+        import zipfile
+        import StringIO
+        attempt = self._makeOne()
+
+        response = self.testapp.get(
+            '/api/v1/files/%s/target.zip/?full=true' % attempt.id,
+            status=200)
+
+        zip_res = zipfile.ZipFile(StringIO.StringIO(response.body))
+        # the zip contains 2 files and 1 directory.
+        self.assertEqual(len(zip_res.namelist()), 3)
+
