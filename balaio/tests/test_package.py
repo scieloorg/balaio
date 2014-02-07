@@ -27,6 +27,53 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
     def _makeOne(self, fname):
         return package.PackageAnalyzer(fname)
 
+    def test_subzip(self): 
+        data = [('bar.xml', b'<root><name>bar</name></root>')]
+        arch1 = self._make_test_archive(data)
+
+        parch1 = self._makeOne(arch1.name)
+
+        self.assertEquals(
+            zipfile.ZipFile(parch1.subzip('bar.xml')).namelist(),
+            ['bar.xml']
+        )
+
+    def test_subzip_nonexisting_member(self): 
+        data = [('bar.xml', b'<root><name>bar</name></root>')]
+        arch1 = self._make_test_archive(data)
+
+        parch1 = self._makeOne(arch1.name)
+
+        self.assertRaises(
+            ValueError,
+            lambda: parch1.subzip('nonexists.xml')
+        )
+
+    def test_subzip_retrieving_one_from_many(self): 
+        data = [('bar.xml', b'<root><name>bar</name></root>'),
+                ('foo.txt', b'<root><name>foo</name></root>')]
+
+        arch1 = self._make_test_archive(data)
+        parch1 = self._makeOne(arch1.name)
+
+        self.assertEquals(
+            zipfile.ZipFile(parch1.subzip('bar.xml')).namelist(),
+            ['bar.xml']
+        )
+
+    def test_subzip_retrieving_two_from_many(self): 
+        data = [('bar.xml', b'<root><name>bar</name></root>'),
+                ('foo.txt', b'<root><name>foo</name></root>'),
+                ('coo.txt', b'<root><name>coo</name></root>')]
+
+        arch1 = self._make_test_archive(data)
+        parch1 = self._makeOne(arch1.name)
+
+        self.assertEquals(
+            zipfile.ZipFile(parch1.subzip('bar.xml', 'coo.txt')).namelist(),
+            ['bar.xml', 'coo.txt'] 
+        )
+
     def test_package_checksum_is_calculated(self):
         data = [('bar.xml', b'<root><name>bar</name></root>')]
         arch1 = self._make_test_archive(data)
