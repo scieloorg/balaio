@@ -1,5 +1,6 @@
 #coding: utf-8
 import time
+import logging
 from datetime import datetime
 from StringIO import StringIO
 from multiprocessing.dummy import Pool as ThreadPool
@@ -17,6 +18,8 @@ FILES_EXTENSION = ['xml', 'pdf',]
 IMAGES_EXTENSION = ['tif', 'eps']
 NAME_ZIP_FILE = 'images.zip'
 STATIC_PATH = 'articles'
+
+logger = logging.getLogger(__name__)
 
 
 class CheckoutList(list):
@@ -107,20 +110,26 @@ def checkout_procedure(item):
     """
     attempt, client, conn = item
 
+    logger.info("Starting checkout to attempt: %s" % attempt)
+
     attempt.checkout_started_at = datetime.now()
+
+    logger.info("Set checkout_started_at to: %s" % attempt.checkout_started_at)
 
     uri_dict = upload_static_files(attempt, conn)
 
+    logger.info("Upload static files for attempt: %s" % attempt)
+
     upload_meta_front(attempt, client, uri_dict)
+
+    logger.info("Set queued_checkout to False attempt: %s" % attempt)
 
     attempt.queued_checkout = False
 
 
 def main(config):
 
-    Session = models.Session
-    Session.configure(bind=models.create_engine_from_config(config))
-    session = Session()
+    session = models.Session()
 
     client = scieloapi.Client(config.get('manager', 'api_username'),
                               config.get('manager', 'api_key'),
@@ -162,6 +171,11 @@ def main(config):
 
 
 if __name__ == '__main__':
+    utils.setup_logging()
     config = utils.balaio_config_from_env()
+
+    models.Session.configure(bind=models.create_engine_from_config(config))
+
+    print('Start checkout process...')
 
     main(config)
