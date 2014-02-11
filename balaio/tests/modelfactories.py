@@ -32,16 +32,6 @@ class AttemptFactory(SQLAlchemyModelFactory):
     filepath = '/tmp/watch/xxx.zip'
 
 
-class TicketFactory(SQLAlchemyModelFactory):
-    FACTORY_FOR = models.Ticket
-    FACTORY_SESSION = models.ScopedSession
-
-    id = factory.Sequence(lambda n: n)
-    title = "Erro no pacote xxx"
-    author = 'Aberlado Barbosa'
-    articlepkg = factory.SubFactory(ArticlePkgFactory)
-
-
 class CheckpointFactory(SQLAlchemyModelFactory):
     FACTORY_FOR = models.Checkpoint
     FACTORY_SESSION = models.ScopedSession
