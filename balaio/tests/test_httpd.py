@@ -422,7 +422,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
         res = self.testapp.get('/api/v1/packages/%s/' % articlepkg_id)
 
         expected = '''{"article_title": "Construction of a recombinant adenovirus...",
-                       "tickets": [],
                        "issue_year": 1995,
                        "journal_title": "Associa... Brasileira",
                        "journal_pissn": "0100-879X",
@@ -452,7 +451,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
         expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": 0},
                        "objects": [
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -466,7 +464,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -480,7 +477,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -513,7 +509,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
         expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 82, "offset": 0},
                        "objects": [
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -527,7 +522,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -541,7 +535,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -572,7 +565,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
         expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"},
                        "objects": [
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -586,7 +578,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -621,7 +612,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
         expected = '''{"meta": {"previous": null, "next": "/api/v1/packages/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0},
                        "objects": [
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -635,7 +625,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -665,7 +654,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
         expected = '''{"meta": {"previous": null, "next": "/api/v1/packages/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"},
                        "objects": [
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -679,7 +667,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
                             "aid": "%s",
                             "issue_number": "8"},
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
@@ -706,7 +693,6 @@ class PackageFunctionalAPITest(unittest.TestCase):
         expected = '''{"meta": {"previous": "/api/v1/packages/?limit=1&offset=1", "next": "/api/v1/packages/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"},
                        "objects": [
                            {"article_title": "Construction of a recombinant adenovirus...",
-                            "tickets": [],
                             "issue_year": 1995,
                             "journal_title": "Associa... Brasileira",
                             "journal_pissn": "0100-879X",
