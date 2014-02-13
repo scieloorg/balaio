@@ -560,8 +560,9 @@ class FileLikeSocketAdaperTests(unittest.TestCase):
 class ZipFilesUtilsTests(unittest.TestCase):
 
     def setUp(self):
-        self.dict_files = {'text': 'Lorem Ipsum é ....',
-                           'img': 'fxx\nfnhjs\nksbhins'}
+        from StringIO import StringIO
+        self.dict_files = {'text': StringIO('Lorem Ipsum é ....'),
+                           'img': StringIO('fxx\nfnhjs\nksbhins')}
 
     def test_if_zip_files_return_file_like_object(self):
         fp = utils.zip_files(self.dict_files)
