@@ -88,7 +88,6 @@ class NotifierTests(mocker.MockerTestCase):
              'article_title': checkpoint.attempt.articlepkg.article_title,
              'journal_title': checkpoint.attempt.articlepkg.journal_title,
              'issue_label': checkpoint.attempt.articlepkg.issue_label,
-             'package_name': checkpoint.attempt.filepath,
              'pissn': checkpoint.attempt.articlepkg.journal_pissn,
              'eissn': checkpoint.attempt.articlepkg.journal_eissn,
         }

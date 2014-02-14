@@ -299,7 +299,7 @@ class ArticlePkgTests(mocker.MockerTestCase):
         pkg_analyzer = ArticlePkg()
 
         pkg_analyzer.issue_year = 2014
-        pkg_analyzer.issue_number = '4'
+        pkg_analyzer.issue_volume = '4'
         pkg_analyzer.issue_suppl_number = '23'
 
-        self.assertEqual(pkg_analyzer.issue_label, '2014 N4 suppl. N23')
+        self.assertEqual(pkg_analyzer.issue_label, '2014 V4 suppl. N23')
