@@ -118,7 +118,7 @@ class Notifier(object):
                  'attempt_ref': str(self.checkpoint.attempt.id),
                  'article_title': self.checkpoint.attempt.articlepkg.article_title,
                  'journal_title': self.checkpoint.attempt.articlepkg.journal_title,
-                 'issue_label': '##',
+                 'issue_label': self.checkpoint.attempt.articlepkg.issue_label,
                  'package_name': self.checkpoint.attempt.filepath,
                  'pissn': self.checkpoint.attempt.articlepkg.journal_pissn,
                  'eissn': self.checkpoint.attempt.articlepkg.journal_eissn,

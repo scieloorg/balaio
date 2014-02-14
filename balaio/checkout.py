@@ -46,7 +46,7 @@ def upload_static_files(attempt, conn_static):
     Send the ``PDF``, ``XML`` files to the static server
 
     :param attempt: Attempt object
-    :param cfg: cfguration file
+    :param conn_static: connection with static server
     """
     uri_dict = {}
     filename_list = []

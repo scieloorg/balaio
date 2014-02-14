@@ -219,3 +219,87 @@ class ArticlePkgTests(mocker.MockerTestCase):
 
         self.assertIsInstance(article_pkg, ArticlePkg)
 
+    def test_property_issue_label_when_exists_year_volume_number(self):
+        """
+        When exists ``year``, ``volume`` and ``number`` must return something
+        like: 2013 V18 N4.
+        """
+        pkg_analyzer = ArticlePkg()
+
+        pkg_analyzer.issue_year = 2014
+        pkg_analyzer.issue_volume = '31'
+        pkg_analyzer.issue_number = '1'
+
+        self.assertEqual(pkg_analyzer.issue_label, '2014 V31 N1')
+
+    def test_property_issue_label_when_exists_only_year(self):
+        """
+        When exists only ``year`` the property must return something like: 2013
+        """
+        pkg_analyzer = ArticlePkg()
+
+        pkg_analyzer.issue_year = 2014
+
+        self.assertEqual(pkg_analyzer.issue_label, '2014')
+
+    def test_property_issue_label_when_exists_only_year_and_volume(self):
+        """
+        When exists only ``year`` and ``volume`` the property must return
+        something like: 2013 V18
+        """
+        pkg_analyzer = ArticlePkg()
+
+        pkg_analyzer.issue_year = 2014
+        pkg_analyzer.issue_volume = '56'
+
+        self.assertEqual(pkg_analyzer.issue_label, '2014 V56')
+
+    def test_property_issue_label_when_exists_only_year_and_number(self):
+        """
+        When exists only ``year`` and ``volume`` the property must return
+        something like: 2013 V18
+        """
+        pkg_analyzer = ArticlePkg()
+
+        pkg_analyzer.issue_year = 2014
+        pkg_analyzer.issue_number = '5'
+
+        self.assertEqual(pkg_analyzer.issue_label, '2014 N5')
+
+    def test_property_issue_label_when_exists_year_suppl_vol(self):
+        """
+        When exists only ``year``, ``supplement volume`` and supplement of volume
+        the property must return something like: 2014 suppl. V23
+        """
+        pkg_analyzer = ArticlePkg()
+
+        pkg_analyzer.issue_year = 2014
+        pkg_analyzer.issue_suppl_volume = '23'
+
+        self.assertEqual(pkg_analyzer.issue_label, '2014 suppl. V23')
+
+    def test_property_issue_label_when_exists_year_suppl_number(self):
+        """
+        When exists only ``year``, ``supplement number`` and supplement of volume
+        the property must return something like: 2014 suppl. N23
+        """
+        pkg_analyzer = ArticlePkg()
+
+        pkg_analyzer.issue_year = 2014
+        pkg_analyzer.issue_suppl_number = '23'
+
+        self.assertEqual(pkg_analyzer.issue_label, '2014 suppl. N23')
+
+    def test_property_issue_label_when_exists_year_number_and_suppl_number(self):
+        """
+        When exists only ``year``, ``number``, ``supplement number``
+        and supplement of volume the property must return something
+        like: 2014 N10 suppl. N27
+        """
+        pkg_analyzer = ArticlePkg()
+
+        pkg_analyzer.issue_year = 2014
+        pkg_analyzer.issue_number = '4'
+        pkg_analyzer.issue_suppl_number = '23'
+
+        self.assertEqual(pkg_analyzer.issue_label, '2014 N4 suppl. N23')
