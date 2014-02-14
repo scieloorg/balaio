@@ -503,8 +503,8 @@ def zip_files(dict_files, compression=zipfile.ZIP_DEFLATED):
     in_memory = StringIO()
 
     with zipfile.ZipFile(in_memory, 'w', compression) as zf:
-        for kname, vbytes in dict_files.iteritems():
-            zf.writestr(kname, vbytes)
+        for fname, fp in dict_files.iteritems():
+            zf.writestr(fname, fp.read())
 
     zf.close()
 

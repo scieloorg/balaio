@@ -113,25 +113,42 @@ class Notifier(object):
 
         assert self.checkpoint.point is models.Point.checkin, 'only `checkin` checkpoint can send this notification.'
 
-        data = {
+        # First, a `checkins_articles` entity is created, with some metadata of the article we
+        # are talking about.
+        data_article = {
                  'articlepkg_ref': str(self.checkpoint.attempt.articlepkg.id),
-                 'attempt_ref': str(self.checkpoint.attempt.id),
                  'article_title': self.checkpoint.attempt.articlepkg.article_title,
                  'journal_title': self.checkpoint.attempt.articlepkg.journal_title,
                  'issue_label': self.checkpoint.attempt.articlepkg.issue_label,
                  'package_name': self.checkpoint.attempt.filepath,
                  'pissn': self.checkpoint.attempt.articlepkg.journal_pissn,
                  'eissn': self.checkpoint.attempt.articlepkg.journal_eissn,
-                 'uploaded_at': str(self.checkpoint.attempt.started_at),
                }
-        resource_uri = '/api/v1/checkins/%s/'
 
         try:
-            resource_id = self.scieloapi.checkins.post(data)
+            resource_id = self.scieloapi.checkins_articles.post(data_article)
+            article_uri = '/api/v1/checkins_articles/%s/' % resource_id
         except scieloapi.exceptions.APIError as e:
             logger.error('Error posting data to Manager. Message: %s' % e)
         else:
-            self.checkpoint.attempt.checkin_uri = resource_uri % resource_id
+            # If the former step goes fine, a `checkins` entity is created, with some metadata
+            # of the current attempt.
+            data_checkins = {
+                     'attempt_ref': str(self.checkpoint.attempt.id),
+                     'package_name': self.checkpoint.attempt.filepath,
+                     'uploaded_at': str(self.checkpoint.attempt.started_at),
+                     'article': article_uri,
+                   }
+            try:
+                resource_id = self.scieloapi.checkins.post(data_checkins)
+                checkin_uri = '/api/v1/checkins/%s/' % resource_id
+            except scieloapi.exceptions.APIError as e:
+                logger.error('Error posting data to Manager. Message: %s' % e)
+            else:
+                # If all goes fine, the generated `checkin_uri` is stored for future
+                # interactions.
+                self.checkpoint.attempt.checkin_uri = checkin_uri
+
 
     def _send_notice_notification(self, message, status, label=None):
         """

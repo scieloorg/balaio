@@ -204,21 +204,20 @@ class ArticlePkg(Base):
         return self.aid if (self.id and self.aid) else genbase(10)
 
     def to_dict(self):
-        return dict(id=self.id,
-                    aid=self.aid,
-                    article_title=self.article_title,
-                    journal_pissn=self.journal_pissn,
-                    journal_eissn=self.journal_eissn,
-                    journal_title=self.journal_title,
-                    issue_year=self.issue_year,
-                    issue_volume=self.issue_volume,
-                    issue_number=self.issue_number,
-                    issue_suppl_volume=self.issue_suppl_volume,
-                    issue_suppl_number=self.issue_suppl_number,
-                    related_resources=[('attempts', 'Attempt', [attempt.id for attempt in self.attempts]),
-                                       ('tickets', 'Ticket', [ticket.id for ticket in self.tickets]),
-                            ]
-                    )
+        return dict(
+            id=self.id,
+            aid=self.aid,
+            article_title=self.article_title,
+            journal_pissn=self.journal_pissn,
+            journal_eissn=self.journal_eissn,
+            journal_title=self.journal_title,
+            issue_year=self.issue_year,
+            issue_volume=self.issue_volume,
+            issue_number=self.issue_number,
+            issue_suppl_volume=self.issue_suppl_volume,
+            issue_suppl_number=self.issue_suppl_number,
+            related_resources=[('attempts', 'Attempt', [attempt.id for attempt in self.attempts]),],
+        )
 
     def __repr__(self):
         return "<ArticlePkg('%s, %s')>" % (self.id, self.article_title)
@@ -245,71 +244,6 @@ class ArticlePkg(Base):
             article_pkg = ArticlePkg(**meta)
 
         return article_pkg
-
-
-class Comment(Base):
-    """
-    Represents comments assigned to a :class:`Ticket`.
-    """
-    __tablename__ = 'comment'
-
-    id = Column(Integer, primary_key=True)
-    date = Column(DateTime, nullable=False)
-    author = Column(String, nullable=False)
-    message = Column(String, nullable=False)
-    ticket_id = Column(Integer, ForeignKey('ticket.id'))
-
-    ticket = relationship('Ticket',
-                          backref=backref('comments',
-                          cascade='all, delete-orphan'))
-
-    def __init__(self, *args, **kwargs):
-        super(Comment, self).__init__(*args, **kwargs)
-        self.date = datetime.datetime.now()
-
-    def to_dict(self):
-        return dict(message=self.message,
-                    author=self.author,
-                    date=str(self.date))
-
-    def __repr__(self):
-        return "<Comment('%s')>" % self.id
-
-
-class Ticket(Base):
-    """
-    Represents an issue related to an :class:`ArticlePkg`.
-    """
-    __tablename__ = 'ticket'
-
-    id = Column(Integer, primary_key=True)
-    is_open = Column(Boolean)
-    started_at = Column(DateTime, nullable=False)
-    finished_at = Column(DateTime)
-    articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'))
-    title = Column(String, nullable=False)
-    author = Column(String, nullable=False)
-    articlepkg = relationship('ArticlePkg',
-                              backref=backref('tickets',
-                              cascade='all, delete-orphan'))
-
-    def __init__(self, *args, **kwargs):
-        super(Ticket, self).__init__(*args, **kwargs)
-        self.started_at = datetime.datetime.now()
-        self.is_open = True
-
-    def to_dict(self):
-        return dict(id=self.id,
-                    articlepkg_id=self.articlepkg_id,
-                    is_open=self.is_open,
-                    started_at=str(self.started_at),
-                    finished_at=str(self.finished_at) if self.finished_at else None,
-                    title=self.title,
-                    author=self.author,
-                    comments=[comment.to_dict() for comment in self.comments])
-
-    def __repr__(self):
-        return "<Ticket('%s')>" % self.id
 
 
 ##

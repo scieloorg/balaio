@@ -53,9 +53,7 @@ class PackageAnalyzer(xray.SPSPackage):
         """
         Returns a subset of the zip package according to a list of members/files.
         """
-
-        dmembers = {member:self.get_fp(member).read() for member in members}
-
+        dmembers = {member:self.get_fp(member) for member in members}
         return utils.zip_files(dmembers)
 
     def lock_package(self):

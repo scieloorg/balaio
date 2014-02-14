@@ -83,21 +83,28 @@ class NotifierTests(mocker.MockerTestCase):
     def test_send_checkin_notification_payload(self):
         checkpoint = modelfactories.CheckpointFactory(point=models.Point.checkin)
 
-        expected = {
+        expected1 = {
              'articlepkg_ref': str(checkpoint.attempt.articlepkg.id),
-             'attempt_ref': str(checkpoint.attempt.id),
              'article_title': checkpoint.attempt.articlepkg.article_title,
              'journal_title': checkpoint.attempt.articlepkg.journal_title,
              'issue_label': checkpoint.attempt.articlepkg.issue_label,
              'package_name': checkpoint.attempt.filepath,
              'pissn': checkpoint.attempt.articlepkg.journal_pissn,
              'eissn': checkpoint.attempt.articlepkg.journal_eissn,
+        }
+
+        expected2 = {
+             'attempt_ref': str(checkpoint.attempt.id),
+             'package_name': checkpoint.attempt.filepath,
              'uploaded_at': str(checkpoint.attempt.started_at),
+             'article': '/api/v1/checkins_articles/1/',
         }
 
         mock_scieloapi = self.mocker.mock()
-        mock_scieloapi.checkins.post(expected)
-        self.mocker.result(None)
+        mock_scieloapi.checkins_articles.post(expected1)
+        self.mocker.result(1)  # resource id
+        mock_scieloapi.checkins.post(expected2)
+        self.mocker.result(2)  # resource id
         self.mocker.replay()
 
         notifier = self._makeOne(checkpoint=checkpoint, scieloapi=mock_scieloapi)
@@ -110,7 +117,7 @@ class NotifierTests(mocker.MockerTestCase):
         checkpoint = modelfactories.CheckpointFactory(point=models.Point.checkin)
 
         mock_scieloapi = self.mocker.mock()
-        mock_scieloapi.checkins.post(mocker.ANY)
+        mock_scieloapi.checkins_articles.post(mocker.ANY)
         self.mocker.throw(APIError)
         self.mocker.replay()
 

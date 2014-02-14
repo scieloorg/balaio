@@ -75,10 +75,6 @@ Response::
       objects: [
           {
             article_title: "Article Title",
-            tickets: [
-              "/api/v1/tickets/100",
-              "/api/v1/tickets/140",
-            ],
             issue_year: 2010,
             journal_title: "Journal Title",
             journal_pissn: "1234-1234",
@@ -96,10 +92,6 @@ Response::
           },
           {
             article_title: "Article Title",
-            tickets: [
-              "/api/v1/tickets/100",
-              "/api/v1/tickets/140",
-            ],
             issue_year: 1998,
             journal_title: "Journal Title",
             journal_pissn: "2349-2309",
@@ -141,10 +133,6 @@ Response::
 
     {
       article_title: "Article Title",
-      tickets: [
-        "/api/v1/tickets/100",
-        "/api/v1/tickets/140",
-      ],
       issue_year: 2013,
       journal_title: "Journal Title",
       journal_pissn: "1234-1234",
