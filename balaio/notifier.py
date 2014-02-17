@@ -119,7 +119,7 @@ class Notifier(object):
                  'articlepkg_ref': str(self.checkpoint.attempt.articlepkg.id),
                  'article_title': self.checkpoint.attempt.articlepkg.article_title,
                  'journal_title': self.checkpoint.attempt.articlepkg.journal_title,
-                 'issue_label': '##',
+                 'issue_label': self.checkpoint.attempt.articlepkg.issue_label,
                  'pissn': self.checkpoint.attempt.articlepkg.journal_pissn,
                  'eissn': self.checkpoint.attempt.articlepkg.journal_eissn,
                }

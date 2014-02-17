@@ -171,6 +171,32 @@ class ArticlePkg(Base):
     issue_suppl_volume = Column(String, nullable=True)
     issue_suppl_number = Column(String, nullable=True)
 
+    @property
+    def issue_label(self):
+        """
+        Return the issue label, some format can be return, see below:
+
+        2014 (year, mandatory attribute)
+        2014 N1 (year and number)
+        2014 V31 (year and volume)
+        2014 V31 N1 (year, volume and number)
+
+        2014 suppl. V32 (year and supplement volume)
+        2014 suppl. N23 (year and supplement number)
+        2014 N4 suppl. N43 (year, number and supplement number)
+        """
+
+        suppl_volume = 'suppl. V%s' % self.issue_suppl_volume if self.issue_suppl_volume else ''
+        suppl_number = 'suppl. N%s' % self.issue_suppl_number if self.issue_suppl_number else ''
+
+        number = 'N%s' % self.issue_number if self.issue_number else ''
+
+        volume = 'V%s' % self.issue_volume if self.issue_volume else ''
+
+        values = [str(self.issue_year), volume, number, suppl_volume, suppl_number]
+
+        return ' '.join([val for val in values if val]).strip()
+
     def get_aid(self):
         """
         Produce a fresh `aid` only for instances not yet persisted.
