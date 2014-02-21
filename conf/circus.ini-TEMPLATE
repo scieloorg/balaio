@@ -3,12 +3,24 @@
 virtualenv_path =
 BALAIO_SETTINGS_FILE =
 BALAIO_ALEMBIC_SETTINGS_FILE =
-app_working_dir = 
+app_working_dir =
 
 
 [circus]
 statsd = 1
 httpd = 1
+
+
+[watcher:checkout]
+cmd = python
+args = checkout.py
+numprocesses = 1
+working_dir = $(circus.env.app_working_dir)
+stop_children = True
+graceful_timeout = 10
+priority = 15
+copy_env = True
+virtualenv = $(circus.env.virtualenv_path)
 
 
 [watcher:logging_server]
@@ -24,7 +36,7 @@ virtualenv = $(circus.env.virtualenv_path)
 
 
 [watcher:httpd]
-;---- run directly as a python program 
+;---- run directly as a python program
 ;cmd = python
 ;args = wsgiapp.py
 
