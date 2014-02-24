@@ -146,7 +146,7 @@ def main(config):
 
         attempts_checkout = session.query(models.Attempt).filter_by(
                                           proceed_to_checkout=True,
-                                          pending_checkout=True).all()
+                                          checkout_started_at=None).all()
 
         #Process only if exists itens
         if attempts_checkout:

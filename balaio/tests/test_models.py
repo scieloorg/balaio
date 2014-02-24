@@ -167,33 +167,6 @@ class AttemptTests(mocker.MockerTestCase):
         attempt = Attempt.get_from_package(pkg_analyzer)
         self.assertFalse(attempt.is_valid)
 
-    def test_pending_checkout_must_ret_False_proceed_check_true_check_started_at_false(self):
-        attempt = Attempt()
-        attempt.proceed_to_checkout = True
-        attempt.checkout_started_at = datetime.now()
-
-        self.assertFalse(attempt.pending_checkout)
-
-    def test_pending_checkout_must_ret_False_proceed_check_false_check_started_at_true(self):
-        attempt = Attempt()
-        attempt.proceed_to_checkout = False
-        attempt.checkout_started_at = datetime.now()
-
-        self.assertFalse(attempt.pending_checkout)
-
-    def test_pending_checkout_must_ret_False_proceed_check_false_check_started_at_false(self):
-        attempt = Attempt()
-        attempt.proceed_to_checkout = False
-        attempt.checkout_started_at = None
-
-        self.assertFalse(attempt.pending_checkout)
-
-    def test_pending_checkout_must_ret_True_proceed_check_true_check_started_at_false(self):
-        attempt = Attempt()
-        attempt.proceed_to_checkout = True
-        attempt.checkout_started_at = None
-
-        self.assertTrue(attempt.pending_checkout)
 
 
 class ArticlePkgTests(mocker.MockerTestCase):
