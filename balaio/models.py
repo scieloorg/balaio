@@ -130,16 +130,6 @@ class Attempt(Base):
     def __repr__(self):
         return "<Attempt('%s, %s')>" % (self.id, self.package_checksum)
 
-
-    @hybrid_property
-    def pending_checkout(self):
-        """
-        Verify if the item is pending to checkout based on ``proceed_to_checkout``
-        and ``checkout_started_at``.
-        """
-        return self.proceed_to_checkout and not self.checkout_started_at
-
-
     @classmethod
     def get_from_package(cls, package):
         """
