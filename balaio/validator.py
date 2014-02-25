@@ -420,12 +420,18 @@ class NLMJournalTitleValidationPipe(vpipes.ValidationPipe):
         """
         attempt, pkg_analyzer, journal_and_issue_data = item[:3]
 
-        j_nlm_title = journal_and_issue_data.get('journal').get('medline_title', '')
+        #The value returned from get('medline_title') when do not have title is None
+        j_nlm_title = journal_and_issue_data.get('journal').get('medline_title')
 
         xml_tree = pkg_analyzer.xml
         xml_nlm_title = xml_tree.findtext('.//journal-meta/journal-id[@journal-id-type="nlm-ta"]')
+
         if not xml_nlm_title:
             xml_nlm_title = ''
+
+        if not j_nlm_title:
+            j_nlm_title = ''
+
         if self._normalize_data(xml_nlm_title) == self._normalize_data(j_nlm_title):
             status, description = [models.Status.ok, 'Valid NLM journal title: %s' % xml_nlm_title]
         else:
