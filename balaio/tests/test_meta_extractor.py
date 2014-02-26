@@ -1238,7 +1238,7 @@ class TearDownPipeTest(unittest.TestCase):
         xml = etree.parse(StringIO(xml_str))
 
         mta_extractor = meta_extractor.TearDownPipe()
-        xml, dict_data = mta_extractor.transform([xml, {}])
+        dict_data = mta_extractor.transform([xml, {}])
 
-        self.assertIs(type(dict_data), str)
+        self.assertIs(type(dict_data), dict)
 
