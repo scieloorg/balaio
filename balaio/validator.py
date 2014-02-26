@@ -4,6 +4,7 @@ import sys
 import logging
 import xml.etree.ElementTree as etree
 import calendar
+import time
 
 import scieloapi
 import transaction
@@ -21,13 +22,12 @@ logger = logging.getLogger('balaio.validator')
 
 class SetupPipe(vpipes.Pipe):
 
-    def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer, issn_validator, Session):
+    def __init__(self, notifier, scieloapi, sapi_tools, pkg_analyzer, issn_validator):
         self._notifier = notifier
         self._scieloapi = scieloapi
         self._sapi_tools = sapi_tools
         self._pkg_analyzer = pkg_analyzer
         self._issn_validator = issn_validator
-        self.Session = Session
 
     def _fetch_journal_data(self, criteria):
         """
@@ -37,7 +37,6 @@ class SetupPipe(vpipes.Pipe):
         :param criteria: valid criteria to retrieve journal data
         :returns: data of one journal
         """
-        #cli.fetch_relations(cli.get(i['resource_uri']))
         found_journal = self._scieloapi.journals.filter(
             limit=1, **criteria)
         return self._sapi_tools.get_one(found_journal)
@@ -50,30 +49,33 @@ class SetupPipe(vpipes.Pipe):
         :param criteria: valid criteria to retrieve issue data
         :returns: data of one issue
         """
-        #cli.fetch_relations(cli.get(i['resource_uri']))
         found_journal_issues = self._scieloapi.issues.filter(
             limit=1, **criteria)
         return self._scieloapi.fetch_relations(self._sapi_tools.get_one(found_journal_issues))
 
-    @vpipes.precondition(vpipes.attempt_is_valid)
-    def transform(self, attempt):
+    def transform(self, message):
         """
         Adds some data that will be needed during validation
         workflow.
 
-        :param attempt: is an models.Attempt instance.
+        :param message: is a models.Attempt, db session pair.
         :returns: a tuple (Attempt, PackageAnalyzer, journal_and_issue_data)
         """
-        logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
-        db_session = self.Session()
+        # setup
+        attempt, db_session = message
+        attempt.start_validation()
 
+        logger.debug('%s started processing %s' % (self.__class__.__name__, attempt))
         self._notifier(attempt, db_session).start()
 
-        pkg_analyzer = self._pkg_analyzer(attempt.filepath)
+        # retrieving the zip package inspection object,
+        # and making sure it is locked during the operation.
+        pkg_analyzer = attempt.analyzer
         pkg_analyzer.lock_package()
 
+        # retrieving remote data from SciELO Manager
+        # about the issue the attempt's article refers.
         criteria = {}
-
         if attempt.articlepkg.issue_volume:
             criteria['volume'] = attempt.articlepkg.issue_volume
         if attempt.articlepkg.issue_number:
@@ -106,8 +108,10 @@ class SetupPipe(vpipes.Pipe):
             logger.info('%s is not related to a known journal' % attempt)
             attempt.is_valid = False
 
+        # producing the response tuple that will traverse all pipes.
         return_value = (attempt, pkg_analyzer, journal_and_issue_data, db_session)
         logger.debug('%s returning %s' % (self.__class__.__name__, ','.join([repr(val) for val in return_value])))
+
         return return_value
 
 
@@ -119,15 +123,7 @@ class TearDownPipe(vpipes.Pipe):
         """
         :param item:
         """
-        try:
-            attempt, pkg_analyzer, __, db_session = item
-        except TypeError:
-            # when a message is broken since the beginning in ways
-            # it couldn't be processed by the SetupPipe, this
-            # unpacking will fail as only an attempt instance is
-            # referenced by `item`.
-            attempt = item
-            db_session = models.Session()
+        attempt, pkg_analyzer, __, db_session = item
 
         logger.debug('%s started processing %s' % (self.__class__.__name__, item))
 
@@ -142,10 +138,7 @@ class TearDownPipe(vpipes.Pipe):
         if not attempt.is_valid:
             utils.mark_as_failed(attempt.filepath)
 
-        try:
-            transaction.commit()
-        finally:
-            db_session.close()
+        attempt.end_validation()
 
         logger.info('Finished validating %s' % attempt)
 
@@ -597,16 +590,61 @@ class ArticleMetaPubDateValidationPipe(vpipes.ValidationPipe):
         return [models.Status.error, 'Mismatched data: %s. Expected one of %s' % (' | '.join(unmatched), ' | '.join(expected))]
 
 
+####
+# Validation worker
+####
+class Worker(object):
+
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
+
+    def _load_messages(self, session):
+        messages = session.query(models.Attempt).filter(
+            models.Attempt.ready_to_validate())
+
+        return messages
+
+    def run_once(self):
+        session = models.Session()
+
+        raw_messages = self._load_messages(session)
+
+        # check if there is something to do.
+        # if not, close the session and return.
+        if not raw_messages.first():
+            transaction.abort()
+            session.close()
+            return None
+
+        try:
+            # enrich each message with the current session.
+            messages = ((msg, session) for msg in raw_messages)
+
+            for _ in self.pipeline.run(messages):
+                # nothing to do here.
+                pass
+        finally:
+
+            try:
+                transaction.commit()
+            except Exception as e:
+                logger.error(e.message)
+                transaction.abort()
+            finally:
+                session.close()
+
+    def start(self):
+        while True:
+            self.run_once()
+            time.sleep(10)
+
+
 if __name__ == '__main__':
     # App bootstrapping:
     # Setting up the app configuration, logging and SqlAlchemy Session.
     config = utils.balaio_config_from_env()
     utils.setup_logging()
     models.Session.configure(bind=models.create_engine_from_config(config))
-
-    # Setting up the messaging machinery.
-    input_stream = utils.get_readable_socket(config.get('app', 'socket'))
-    messages = utils.recv_messages(input_stream, utils.make_digest)
 
     # Setting up some pipe dependencies.
     scieloapi = scieloapi.Client(config.get('manager', 'api_username'),
@@ -615,12 +653,9 @@ if __name__ == '__main__':
 
     notifier_dep = notifier.validation_notifier_factory(config)
 
-    Session = models.Session
-    Session.configure(bind=models.create_engine_from_config(config))
-
     ppl = vpipes.Pipeline(
         SetupPipe(notifier_dep, scieloapi, scieloapitoolbelt,
-            package.PackageAnalyzer, utils.is_valid_issn, Session),
+                  package.PackageAnalyzer, utils.is_valid_issn),
         PublisherNameValidationPipe(notifier_dep, utils.normalize_data),
         JournalAbbreviatedTitleValidationPipe(notifier_dep, utils.normalize_data),
         NLMJournalTitleValidationPipe(notifier_dep, utils.normalize_data),
@@ -635,10 +670,12 @@ if __name__ == '__main__':
         TearDownPipe(notifier_dep)
     )
 
-    try:
-        for msg in ppl.run(messages):
-            # nothing to do here...
-            pass
-    except KeyboardInterrupt:
-        sys.exit(0)
+    while True:
+        try:
+            app = Worker(ppl)
+            app.start()
+        except KeyboardInterrupt:
+            sys.exit(0)
+        except Exception as e:
+            logger.error(e.message)
 

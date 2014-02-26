@@ -38,7 +38,7 @@ class Monitor(object):
     def _setup_sock(self):
         while True:
             try:
-                self.stream = utils.get_writable_socket(self.config.get('app', 'socket'))
+                #self.stream = utils.get_writable_socket(self.config.get('app', 'socket'))
                 break
             except socket.error:
                 logger.info('Trying to estabilish connection with module `validator`. Please wait...')
@@ -84,12 +84,8 @@ class Monitor(object):
                 checkin_notifier.tell(notification_msg, notification_status, 'Checkin')
                 checkin_notifier.end()
 
+                attempt.proceed_to_validation = True
                 transaction.commit()
-
-                #Send stream
-                utils.send_message(self.stream, attempt, utils.make_digest)
-                logging.debug('Message sent for %s: %s, %s' % (filepath,
-                    repr(attempt), repr(utils.make_digest)))
 
     def trigger_event(self, filepath):
         self.job_queue.put(filepath)

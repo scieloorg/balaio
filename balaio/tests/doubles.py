@@ -202,6 +202,16 @@ class AttemptStub(object):
                     is_valid=self.is_valid,
                     )
 
+    def start_validation(self):
+        return None
+
+    def end_validation(self):
+        return None
+
+    @property
+    def analyzer(self):
+        return PackageAnalyzerStub()
+
 
 class CommentStub(object):
     def __init__(self, *args, **kwargs):
