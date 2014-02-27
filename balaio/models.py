@@ -85,7 +85,7 @@ class Attempt(Base):
     is_valid = Column(Boolean)
     checkin_uri = Column(String(length=64), nullable=True)
 
-    proceed_to_validation = Column(Boolean, nullable=False)
+    proceed_to_validation = Column(Boolean, nullable=False, default=False)
     validation_started_at = Column(DateTime(timezone=True))
     validation_ended_at = Column(DateTime(timezone=True))
 
