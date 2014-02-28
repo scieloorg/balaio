@@ -45,6 +45,14 @@ class Configuration(SingletonMixin):
     def __init__(self, fp, parser_dep=SafeConfigParser):
         self.conf = parser_dep()
         self.conf.readfp(fp)
+        self._fp = fp
+
+    @property
+    def fp(self):
+        # Workaround to make the fp readable indefinitely.
+        # But this code has serious problems on concurrent environments.
+        self._fp.seek(0)
+        return self._fp
 
     @classmethod
     def from_file(cls, filepath):
@@ -62,7 +70,7 @@ class Configuration(SingletonMixin):
     def items(self):
         """Settings as key-value pair.
         """
-        return [(section, dict(self.conf.items(section))) for \
+        return [(section, dict(self.conf.items(section, raw=True))) for \
             section in [section for section in self.conf.sections()]]
 
 
@@ -109,19 +117,16 @@ def mark_as_duplicated(filename):
     prefix_file(filename, '_duplicated_')
 
 
-def setup_logging():
+def setup_logging(config):
     global has_logger
+
     # avoid setting up more than once per process
     if has_logger:
         return None
     else:
-        rootLogger = logging.getLogger('')
-        rootLogger.setLevel(logging.DEBUG)
-        socketHandler = logging.handlers.SocketHandler('localhost',
-                                                       logging.handlers.DEFAULT_TCP_LOGGING_PORT)
-        # don't bother with a formatter, since a socket handler sends the event as
-        # an unformatted pickle
-        rootLogger.addHandler(socketHandler)
+        from logging.config import fileConfig
+        fileConfig(config.fp)
+
         has_logger = True
 
 

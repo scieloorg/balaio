@@ -185,8 +185,8 @@ def main(config):
 
 
 if __name__ == '__main__':
-    utils.setup_logging()
     config = utils.balaio_config_from_env()
+    utils.setup_logging(config)
 
     models.Session.configure(bind=models.create_engine_from_config(config))
 

@@ -119,7 +119,7 @@ if __name__ == '__main__':
     # App bootstrapping:
     # Setting up the app configuration, logging and SqlAlchemy Session.
     config = utils.balaio_config_from_env()
-    utils.setup_logging()
+    utils.setup_logging(config)
     models.Session.configure(bind=models.create_engine_from_config(config))
 
     # Setting up PyInotify event watcher.
