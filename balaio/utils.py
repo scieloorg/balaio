@@ -1,33 +1,15 @@
 import os
-import hmac
-import types
 import weakref
-import hashlib
 import requests
-import threading
 import zipfile
 from StringIO import StringIO
 import logging, logging.handlers
 from ConfigParser import SafeConfigParser
-import socket
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 from requests.exceptions import Timeout, RequestException
 
 
 logger = logging.getLogger('balaio.utils')
-
-# stdout_lock is used by send_messages func to sincronize
-# writes to the data stream
-stdout_lock = threading.Lock()
-
-# stdin_lock is used by recv_messages func to sincronize
-# reads to the data stream
-stdin_lock = threading.Lock()
 
 # flag to indicate if the process have
 # already defined a logger handler.
@@ -108,120 +90,6 @@ def alembic_config_from_env():
         raise ValueError('missing env variable BALAIO_ALEMBIC_SETTINGS_FILE')
 
     return Configuration.from_file(filepath)
-
-
-def make_digest(message, secret='sekretz'):
-    """
-    Returns a digest for the message based on the given secret
-
-    ``message`` is the file object or byte string to be calculated
-    ``secret`` is a shared key used by the hash algorithm
-    """
-    hash = hmac.new(secret, '', hashlib.sha1)
-
-    if hasattr(message, 'read'):
-        while True:
-            chunk = message.read(1024)
-            if not chunk:
-                break
-            hash.update(chunk)
-
-    elif isinstance(message, types.StringType):
-        hash.update(message)
-
-    else:
-        raise TypeError('Unsupported type %s' % type(message))
-
-    return hash.hexdigest()
-
-
-def make_digest_file(filepath, secret='sekretz'):
-    """
-    Returns a digest for the filepath based on the given secret
-
-    ``filepath`` is the file to have its bytes calculated
-    ``secret`` is a shared key used by the hash algorithm
-    """
-    with open(filepath, 'rb') as f:
-        digest = make_digest(f, secret)
-
-    return digest
-
-
-def send_message(stream, message, digest, pickle_dep=pickle):
-    """
-    Serializes the message and flushes it through ``stream``.
-    Writes to stream are synchronized in order to keep data
-    integrity.
-
-    ``stream`` is a writable socket, pipe, buffer of something like that.
-    ``message`` is the object to be dispatched.
-    ``digest`` is a callable that generates a hash in order to avoid
-    data transmission corruptions.
-    """
-    if hasattr(stream, 'getsockname'):
-        stream = FileLikeSocket(stream)
-
-    if not callable(digest):
-        raise ValueError('digest must be callable')
-
-    serialized = pickle_dep.dumps(message, pickle_dep.HIGHEST_PROTOCOL)
-    data_digest = digest(serialized)
-    header = '%s %s\n' % (data_digest, len(serialized))
-
-    with stdout_lock:
-        logger.debug('Stream %s is locked' % stream)
-        stream.write(header)
-        stream.write(serialized)
-        stream.flush()
-
-    logger.debug('Stream %s is unlocked' % stream)
-    logger.debug('Message sent with header: %s' % header)
-
-
-def recv_messages(stream, digest, pickle_dep=pickle):
-    """
-    Returns an iterator that retrieves messages from the ``stream``
-    on its deserialized form.
-    When the stream is exhausted the iterator stops, raising
-    StopIteration.
-
-    ``stream`` is a readable socket, pipe, buffer of something like that.
-    ``digest`` is a callable that generates a hash in order to avoid
-    data transmission corruptions.
-    """
-
-    if not callable(digest):
-        raise ValueError('digest must be callable')
-
-    # check if stream is a socket, and adapt it to
-    # be handled as a file-object
-    if hasattr(stream, 'getsockname'):
-        try:
-            stream, _ = stream.accept()
-        except socket.error:
-            logger.debug('%s stream is not listening. Trying to read it anyway.' % stream)
-
-        stream = FileLikeSocket(stream)
-
-    while True:
-        # locking to prevent the message frame from being
-        # corrupted
-        with stdin_lock:
-            header = stream.readline()
-            if not header:
-                raise StopIteration()
-
-            in_digest, in_length = header.split(' ')
-            in_message = stream.read(int(in_length))
-
-        logger.debug('Received message header: %s message: %s' % (header, in_message))
-
-        if in_digest == digest(in_message):
-            yield pickle_dep.loads(in_message)
-        else:
-            logger.error('Received a corrupted message: %s, %s' % (header, in_message))
-            continue
 
 
 def prefix_file(filename, prefix):
@@ -418,82 +286,6 @@ def issue_identification(volume, number, supplement):
     return (volume, volume_suppl, number, number_suppl)
 
 
-class FileLikeSocket(object):
-    """
-    Adapts socket instances to file-like objects.
-
-    This adapters are used on :func:`send_message` and
-    :func:`recv_messages`.
-
-    It is important to note that instances are not
-    thread-safe.
-    """
-    def __init__(self, sock):
-        self.sock = sock
-
-    def readline(self):
-        chars = []
-        while True:
-            char = self.sock.recv(1)
-            if char != '\n':
-                chars.append(char)
-            else:
-                break
-
-        return ''.join(chars)
-
-    def read(self, len):
-        return self.sock.recv(len)
-
-    def write(self, bytes):
-        self.sock.sendall(bytes)
-
-    def flush(self):
-        pass
-
-
-def remove_unix_socket(sock_path):
-    """
-    Cleanup existing sockets on filesystem.
-    """
-    try:
-        os.unlink(sock_path)
-    except OSError:
-        if os.path.exists(sock_path):
-            raise
-
-
-def get_readable_socket(sock_path, fresh=True):
-    """
-    Gets a new socket server.
-
-    :param sock_path: filepath to the unix socket.
-    :param fresh: if the socket file should be removed before the new is created.
-    :returns: instance of socket.
-    """
-    if fresh:
-        remove_unix_socket(sock_path)
-
-    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.bind(sock_path)
-    # can enqueue half the total connections the kernel supports,
-    # close to 64 connections, but this value may vary according to the kernel.
-    sock.listen(socket.SOMAXCONN / 2)
-    return sock
-
-
-def get_writable_socket(sock_path):
-    """
-    Gets a new socket client.
-
-    :param sock_path: filepath to the unix socket.
-    :returns: instance of socket.
-    """
-    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.connect(sock_path)
-    return sock
-
-
 def zip_files(dict_files, compression=zipfile.ZIP_DEFLATED):
     """
     Compact dict itens passed by parameter and return a file-like object
@@ -521,3 +313,4 @@ def get_static_path(path, aid, filename):
     :param filename: name of the file
     """
     return os.path.join(path, aid, os.path.basename(filename))
+

@@ -32,5 +32,5 @@ def update(env):
             run('git pull origin master')
             run('git stash pop')
 
-   reload(env)
+    reload(env)
 

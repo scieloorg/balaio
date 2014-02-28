@@ -24,7 +24,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from zope.sqlalchemy import ZopeTransactionExtension
 
 from base28 import genbase
@@ -84,6 +84,11 @@ class Attempt(Base):
     filepath = Column(String)
     is_valid = Column(Boolean)
     checkin_uri = Column(String(length=64), nullable=True)
+
+    proceed_to_validation = Column(Boolean, nullable=False, default=False)
+    validation_started_at = Column(DateTime(timezone=True))
+    validation_ended_at = Column(DateTime(timezone=True))
+
     proceed_to_checkout = Column(Boolean, nullable=False)
     checkout_started_at = Column(DateTime)
     queued_checkout = Column(Boolean)
@@ -96,6 +101,7 @@ class Attempt(Base):
         super(Attempt, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
         self.is_valid = kwargs.get('is_valid', True)
+        self.proceed_to_validation = kwargs.get('proceed_to_validation', False)
         self.proceed_to_checkout = kwargs.get('proceed_to_checkout', False)
 
     @property
@@ -144,6 +150,26 @@ class Attempt(Base):
         if package.is_valid_package() and package.is_valid_meta() and package.is_valid_schema():
             attempt.is_valid = True
         return attempt
+
+    @hybrid_method
+    def ready_to_validate(self):
+        """
+        Returns a bool indicating if the attempt is ready to be validated.
+        """
+        return (self.proceed_to_validation == True) & (self.is_valid == True)
+
+    def start_validation(self):
+        """
+        Mark the attempt validation as started.
+        """
+        self.proceed_to_validation = False
+        self.validation_started_at = datetime.datetime.now()
+
+    def end_validation(self):
+        """
+        Mark the attempt validation as ended.
+        """
+        self.validation_ended_at = datetime.datetime.now()
 
 
 class ArticlePkg(Base):

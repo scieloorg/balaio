@@ -20,14 +20,12 @@ class SetupPipeTests(mocker.MockerTestCase):
         _sapi_tools = kwargs.get('_sapi_tools', get_ScieloAPIToolbeltStubModule())
         _pkg_analyzer = kwargs.get('_pkg_analyzer', PackageAnalyzerStub)
         _issn_validator = kwargs.get('_issn_validator', utils.is_valid_issn)
-        _db_session = kwargs.get('db_session', SessionStub)
 
         vpipe = validator.SetupPipe(scieloapi=_scieloapi,
                                     notifier=_notifier,
                                     sapi_tools=_sapi_tools,
                                     pkg_analyzer=_pkg_analyzer,
-                                    issn_validator=_issn_validator,
-                                    Session=_db_session)
+                                    issn_validator=_issn_validator)
         vpipe.feed(data)
         return vpipe
 
@@ -44,7 +42,7 @@ class SetupPipeTests(mocker.MockerTestCase):
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi)
         vpipe._notifier = lambda a, b: NotifierStub()
-        result = vpipe.transform(AttemptStub())
+        result = vpipe.transform((AttemptStub(), SessionStub()))
 
         self.assertIsInstance(result, tuple)
         self.assertIsInstance(result[0], AttemptStub)
@@ -166,7 +164,7 @@ class SetupPipeTests(mocker.MockerTestCase):
         vpipe._fetch_journal_and_issue_data = mock_fetch_journal_and_issue_data
         vpipe._notifier = lambda a, b: NotifierStub()
 
-        result = vpipe.transform(stub_attempt)
+        result = vpipe.transform((stub_attempt, SessionStub()))
 
 
 class ReferenceSourceValidationTests(unittest.TestCase):
