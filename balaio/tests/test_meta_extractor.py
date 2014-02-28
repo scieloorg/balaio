@@ -1232,13 +1232,13 @@ class PublisherIDPipeTest(unittest.TestCase):
 
 class TearDownPipeTest(unittest.TestCase):
 
-    def test_if_tear_down_return_str_type(self):
+    def test_if_tear_down_return_dict_type(self):
         xml_str = '''<article></article>'''
 
         xml = etree.parse(StringIO(xml_str))
 
         mta_extractor = meta_extractor.TearDownPipe()
-        xml, dict_data = mta_extractor.transform([xml, {}])
+        dict_data = mta_extractor.transform([xml, {}])
 
-        self.assertIs(type(dict_data), str)
+        self.assertIs(type(dict_data), dict)
 

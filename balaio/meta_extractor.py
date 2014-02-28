@@ -1,6 +1,4 @@
 # coding: utf-8
-import json
-
 import plumber
 
 class SetupPipe(plumber.Pipe):
@@ -281,7 +279,7 @@ class TearDownPipe(plumber.Pipe):
 
     def transform(self, item):
         xml, dict_data = item
-        return json.dumps(dict_data, indent=2)
+        return dict_data
 
 
 def get_meta_ppl():
