@@ -45,8 +45,10 @@ def create_engine_from_config(config):
     """
     Create a sqlalchemy.engine using values from utils.Configuration.
     """
+    debug_sql = config.getboolean('app', 'debug_sql')
+
     return create_engine(config.get('app', 'db_dsn'),
-                         echo=config.getboolean('app', 'debug'))
+                         echo=debug_sql)
 
 
 def init_database(engine):

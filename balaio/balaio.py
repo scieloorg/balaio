@@ -18,7 +18,6 @@ def setenv(var_name, path):
 
 
 if __name__ == '__main__':
-    utils.setup_logging()
 
     parser = argparse.ArgumentParser(description=u'Balaio utility')
     parser.add_argument('--config',
@@ -38,6 +37,9 @@ if __name__ == '__main__':
     if args.alembic_configfile:
         setenv('BALAIO_ALEMBIC_SETTINGS_FILE', args.alembic_configfile)
 
+    config = utils.balaio_config_from_env()
+    utils.setup_logging(config)
+
     activity = args.activity
     if activity == 'syncdb':
         # Creates all database basic structure including
@@ -47,7 +49,6 @@ if __name__ == '__main__':
             sys.exit('%s: error: argument --alembic-config is required' % __file__)
 
         logger.info('The database infrastructure will be created')
-        config = utils.balaio_config_from_env()
         engine = models.create_engine_from_config(config)
         models.init_database(engine)
 
@@ -60,8 +61,7 @@ if __name__ == '__main__':
         local_scope = {}
 
         def Session_factory():
-            engine = models.create_engine_from_config(
-                utils.balaio_config_from_env())
+            engine = models.create_engine_from_config(config)
             models.Session.configure(bind=engine)
             return models.Session
 

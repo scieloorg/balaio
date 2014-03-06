@@ -1,7 +1,8 @@
 [app]
-debug=False
 db_dsn=postgres://user:password@localhost/balaio
 socket=balaio.sock
+working_dir=/tmp/balaio_wd
+debug_sql=False
 
 [monitor]
 watch_path=
@@ -25,3 +26,43 @@ host=
 username=
 password=
 path=
+
+
+# Begin logging configuration
+
+[loggers]
+keys = root, balaio
+
+[handlers]
+keys = console, sock
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARNING
+handlers = console
+
+[logger_balaio]
+level = INFO
+handlers = sock
+qualname = balaio
+propagate = 0
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[handler_sock]
+class = handlers.SocketHandler
+level = NOTSET
+args = ('localhost', handlers.DEFAULT_TCP_LOGGING_PORT)
+
+[formatter_generic]
+format = %(asctime)s [%(process)d] [%(levelname)s] %(message)s
+datefmt = %Y-%m-%d %H:%M:%S
+class = logging.Formatter
+
+# End logging configuration
