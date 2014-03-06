@@ -1274,7 +1274,7 @@ class LicenseValidationPipeTests(mocker.MockerTestCase):
                          vpipe.validate([None, pkg_analyzer_stub, None]))
 
     def test_article_without_permissions(self):
-        expected = [models.Status.error, 'Missing permissions']
+        expected = [models.Status.error, 'Missing data: permissions']
         data = '<root><article-meta></article-meta></root>'
 
         vpipe = self._makeOne(data)

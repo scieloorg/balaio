@@ -482,7 +482,7 @@ class LicenseValidationPipe(vpipes.ValidationPipe):
             else:
                 return [models.Status.warning, 'This article dont have a license']
         else:
-            return [models.Status.error, 'Missing permissions']
+            return [models.Status.error, 'Missing data: permissions']
 
 
 class ArticleSectionValidationPipe(vpipes.ValidationPipe):
