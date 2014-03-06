@@ -1244,3 +1244,53 @@ class ArticleMetaPubDateValidationPipeTests(mocker.MockerTestCase):
         vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate(data))
+
+
+class LicenseValidationPipeTests(mocker.MockerTestCase):
+    """
+    Tests of LicenseValidationPipe
+    """
+    def _makeOne(self, data, **kwargs):
+        _notifier = kwargs.get('_notifier', lambda: NotifierStub)
+
+        vpipe = validator.LicenseValidationPipe(_notifier)
+        vpipe.feed(data)
+        return vpipe
+
+    def _makePkgAnalyzerWithData(self, data):
+        pkg_analyzer_stub = PackageAnalyzerStub()
+        pkg_analyzer_stub._xml_string = data
+        return pkg_analyzer_stub
+
+    def test_article_with_valid_license(self):
+        expected = [models.Status.ok, 'This article have a valid license']
+        data = '<root><article-meta><permissions><license-p>This is an Open Access article distributed under the terms of the Creative Commons...</license-p></permissions></article-meta></root>'
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        vpipe = self._makeOne(data)
+        self.assertEqual(expected,
+                         vpipe.validate([None, pkg_analyzer_stub, None]))
+
+    def test_article_without_permissions(self):
+        expected = [models.Status.error, 'Missing data: permissions']
+        data = '<root><article-meta></article-meta></root>'
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        vpipe = self._makeOne(data)
+        self.assertEqual(expected,
+                         vpipe.validate([None, pkg_analyzer_stub, None]))
+
+    def test_article_without_text_license(self):
+        expected = [models.Status.warning, 'This article dont have a license']
+        data = '<root><article-meta><permissions><license-p></license-p></permissions></article-meta></root>'
+
+        vpipe = self._makeOne(data)
+        pkg_analyzer_stub = self._makePkgAnalyzerWithData(data)
+
+        vpipe = self._makeOne(data)
+        self.assertEqual(expected,
+                         vpipe.validate([None, pkg_analyzer_stub, None]))
