@@ -459,32 +459,6 @@ class DOIVAlidationPipe(vpipes.ValidationPipe):
             return [models.Status.warning, 'Missing data: DOI']
 
 
-class LicenseValidationPipe(vpipes.ValidationPipe):
-    """
-    Verify if exists license in XML
-    Analyzed tag: ``.//article-meta/permissions/license/license-p``
-    """
-
-    _stage_ = 'Article'
-
-    def __init__(self, notifier):
-        self._notifier = notifier
-
-    def validate(self, item):
-
-        attempt, pkg_analyzer, journal_data = item[:3]
-
-        license_xml = pkg_analyzer.xml.find('.//article-meta/permissions')
-
-        if license_xml is not None:
-            if license_xml.findtext('.//license-p'):
-                return [models.Status.ok, 'This article have a valid license']
-            else:
-                return [models.Status.warning, 'This article dont have a license']
-        else:
-            return [models.Status.error, 'Missing permissions']
-
-
 class ArticleSectionValidationPipe(vpipes.ValidationPipe):
     """
     Validate the article section
@@ -693,7 +667,6 @@ if __name__ == '__main__':
         ReferenceSourceValidationPipe(notifier_dep),
         ReferenceJournalTypeArticleTitleValidationPipe(notifier_dep),
         ReferenceYearValidationPipe(notifier_dep),
-        LicenseValidationPipe(notifier_dep),
         TearDownPipe(notifier_dep)
     )
 
