@@ -82,7 +82,6 @@ class Attempt(Base):
     articlepkg_id = Column(Integer, ForeignKey('articlepkg.id'), nullable=True)
     started_at = Column(DateTime, nullable=False)
     finished_at = Column(DateTime)
-    collection_uri = Column(String)
     filepath = Column(String)
     is_valid = Column(Boolean)
     checkin_uri = Column(String(length=64), nullable=True)
@@ -126,7 +125,6 @@ class Attempt(Base):
                            articlepkg_id=self.articlepkg_id,
                            started_at=str(self.started_at),
                            finished_at=str(self.finished_at) if self.finished_at else None,
-                           collection_uri=self.collection_uri,
                            filepath=self.filepath,
                            is_valid=self.is_valid,
                            proceed_to_checkout=self.proceed_to_checkout,

@@ -27,7 +27,6 @@ class AttemptFactory(SQLAlchemyModelFactory):
     id = factory.Sequence(lambda n: n)
     package_checksum = factory.Sequence(lambda n: '20132df0as89dds73as936%s' % n)
     finished_at = None
-    collection_uri = ''
     articlepkg = factory.SubFactory(ArticlePkgFactory)
     filepath = '/tmp/watch/xxx.zip'
 

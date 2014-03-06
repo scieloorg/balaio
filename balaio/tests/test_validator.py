@@ -1294,3 +1294,4 @@ class LicenseValidationPipeTests(mocker.MockerTestCase):
         vpipe = self._makeOne(data)
         self.assertEqual(expected,
                          vpipe.validate([None, pkg_analyzer_stub, None]))
+

@@ -693,7 +693,6 @@ if __name__ == '__main__':
         ReferenceSourceValidationPipe(notifier_dep),
         ReferenceJournalTypeArticleTitleValidationPipe(notifier_dep),
         ReferenceYearValidationPipe(notifier_dep),
-        LicenseValidationPipe(notifier_dep),
         TearDownPipe(notifier_dep)
     )
 
