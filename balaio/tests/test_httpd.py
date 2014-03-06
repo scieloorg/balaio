@@ -96,8 +96,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
 
         res = self.testapp.get('/api/v1/attempts/%s/' % attempt_id)
 
-        expected = '''{"collection_uri": "",
-                       "filepath": "/tmp/watch/xxx.zip",
+        expected = '''{"filepath": "/tmp/watch/xxx.zip",
                        "finished_at": null,
                        "articlepkg_id": %s,
                        "proceed_to_checkout": false,
@@ -128,8 +127,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
 
         expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": 0},
                        "objects": [
-                           {"collection_uri": "",
-                            "filepath": "/tmp/watch/xxx.zip",
+                           {"filepath": "/tmp/watch/xxx.zip",
                             "finished_at": null,
                             "articlepkg_id": %s,
                             "is_valid": true,
@@ -140,8 +138,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "checkout_started_at": null,
                             "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"},
-                           {"collection_uri": "",
-                            "filepath": "/tmp/watch/xxx.zip",
+                           {"filepath": "/tmp/watch/xxx.zip",
                             "finished_at": null,
                             "articlepkg_id": %s,
                             "is_valid": true,
@@ -152,8 +149,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "checkout_started_at": null,
                             "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"},
-                           {"collection_uri": "",
-                            "filepath": "/tmp/watch/xxx.zip",
+                           {"filepath": "/tmp/watch/xxx.zip",
                             "finished_at": null,
                             "articlepkg_id": %s,
                             "is_valid": true,
@@ -188,8 +184,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
 
         expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 45, "offset": 0},
                        "objects": [
-                           {"collection_uri": "",
-                            "filepath": "/tmp/watch/xxx.zip",
+                           {"filepath": "/tmp/watch/xxx.zip",
                             "finished_at": null,
                             "articlepkg_id": %s,
                             "is_valid": true,
@@ -200,8 +195,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "checkout_started_at": null,
                             "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"},
-                           {"collection_uri": "",
-                            "filepath": "/tmp/watch/xxx.zip",
+                           {"filepath": "/tmp/watch/xxx.zip",
                             "finished_at": null,
                             "articlepkg_id": %s,
                             "is_valid": true,
@@ -212,8 +206,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "checkout_started_at": null,
                             "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"},
-                           {"collection_uri": "",
-                            "filepath": "/tmp/watch/xxx.zip",
+                           {"filepath": "/tmp/watch/xxx.zip",
                             "finished_at": null,
                             "articlepkg_id": %s,
                             "is_valid": true,
@@ -244,8 +237,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
 
         expected = '''{"meta": {"previous": null, "next": null, "total": 3, "limit": 20, "offset": "1"},
                        "objects": [
-                         {"collection_uri": "",
-                          "filepath": "/tmp/watch/xxx.zip",
+                         {"filepath": "/tmp/watch/xxx.zip",
                           "finished_at": null,
                           "articlepkg_id": %s,
                           "is_valid": true,
@@ -256,8 +248,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                           "checkout_started_at": null,
                           "queued_checkout": null,
                           "resource_uri": "/api/v1/attempts/%s/"},
-                         {"collection_uri": "",
-                          "filepath": "/tmp/watch/xxx.zip",
+                         {"filepath": "/tmp/watch/xxx.zip",
                           "finished_at": null,
                           "articlepkg_id": %s,
                           "is_valid": true,
@@ -292,8 +283,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
 
         expected = '''{"meta": {"previous": null, "next": "/api/v1/attempts/?limit=2&offset=2", "total": 3, "limit": 2, "offset": 0},
                        "objects": [
-                         {"collection_uri": "",
-                          "filepath": "/tmp/watch/xxx.zip",
+                         {"filepath": "/tmp/watch/xxx.zip",
                           "finished_at": null,
                           "articlepkg_id": %s,
                           "is_valid": true,
@@ -304,8 +294,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                           "checkout_started_at": null,
                           "queued_checkout": null,
                           "resource_uri": "/api/v1/attempts/%s/"},
-                         {"collection_uri": "",
-                          "filepath": "/tmp/watch/xxx.zip",
+                         {"filepath": "/tmp/watch/xxx.zip",
                           "finished_at": null,
                           "articlepkg_id": %s,
                           "is_valid": true,
@@ -334,8 +323,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
 
         expected = '''{"meta": {"previous": null, "next": "/api/v1/attempts/?limit=2&offset=3", "total": 3, "limit": 2, "offset": "1"},
                        "objects": [
-                           {"collection_uri": "",
-                            "filepath": "/tmp/watch/xxx.zip",
+                           {"filepath": "/tmp/watch/xxx.zip",
                             "finished_at": null,
                             "articlepkg_id": %s,
                             "is_valid": true,
@@ -346,8 +334,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "checkout_started_at": null,
                             "queued_checkout": null,
                             "resource_uri": "/api/v1/attempts/%s/"},
-                           {"collection_uri": "",
-                            "filepath": "/tmp/watch/xxx.zip",
+                           {"filepath": "/tmp/watch/xxx.zip",
                             "finished_at": null,
                             "articlepkg_id": %s,
                             "is_valid": true,
@@ -372,8 +359,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
 
         expected = '''{"meta": {"previous": "/api/v1/attempts/?limit=1&offset=1", "next": "/api/v1/attempts/?limit=1&offset=3", "total": 3, "limit": 1, "offset": "2"},
                        "objects": [
-                           {"collection_uri": "",
-                            "filepath": "/tmp/watch/xxx.zip",
+                           {"filepath": "/tmp/watch/xxx.zip",
                             "finished_at": null,
                             "articlepkg_id": %s,
                             "proceed_to_checkout": false,
