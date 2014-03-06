@@ -84,12 +84,26 @@ def upload_meta_front(attempt, client, uri_dict):
     :param cfg: cfguration file
     :param uri_dict: dict content the uri to the static file
     """
+    dict_filter = {}
 
     ppl =  meta_extractor.get_meta_ppl()
 
     xml = attempt.analyzer.xml
 
+    articlepkg = attempt.articlepkg
+
+    dict_filter['pissn'] = articlepkg.journal_pissn if articlepkg.journal_pissn else None
+    dict_filter['eissn'] = articlepkg.journal_eissn if articlepkg.journal_eissn else None
+    dict_filter['volume'] = articlepkg.issue_volume if articlepkg.issue_volume else None
+    dict_filter['number'] = articlepkg.issue_number if articlepkg.issue_number else None
+    dict_filter['suppl_number'] = articlepkg.issue_suppl_number if articlepkg.issue_suppl_number else None
+    dict_filter['suppl_volume'] = articlepkg.issue_suppl_volume if articlepkg.issue_suppl_volume else None
+    dict_filter['publication_year'] = articlepkg.issue_year if articlepkg.issue_year else None
+
+    issue = next(client.issues.filter(**dict_filter))
+
     data = {
+        'issue': issue['resource_uri'],
         'front': next(ppl.run(xml, rewrap=True)),
         'xml_url': uri_dict['xml'],
         'pdf_url': uri_dict['pdf'],
