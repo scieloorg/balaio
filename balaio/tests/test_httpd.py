@@ -925,3 +925,32 @@ class FilesAPITests(unittest.TestCase):
         # the zip contains 2 files and 1 directory.
         self.assertEqual(len(zip_res.namelist()), 3)
 
+
+class HealthStatusTests(unittest.TestCase):
+    """
+    It is not necessary to test the status and description contents as long as
+    they are tested in `test_health.py`.
+    """
+    def setUp(self):
+        self.config = testing.setUp()
+
+        app = httpd.main(ConfigStub(), global_engine)
+        self.testapp = TestApp(app)
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def test_DBConnection(self):
+        response = self.testapp.get('/status/')
+        results = response.json['results']
+        self.assertTrue('DBConnection' in results)
+        self.assertTrue('status' in results['DBConnection'])
+        self.assertTrue('description' in results['DBConnection'])
+
+    def test_NotificationsOption(self):
+        response = self.testapp.get('/status/')
+        results = response.json['results']
+        self.assertTrue('NotificationsOption' in results)
+        self.assertTrue('status' in results['NotificationsOption'])
+        self.assertTrue('description' in results['NotificationsOption'])
+

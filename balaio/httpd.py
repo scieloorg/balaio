@@ -292,6 +292,7 @@ def main(config, engine):
     # periodically.
     check_list = health.CheckList(refresh=1)
     check_list.add_check(health.DBConnection(engine))
+    check_list.add_check(health.NotificationsOption(config))
 
     config_pyrmd.registry.health_status = check_list
     config_pyrmd.add_subscriber(update_health_status, NewRequest)

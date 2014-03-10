@@ -252,6 +252,9 @@ class ConfigStub(object):
     def items(self):
         return [(None, None)]
 
+    def getboolean(self, section, option):
+        return True
+
 
 class PipeStub(object):
     def __init__(self, data, **kwargs):
