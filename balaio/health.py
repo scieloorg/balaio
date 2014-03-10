@@ -1,5 +1,6 @@
 #coding: utf-8
 import datetime
+import ConfigParser
 
 from sqlalchemy.exc import OperationalError
 
@@ -82,4 +83,18 @@ class DBConnection(CheckItem):
             return False
         else:
             return True
+
+
+class NotificationsOption(CheckItem):
+    """
+    All generated notifications must be sent to SciELO Manager.
+    """
+    def __init__(self, config):
+        self.config = config
+
+    def __call__(self):
+        try:
+            return self.config.getboolean('manager', 'notifications')
+        except ConfigParser.Error:
+            return False
 

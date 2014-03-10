@@ -109,3 +109,36 @@ class CheckListTests(mocker.MockerTestCase):
 
         self.assertEqual(check_list.since(), '0:01:00')
 
+
+class NotificationsTests(mocker.MockerTestCase):
+
+    def test_notifications_is_on(self):
+        mock_config = self.mocker.mock()
+        mock_config.getboolean('manager', 'notifications')
+        self.mocker.result(True)
+        self.mocker.replay()
+
+        notifications = health.NotificationsOption(mock_config)
+        self.assertTrue(notifications())
+
+    def test_structured_description(self):
+        mock_config = self.mocker.mock()
+        mock_config.getboolean('manager', 'notifications')
+        self.mocker.result(True)
+        self.mocker.replay()
+
+        notifications = health.NotificationsOption(mock_config)
+        self.assertTrue(notifications.structured(),
+            {'description': 'All generated notifications must be sent to SciELO Manager.',
+             'status': True})
+
+    def test_notifications_opt_is_missing(self):
+        import ConfigParser
+
+        mock_config = self.mocker.mock()
+        mock_config.getboolean('manager', 'notifications')
+        self.mocker.throw(ConfigParser.NoOptionError('manager', 'notifications'))
+        self.mocker.replay()
+
+        notifications = health.NotificationsOption(mock_config)
+        self.assertFalse(notifications())
