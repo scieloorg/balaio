@@ -134,7 +134,7 @@ class Notifier(object):
             # of the current attempt.
             data_checkins = {
                      'attempt_ref': str(self.checkpoint.attempt.id),
-                     'package_name': self.checkpoint.attempt.filepath,
+                     'package_name': self.checkpoint.attempt.xml_filename,
                      'uploaded_at': str(self.checkpoint.attempt.started_at),
                      'article': article_uri,
                    }

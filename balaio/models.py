@@ -171,6 +171,21 @@ class Attempt(Base):
         """
         self.validation_ended_at = datetime.datetime.now()
 
+    @property
+    def xml_filename(self):
+        """
+        Get the .xml file filename, used as identification by the operations team.
+
+        If the filename has path data, these are ignored. e.g:
+        0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml returns
+        0042-9686-bwho-91-08-545.xml
+        """
+        xmls = self.analyzer.get_ext('xml')
+        if len(xmls[:2]) == 1:
+            return xmls[0].rsplit(os.sep, 1)[-1]
+        else:
+            raise ValueError('There are many xml files in the package.')
+
 
 class ArticlePkg(Base):
     __tablename__ = 'articlepkg'
