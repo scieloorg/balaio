@@ -12,7 +12,7 @@ from balaio.models import (
     Attempt,
     ArticlePkg,
 )
-from . import doubles
+from . import doubles, modelfactories
 
 
 class CheckpointTests(unittest.TestCase):
@@ -167,6 +167,15 @@ class AttemptTests(mocker.MockerTestCase):
         attempt = Attempt.get_from_package(pkg_analyzer)
         self.assertFalse(attempt.is_valid)
 
+    def test_xml_filename(self):
+        attempt = modelfactories.AttemptFactory()
+
+        mock_attempt = self.mocker.patch(attempt)
+        mock_attempt.analyzer.get_ext('xml')
+        self.mocker.result(['0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml'])
+        self.mocker.replay()
+
+        self.assertEqual(attempt.xml_filename, '0042-9686-bwho-91-08-545.xml')
 
 
 class ArticlePkgTests(mocker.MockerTestCase):
