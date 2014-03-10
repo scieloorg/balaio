@@ -3,6 +3,8 @@ from datetime import datetime
 
 import mocker
 import enum
+import transaction
+from sqlalchemy.exc import OperationalError
 
 from balaio.models import (
     Point,
@@ -11,8 +13,26 @@ from balaio.models import (
     Notice,
     Attempt,
     ArticlePkg,
+    Session,
 )
-from . import doubles
+from . import doubles, modelfactories
+from .utils import db_bootstrap, DB_READY
+
+
+global_engine = None
+
+
+def setUpModule():
+    """
+    Initialize the database.
+    """
+    global global_engine
+    try:
+        global_engine = db_bootstrap()
+    except OperationalError:
+        # global_engine remains None, all db-bound testcases
+        # need to test for DB_READY before run.
+        pass
 
 
 class CheckpointTests(unittest.TestCase):
@@ -167,6 +187,28 @@ class AttemptTests(mocker.MockerTestCase):
         attempt = Attempt.get_from_package(pkg_analyzer)
         self.assertFalse(attempt.is_valid)
 
+    @unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
+    def test_xml_filename(self):
+        attempt = modelfactories.AttemptFactory()
+
+        mock_attempt = self.mocker.patch(attempt)
+        mock_attempt.analyzer.get_ext('xml')
+        self.mocker.result(['0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml'])
+        self.mocker.replay()
+
+        self.assertEqual(attempt.xml_filename, '0042-9686-bwho-91-08-545')
+
+    @unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
+    def test_xml_filename_raises_ValueError(self):
+        attempt = modelfactories.AttemptFactory()
+
+        mock_attempt = self.mocker.patch(attempt)
+        mock_attempt.analyzer.get_ext('xml')
+        self.mocker.result(['0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml',
+            '0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-546.xml'])
+        self.mocker.replay()
+
+        self.assertRaises(ValueError, lambda: attempt.xml_filename)
 
 
 class ArticlePkgTests(mocker.MockerTestCase):
