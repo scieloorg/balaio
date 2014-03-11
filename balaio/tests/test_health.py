@@ -3,8 +3,6 @@ import unittest
 import mocker
 import os
 
-from mocker import ANY
-
 from balaio import health
 
 
