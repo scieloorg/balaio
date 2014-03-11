@@ -89,7 +89,9 @@ class DBConnection(CheckItem):
 
 class Monitor(CheckItem):
     """
-    The Monitor process must be running.
+    Try check if the monitor is running by asking it to circusctl.
+    If circusctl is unknown, we are unable to say if the process
+    is running, so return None.
     """
 
     def __call__(self):
@@ -106,7 +108,9 @@ class Monitor(CheckItem):
 
 class Validator(CheckItem):
     """
-    The Validator process must be running
+    Try check if the validator is running by asking it to circusctl.
+    If circusctl is unknown, we are unable to say if the process
+    is running, so return None.
     """
 
     def __call__(self):
