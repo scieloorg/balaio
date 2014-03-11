@@ -1,6 +1,9 @@
 import unittest
 
 import mocker
+import os
+
+from mocker import ANY
 
 from balaio import health
 
@@ -12,6 +15,48 @@ class CheckItem(unittest.TestCase):
 
         check = CheckIt()
         self.assertRaises(NotImplementedError, check)
+
+
+class MonitorTests(mocker.MockerTestCase):
+
+    def test_monitor_is_health(self):
+        mock_os = self.mocker.replace(os)
+        mock_os.popen('circusctl status monitor').read()
+        self.mocker.result('active\n')
+        self.mocker.replay()
+
+        monitor = health.Monitor()
+        self.assertTrue(monitor())
+
+    def test_monitor_is_dead(self):
+        mock_os = self.mocker.replace(os)
+        mock_os.popen('circusctl status monitor').read()
+        self.mocker.result('stopped\n')
+        self.mocker.replay()
+
+        monitor = health.Monitor()
+        self.assertFalse(monitor())
+
+
+class ValidatorTests(mocker.MockerTestCase):
+
+    def test_validator_is_health(self):
+        mock_os = self.mocker.replace(os)
+        mock_os.popen('circusctl status validator').read()
+        self.mocker.result('active\n')
+        self.mocker.replay()
+
+        validator = health.Validator()
+        self.assertTrue(validator())
+
+    def test_validator_is_dead(self):
+        mock_os = self.mocker.replace(os)
+        mock_os.popen('circusctl status validator').read()
+        self.mocker.result('stopped\n')
+        self.mocker.replay()
+
+        validator = health.Validator()
+        self.assertFalse(validator())
 
 
 class DBConnectionTests(mocker.MockerTestCase):
