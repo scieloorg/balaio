@@ -81,7 +81,8 @@ class NotifierTests(mocker.MockerTestCase):
 
     @unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
     def test_send_checkin_notification_payload(self):
-        checkpoint = modelfactories.CheckpointFactory(point=models.Point.checkin)
+        attempt = modelfactories.AttemptFactory()
+        checkpoint = modelfactories.CheckpointFactory(point=models.Point.checkin, attempt=attempt)
 
         expected1 = {
              'articlepkg_ref': str(checkpoint.attempt.articlepkg.id),
@@ -94,10 +95,14 @@ class NotifierTests(mocker.MockerTestCase):
 
         expected2 = {
              'attempt_ref': str(checkpoint.attempt.id),
-             'package_name': checkpoint.attempt.filepath,
+             'package_name': '0042-9686-bwho-91-08-545',
              'uploaded_at': str(checkpoint.attempt.started_at),
              'article': '/api/v1/checkins_articles/1/',
         }
+
+        mock_attempt = self.mocker.patch(attempt)
+        mock_attempt.analyzer.get_ext('xml')
+        self.mocker.result(['0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml'])
 
         mock_scieloapi = self.mocker.mock()
         mock_scieloapi.checkins_articles.post(expected1)
