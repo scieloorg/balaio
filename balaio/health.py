@@ -89,7 +89,7 @@ class DBConnection(CheckItem):
 
 class Monitor(CheckItem):
     """
-    The Monitor process must be active in Circus.
+    The Monitor process must be running.
     """
 
     def __call__(self):
@@ -106,7 +106,7 @@ class Monitor(CheckItem):
 
 class Validator(CheckItem):
     """
-    The Validator process must be active in Circus.
+    The Validator process must be running
     """
 
     def __call__(self):
