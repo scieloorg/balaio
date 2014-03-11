@@ -35,6 +35,15 @@ class MonitorTests(mocker.MockerTestCase):
         monitor = health.Monitor()
         self.assertFalse(monitor())
 
+    def test_monitor_without_circus_ctl(self):
+        mock_os = self.mocker.replace(os)
+        mock_os.popen('circusctl status monitor').read()
+        self.mocker.result('')
+        self.mocker.replay()
+
+        monitor = health.Monitor()
+        self.assertEqual(monitor(), None)
+
 
 class ValidatorTests(mocker.MockerTestCase):
 
@@ -55,6 +64,15 @@ class ValidatorTests(mocker.MockerTestCase):
 
         validator = health.Validator()
         self.assertFalse(validator())
+
+    def test_validator_without_circusctl(self):
+        mock_os = self.mocker.replace(os)
+        mock_os.popen('circusctl status validator').read()
+        self.mocker.result('')
+        self.mocker.replay()
+
+        validator = health.Validator()
+        self.assertEqual(validator(), None)
 
 
 class DBConnectionTests(mocker.MockerTestCase):

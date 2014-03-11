@@ -100,8 +100,8 @@ class Monitor(CheckItem):
 
         if status == 'active':
             return True
-
-        return False
+        elif status == 'stopped':
+            return False
 
 
 class Validator(CheckItem):
@@ -117,8 +117,8 @@ class Validator(CheckItem):
 
         if status == 'active':
             return True
-
-        return False
+        elif status == 'stopped':
+            return False
 
 
 class NotificationsOption(CheckItem):
