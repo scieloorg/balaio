@@ -89,14 +89,14 @@ class DBConnection(CheckItem):
 
 class Monitor(CheckItem):
     """
-    Try check if the monitor is running by asking it to circusctl.
-    If circusctl is unknown, we are unable to say if the process
-    is running, so return None.
+    The monitor process must be running.
     """
 
     def __call__(self):
         """
-        Try to check if the monitor process is active.
+        Try check if the monitor is running by asking it to circusctl.
+        If circusctl is unknown, we are unable to say if the process
+        is running, so return None.
         """
         status = os.popen('circusctl status monitor').read().strip()
 
@@ -108,14 +108,14 @@ class Monitor(CheckItem):
 
 class Validator(CheckItem):
     """
-    Try check if the validator is running by asking it to circusctl.
-    If circusctl is unknown, we are unable to say if the process
-    is running, so return None.
+    The validator process must be running.
     """
 
     def __call__(self):
         """
-        Try to check if the validator process is active.
+        Try check if the validator is running by asking it to circusctl.
+        If circusctl is unknown, we are unable to say if the process
+        is running, so return None.
         """
         status = os.popen('circusctl status validator').read().strip()
 
