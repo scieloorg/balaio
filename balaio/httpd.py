@@ -195,14 +195,10 @@ def main(config, engine):
     # get
     config_pyrmd.add_route('ArticlePkg', '/api/v1/packages/{id}/')
     config_pyrmd.add_route('Attempt', '/api/v1/attempts/{id}/')
-    config_pyrmd.add_route('Ticket', '/api/v1/tickets/{id}/')
 
     # lists
     config_pyrmd.add_route('list_package', '/api/v1/packages/')
     config_pyrmd.add_route('list_attempts', '/api/v1/attempts/')
-
-    # tickets new and update
-    config_pyrmd.add_route('ticket', '/api/v1/tickets/')
 
     # files
     config_pyrmd.add_route('list_attempt_members', '/api/v1/files/{attempt_id}/')
