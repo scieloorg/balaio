@@ -293,6 +293,8 @@ def main(config, engine):
     check_list = health.CheckList(refresh=1)
     check_list.add_check(health.DBConnection(engine))
     check_list.add_check(health.NotificationsOption(config))
+    check_list.add_check(health.Monitor())
+    check_list.add_check(health.Validator())
 
     config_pyrmd.registry.health_status = check_list
     config_pyrmd.add_subscriber(update_health_status, NewRequest)
