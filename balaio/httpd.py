@@ -98,6 +98,27 @@ def attempts(request):
             'objects': [attempt.to_dict() for attempt in attempts]}
 
 
+@view_config(route_name='Attempt', request_method='POST', renderer="gtw")
+def update_attempt(request):
+    """
+    Update an attempt setting atribute proceed_to_checkout=True
+    """
+    attempt = request.db.query(models.Attempt).get(request.matchdict['id'])
+
+    if attempt:
+        attempt.proceed_to_checkout = request.POST['proceed_to_checkout']
+        attempt.user_mark_to_checkout = request.POST['user_mark_to_checkout']
+        attempt.date_mark_to_checkout = request.POST['date_mark_to_checkout']
+        try:
+            transaction.commit()
+            return HTTPAccepted()
+        except:
+            request.db.rollback()
+            raise
+    else:
+        return HTTPNotFound()
+
+
 @view_config(route_name='Ticket', request_method='GET', renderer="gtw")
 def ticket(request):
     """

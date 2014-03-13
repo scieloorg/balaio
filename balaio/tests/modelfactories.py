@@ -29,6 +29,7 @@ class AttemptFactory(SQLAlchemyModelFactory):
     finished_at = None
     articlepkg = factory.SubFactory(ArticlePkgFactory)
     filepath = '/tmp/watch/xxx.zip'
+    proceed_to_checkout = False
 
 
 class CheckpointFactory(SQLAlchemyModelFactory):
