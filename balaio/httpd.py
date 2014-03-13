@@ -6,6 +6,8 @@ from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted, HTTPCreated, HTTP
 from pyramid.view import notfound_view_config, view_config
 from pyramid.events import NewRequest
 from pyramid.settings import asbool
+from pyramid_xmlrpc import parse_xmlrpc_request
+from pyramid_xmlrpc import xmlrpc_response
 
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
@@ -96,6 +98,33 @@ def attempts(request):
             'filters': filters,
             'total': request.db.query(func.count(models.Attempt.id)).filter_by(**filters).scalar(),
             'objects': [attempt.to_dict() for attempt in attempts]}
+
+
+@view_config(route_name='proceed_to_checkout')
+def proceed_to_checkout(request):
+    """
+    XML-RPC method to set attribute proceed_to_checkout=True
+    return ``True`` if the operation succeeded ``False`` otherwise
+    """
+    params, method = parse_xmlrpc_request(request)
+
+    if len(params) != 0:
+        attempt = request.db.query(models.Attempt).get(params[0])
+    else:
+        _return = False
+
+    if attempt:
+        attempt.proceed_to_checkout = True
+        try:
+            transaction.commit()
+            _return = True
+        except:
+            transaction.abort()
+            _return = False
+    else:
+        _return = False
+
+    return xmlrpc_response(_return)
 
 
 @view_config(route_name='Ticket', request_method='GET', renderer="gtw")
@@ -275,6 +304,9 @@ def main(config, engine):
 
     # tickets new and update
     config_pyrmd.add_route('ticket', '/api/v1/tickets/')
+
+    # XML RPC to mark ``proceed_to_checkout=True``
+    config_pyrmd.add_route('proceed_to_checkout', '/api/v1/_rpc/proceed_to_checkout/')
 
     # files
     config_pyrmd.add_route('list_attempt_members', '/api/v1/files/{attempt_id}/')

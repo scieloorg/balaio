@@ -6,6 +6,7 @@ enum34
 -e git+git://github.com/scieloorg/scieloapi.py.git#egg=scieloapi
 -e git+git://github.com/scieloorg/packtools.git#egg=packtools
 pyramid
+pyramid_xmlrpc
 WebTest
 transaction
 zope.sqlalchemy
