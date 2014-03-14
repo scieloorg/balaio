@@ -377,3 +377,16 @@ class SafePackageStub(object):
         except OSError as e:
             logger.debug('The file is gone before marked as duplicated. %s' % e)
             if not silence: raise
+
+#
+# Dummy os implementation
+#
+class DummyProcess(object):
+    def read(self):
+        return 'active\n'
+    def strip(self):
+        return 'active'
+
+DummyOs = types.ModuleType('DummyOs')
+DummyOs.popen = lambda x: DummyProcess()
+
