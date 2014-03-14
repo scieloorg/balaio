@@ -228,6 +228,9 @@ def main(config, engine):
     config_pyrmd.add_route('list_package', '/api/v1/packages/')
     config_pyrmd.add_route('list_attempts', '/api/v1/attempts/')
 
+    # XML RPC to mark ``proceed_to_checkout=True``
+    config_pyrmd.add_route('proceed_to_checkout', '/api/v1/_rpc/proceed_to_checkout/')
+
     # files
     config_pyrmd.add_route('list_attempt_members', '/api/v1/files/{attempt_id}/')
     config_pyrmd.add_route('get_attempt_member', '/api/v1/files/{attempt_id}/{target}/')
