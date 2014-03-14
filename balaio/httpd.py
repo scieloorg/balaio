@@ -126,79 +126,6 @@ def proceed_to_checkout(request):
 
     return xmlrpc_response(_return)
 
-
-@view_config(route_name='Ticket', request_method='GET', renderer="gtw")
-def ticket(request):
-    """
-    Get a single object and return a serialized dict
-    """
-
-    ticket = request.db.query(models.Ticket).get(request.matchdict['id'])
-
-    if ticket is None:
-        return HTTPNotFound()
-
-    return ticket.to_dict()
-
-
-@view_config(route_name='ticket', request_method='GET', renderer="gtw")
-def list_ticket(request):
-    """
-    Return a dict content the total param and the objects list
-    Example: {'total': 12, 'limit': 20, offset: 0, 'objects': [object, object,...]}
-    """
-
-    limit = request.params.get('limit', request.registry.settings.get('http_server', {}).get('limit', 20))
-    offset = request.params.get('offset', 0)
-    filters = get_query_filters(models.Ticket, request.params)
-    tickets = request.db.query(models.Ticket).filter_by(**filters).limit(limit).offset(offset)
-
-    return {'limit': limit,
-            'offset': offset,
-            'filters': filters,
-            'total': request.db.query(func.count(models.Ticket.id)).filter_by(**filters).scalar(),
-            'objects': [ticket.to_dict() for ticket in tickets]}
-
-
-@view_config(route_name='ticket', request_method='POST', renderer="gtw")
-def new_ticket(request):
-    """
-    Creates a ticket with or without comment.
-    Returns the new ticket as a serialized dict
-    """
-    ticket = models.Ticket(articlepkg_id=request.POST['articlepkg_id'], author=request.POST['ticket_author'], title=request.POST['title'])
-    if request.POST.get('message', None):
-        ticket.comments.append(models.Comment(author=request.POST['ticket_author'], message=request.POST['message']))
-    try:
-        request.db.add(ticket)
-        transaction.commit()
-    except:
-        request.db.rollback()
-        raise
-
-    return HTTPCreated()
-
-
-@view_config(route_name='Ticket', request_method='POST', renderer="gtw")
-def update_ticket(request):
-    """
-    Update a ticket
-    """
-    ticket = request.db.query(models.Ticket).get(request.matchdict['id'])
-    if ticket:
-        ticket.is_open = request.POST['is_open']
-        if request.POST.get('message', None):
-            ticket.comments.append(models.Comment(author=request.POST['comment_author'], message=request.POST['message']))
-        try:
-            transaction.commit()
-            return HTTPAccepted()
-        except:
-            request.db.rollback()
-            raise
-    else:
-        return HTTPNotFound()
-
-
 @view_config(route_name='status', request_method='GET', renderer='json')
 def health_status(request):
     """
@@ -296,17 +223,10 @@ def main(config, engine):
     # get
     config_pyrmd.add_route('ArticlePkg', '/api/v1/packages/{id}/')
     config_pyrmd.add_route('Attempt', '/api/v1/attempts/{id}/')
-    config_pyrmd.add_route('Ticket', '/api/v1/tickets/{id}/')
 
     # lists
     config_pyrmd.add_route('list_package', '/api/v1/packages/')
     config_pyrmd.add_route('list_attempts', '/api/v1/attempts/')
-
-    # tickets new and update
-    config_pyrmd.add_route('ticket', '/api/v1/tickets/')
-
-    # XML RPC to mark ``proceed_to_checkout=True``
-    config_pyrmd.add_route('proceed_to_checkout', '/api/v1/_rpc/proceed_to_checkout/')
 
     # files
     config_pyrmd.add_route('list_attempt_members', '/api/v1/files/{attempt_id}/')
@@ -325,6 +245,8 @@ def main(config, engine):
     check_list = health.CheckList(refresh=1)
     check_list.add_check(health.DBConnection(engine))
     check_list.add_check(health.NotificationsOption(config))
+    check_list.add_check(health.Monitor())
+    check_list.add_check(health.Validator())
 
     config_pyrmd.registry.health_status = check_list
     config_pyrmd.add_subscriber(update_health_status, NewRequest)

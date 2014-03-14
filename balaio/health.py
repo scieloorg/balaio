@@ -1,4 +1,5 @@
 #coding: utf-8
+import os
 import datetime
 import ConfigParser
 
@@ -70,6 +71,7 @@ class DBConnection(CheckItem):
     """
     The DB connection must be active and operating.
     """
+
     def __init__(self, engine):
         self.engine = engine
 
@@ -85,6 +87,44 @@ class DBConnection(CheckItem):
             return True
 
 
+class Monitor(CheckItem):
+    """
+    The monitor process must be running.
+    """
+
+    def __call__(self):
+        """
+        Try check if the monitor is running by asking it to circusctl.
+        If circusctl is unknown, we are unable to say if the process
+        is running, so return None.
+        """
+        status = os.popen('circusctl status monitor').read().strip()
+
+        if status == 'active':
+            return True
+        elif status == 'stopped':
+            return False
+
+
+class Validator(CheckItem):
+    """
+    The validator process must be running.
+    """
+
+    def __call__(self):
+        """
+        Try check if the validator is running by asking it to circusctl.
+        If circusctl is unknown, we are unable to say if the process
+        is running, so return None.
+        """
+        status = os.popen('circusctl status validator').read().strip()
+
+        if status == 'active':
+            return True
+        elif status == 'stopped':
+            return False
+
+
 class NotificationsOption(CheckItem):
     """
     All generated notifications must be sent to SciELO Manager.
@@ -97,4 +137,3 @@ class NotificationsOption(CheckItem):
             return self.config.getboolean('manager', 'notifications')
         except ConfigParser.Error:
             return False
-
