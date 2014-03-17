@@ -6,8 +6,8 @@ from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted, HTTPCreated, HTTP
 from pyramid.view import notfound_view_config, view_config
 from pyramid.events import NewRequest
 from pyramid.settings import asbool
-from pyramid_xmlrpc import parse_xmlrpc_request
-from pyramid_xmlrpc import xmlrpc_response
+from pyramid_xmlrpc import parse_xmlrpc_request, xmlrpc_response, xmlrpc_view
+
 
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
@@ -126,6 +126,16 @@ def proceed_to_checkout(request):
 
     return xmlrpc_response(_return)
 
+
+@view_config(route_name='rpc_status')
+@xmlrpc_view
+def rpc_status(context):
+    """
+    XML-RPC method to test service
+    """
+    return True
+
+
 @view_config(route_name='status', request_method='GET', renderer='json')
 def health_status(request):
     """
@@ -228,6 +238,8 @@ def main(config, engine):
     config_pyrmd.add_route('list_package', '/api/v1/packages/')
     config_pyrmd.add_route('list_attempts', '/api/v1/attempts/')
 
+    # XML RPC status
+    config_pyrmd.add_route('rpc_status', '/api/v1/_rpc/status/')
     # XML RPC to mark ``proceed_to_checkout=True``
     config_pyrmd.add_route('proceed_to_checkout', '/api/v1/_rpc/proceed_to_checkout/')
 
