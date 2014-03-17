@@ -38,6 +38,11 @@ def setUpModule():
         # need to test for DB_READY before run.
         pass
 
+    # replacing some dependencies, else when httpd.main() is called,
+    # lots of system calls are made to `circusctl`.
+    from balaio import health
+    health.Monitor.os = DummyOs
+    health.Validator.os = DummyOs
 
 def _load_fixtures(obj_list):
 
