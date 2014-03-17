@@ -91,6 +91,7 @@ class Monitor(CheckItem):
     """
     The monitor process must be running.
     """
+    os = os
 
     def __call__(self):
         """
@@ -98,7 +99,7 @@ class Monitor(CheckItem):
         If circusctl is unknown, we are unable to say if the process
         is running, so return None.
         """
-        status = os.popen('circusctl status monitor').read().strip()
+        status = self.os.popen('circusctl status monitor').read().strip()
 
         if status == 'active':
             return True
@@ -110,6 +111,7 @@ class Validator(CheckItem):
     """
     The validator process must be running.
     """
+    os = os
 
     def __call__(self):
         """
@@ -117,7 +119,7 @@ class Validator(CheckItem):
         If circusctl is unknown, we are unable to say if the process
         is running, so return None.
         """
-        status = os.popen('circusctl status validator').read().strip()
+        status = self.os.popen('circusctl status validator').read().strip()
 
         if status == 'active':
             return True
