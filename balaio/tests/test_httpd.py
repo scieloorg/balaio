@@ -926,6 +926,7 @@ class FilesAPITests(unittest.TestCase):
         self.assertEqual(len(zip_res.namelist()), 3)
 
 
+@unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
 class HealthStatusTests(unittest.TestCase):
     """
     It is not necessary to test the status and description contents as long as
