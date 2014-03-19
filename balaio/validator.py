@@ -105,8 +105,13 @@ class SetupPipe(vpipes.Pipe):
                 journal_and_issue_data = None
 
         if not journal_and_issue_data:
-            logger.info('%s is not related to a known journal' % attempt)
+            repr_err_msg = '%s is not related to a known journal' % attempt
+            err_msg = 'The article is not related to a known journal or issue.'
+            logger.info(repr_err_msg)
+
+            # mark the attempt as invalid and notify SciELO Manager
             attempt.is_valid = False
+            self._notifier(attempt, db_session).tell(err_msg, models.Status.error)
 
         # producing the response tuple that will traverse all pipes.
         return_value = (attempt, pkg_analyzer, journal_and_issue_data, db_session)
