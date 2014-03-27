@@ -613,7 +613,13 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
     def test_valid_abbreviated_title(self):
         expected = [models.Status.ok, u'Valid abbrev-journal-title: An. Acad. Bras. Ciênc.']
         xml = '''
-            <front><journal-meta><abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Acad. Bras. Ciênc.]]></abbrev-journal-title></journal-meta></front>'''
+            <front>
+              <journal-meta>
+                <journal-title-group>
+                  <abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Acad. Bras. Ciênc.]]></abbrev-journal-title>
+                </journal-title-group>
+              </journal-meta>
+            </front>'''
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
@@ -639,7 +645,13 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
     def test_invalid_abbreviated_title(self):
         expected = [models.Status.error, u'Mismatched data: An. Academia Bras. Ciênc.. Expected: An. Acad. Bras. Ciênc.']
         xml = '''
-            <front><journal-meta><abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Academia Bras. Ciênc.]]></abbrev-journal-title></journal-meta></front>'''
+            <front>
+              <journal-meta>
+                <journal-title-group>
+                  <abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Academia Bras. Ciênc.]]></abbrev-journal-title>
+                </journal-title-group>
+              </journal-meta>
+            </front>'''
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
@@ -666,7 +678,13 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
     def test_if_exists_abbreviated_title_tag_on_source(self):
         expected = [models.Status.error, 'Missing data: short_title, in scieloapi']
         xml = '''
-            <front><journal-meta><abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Academia Bras. Ciênc.]]></abbrev-journal-title></journal-meta></front>'''
+            <front>
+              <journal-meta>
+                <journal-title-group>
+                  <abbrev-journal-title abbrev-type="publisher"><![CDATA[An. Academia Bras. Ciênc.]]></abbrev-journal-title>
+                </journal-title-group>
+              </journal-meta>
+            </front>'''
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
@@ -682,7 +700,12 @@ class JournalAbbreviatedTitleValidationTests(mocker.MockerTestCase):
     def test_if_exists_abbreviated_title_tag_on_xml(self):
         expected = [models.Status.error, 'Missing data: abbrev-journal-title']
         xml = '''
-            <front><journal-meta></journal-meta></front>'''
+              <front>
+                <journal-meta>
+                  <journal-title-group></journal-title-group>
+                </journal-meta>
+              </front>
+              '''
 
         stub_attempt = AttemptStub()
         stub_package_analyzer = self._makePkgAnalyzerWithData(xml)
