@@ -333,7 +333,7 @@ class JournalAbbreviatedTitleValidationPipe(vpipes.ValidationPipe):
         abbrev_title = journal_and_issue_data.get('journal').get('short_title')
 
         if abbrev_title:
-            abbrev_title_xml = pkg_analyzer.xml.find('.//journal-meta/abbrev-journal-title[@abbrev-type="publisher"]')
+            abbrev_title_xml = pkg_analyzer.xml.find('.//journal-meta/journal-title-group/abbrev-journal-title[@abbrev-type="publisher"]')
             if abbrev_title_xml is not None:
                 if self._normalize_data(abbrev_title) == self._normalize_data(abbrev_title_xml.text):
                     return [models.Status.ok, 'Valid abbrev-journal-title: %s' % abbrev_title_xml.text ]
