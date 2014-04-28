@@ -3,7 +3,7 @@ import unittest
 from lxml import etree
 from StringIO import StringIO
 
-from balaio import meta_extractor
+from balaio.lib import meta_extractor
 
 
 class SetupPipeTest(unittest.TestCase):

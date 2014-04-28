@@ -5,7 +5,7 @@ import scieloapi
 import sqlalchemy
 import transaction
 
-import models
+from . import models
 
 
 logger = logging.getLogger(__name__)

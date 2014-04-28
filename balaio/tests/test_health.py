@@ -3,7 +3,7 @@ import unittest
 import mocker
 import os
 
-from balaio import health
+from balaio.lib import health
 
 
 class CheckItem(unittest.TestCase):

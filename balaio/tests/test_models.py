@@ -6,7 +6,7 @@ import enum
 import transaction
 from sqlalchemy.exc import OperationalError
 
-from balaio.models import (
+from balaio.lib.models import (
     Point,
     Checkpoint,
     Status,
@@ -140,18 +140,14 @@ class PointTests(unittest.TestCase):
 
     def test_required_enums(self):
         names = [pt.name for pt in Point]
-        self.assertIn('checkin', names)
-        self.assertIn('validation', names)
-        self.assertIn('checkout', names)
+        self.assertEqual(sorted(names), sorted(['checkin', 'validation', 'checkout']))
 
 
 class StatusTests(unittest.TestCase):
 
     def test_required_enums(self):
         names = [st.name for st in Status]
-        self.assertIn('ok', names)
-        self.assertIn('warning', names)
-        self.assertIn('error', names)
+        self.assertEqual(sorted(names), sorted(['ok', 'warning', 'error']))
 
 
 class AttemptTests(mocker.MockerTestCase):

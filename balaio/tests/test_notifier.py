@@ -3,8 +3,8 @@ import unittest
 import mocker
 from sqlalchemy.exc import OperationalError
 
-from balaio.notifier import Notifier
-from balaio import models
+from balaio.lib.notifier import Notifier
+from balaio.lib import models
 from . import doubles, modelfactories
 from .utils import db_bootstrap, DB_READY
 

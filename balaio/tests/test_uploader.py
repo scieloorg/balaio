@@ -2,7 +2,7 @@ import unittest
 
 import mocker
 
-from balaio import uploader
+from balaio.lib import uploader
 
 
 class LoadModuleTests(unittest.TestCase):

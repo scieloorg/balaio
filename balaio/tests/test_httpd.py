@@ -4,9 +4,6 @@ import sys
 import os
 import unittest
 
-# adding balaio package to path, to avoid some httpd imports to blow up.
-sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
-
 from pyramid import testing
 from pyramid.httpexceptions import HTTPNotFound,HTTPAccepted, HTTPCreated
 from sqlalchemy.exc import OperationalError
@@ -14,7 +11,7 @@ from sqlalchemy import create_engine
 from webtest import TestApp
 import transaction
 
-from balaio import models, httpd
+from balaio.lib import models, httpd
 from .doubles import *
 from .utils import db_bootstrap, DB_READY
 from . import modelfactories
@@ -40,7 +37,7 @@ def setUpModule():
 
     # replacing some dependencies, else when httpd.main() is called,
     # lots of system calls are made to `circusctl`.
-    from balaio import health
+    from balaio.lib import health
     health.Monitor.os = DummyOs
     health.Validator.os = DummyOs
 

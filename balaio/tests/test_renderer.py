@@ -1,6 +1,6 @@
 import unittest
 from pyramid import testing
-from balaio.renderers import GtwMetaFactory
+from balaio.lib.renderers import GtwMetaFactory
 from balaio.tests.doubles import *
 
 
@@ -137,12 +137,12 @@ class TestRenderer(unittest.TestCase):
         self.req.path = "/api/v1/attempts/1/"
         renderer.request = self.req
 
-        self.assertEqual(renderer.format_response(data), 
+        self.assertEqual(renderer.format_response(data),
                         expected
                        )
 
     def test_format_response_for_a_list_of_objects(self):
-        
+
         data = {'limit': 20,
                 'offset': 0,
                 'total': 200,
@@ -154,7 +154,7 @@ class TestRenderer(unittest.TestCase):
 
         renderer = GtwMetaFactory()
         renderer.request = self.req
-        renderer._current_resource_path = lambda *args, **kwargs: self.req.path + '?limit=20&offset=20' 
+        renderer._current_resource_path = lambda *args, **kwargs: self.req.path + '?limit=20&offset=20'
 
         self.assertEqual(renderer.format_response(data), {
                 'meta':{
@@ -166,7 +166,7 @@ class TestRenderer(unittest.TestCase):
                         },
                 'objects':
                     [
-                        {'id':1, 
+                        {'id':1,
                             'data':1,
                             'resource_uri': '/api/v1/packages/1/'
                         }

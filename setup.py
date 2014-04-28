@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import balaio
 try:
     from setuptools import setup
 except ImportError:
@@ -8,7 +7,7 @@ except ImportError:
 
 setup(
     name="balaio",
-    version='.'.join(balaio.__version__),
+    version='0.2',
     description="Utility to support the submission and validation of packages of articles to be included in collections of the SciELO.",
     author="SciELO",
     author_email="scielo-dev@googlegroups.com",

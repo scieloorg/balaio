@@ -27,8 +27,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from zope.sqlalchemy import ZopeTransactionExtension
 
-from base28 import genbase
-from package import PackageAnalyzer
+from .base28 import genbase
+from .package import PackageAnalyzer
 
 
 logger = logging.getLogger(__name__)

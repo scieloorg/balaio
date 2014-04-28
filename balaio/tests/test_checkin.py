@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 import unittest
 import transaction
 
-from balaio import checkin, models, excepts, package
+from balaio.lib import checkin, models, excepts, package
 from .utils import db_bootstrap, DB_READY
 from . import doubles
 

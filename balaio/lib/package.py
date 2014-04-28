@@ -6,7 +6,7 @@ import uuid
 
 from packtools import xray
 
-import utils
+from . import utils
 
 
 logger = logging.getLogger(__name__)

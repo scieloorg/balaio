@@ -8,13 +8,11 @@ from pyramid.events import NewRequest
 from pyramid.settings import asbool
 from pyramid_xmlrpc import parse_xmlrpc_request, xmlrpc_response, xmlrpc_view
 
-
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import DataError
 
-import models
-import health
+from . import models, health
 
 
 def get_query_filters(model, request_params):
@@ -247,7 +245,7 @@ def main(config, engine):
     config_pyrmd.add_route('list_attempt_members', '/api/v1/files/{attempt_id}/')
     config_pyrmd.add_route('get_attempt_member', '/api/v1/files/{attempt_id}/{target}/')
 
-    config_pyrmd.add_renderer('gtw', factory='renderers.GtwFactory')
+    config_pyrmd.add_renderer('gtw', factory='.renderers.GtwFactory')
 
     #DB session bound to each request
     config_pyrmd.registry.Session = models.ScopedSession
@@ -266,7 +264,7 @@ def main(config, engine):
     config_pyrmd.registry.health_status = check_list
     config_pyrmd.add_subscriber(update_health_status, NewRequest)
 
-    config_pyrmd.scan(package='httpd')
+    config_pyrmd.scan(package='.httpd')
 
     return config_pyrmd.make_wsgi_app()
 

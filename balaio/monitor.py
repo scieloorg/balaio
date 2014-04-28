@@ -8,12 +8,14 @@ import zipfile
 import pyinotify
 import transaction
 
-import utils
-import checkin
-import models
-import excepts
-import notifier
-import package
+from lib import (
+    utils,
+    checkin,
+    models,
+    excepts,
+    notifier,
+    package,
+)
 
 
 logger = logging.getLogger('balaio.monitor')
