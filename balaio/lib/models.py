@@ -292,6 +292,10 @@ class Status(enum.Enum):
     warning = 2
     error = 3
 
+    # Services status on range 50 - 99 (inclusive)
+    SERV_BEGIN = 50
+    SERV_END = 51
+
 
 class Notice(Base):
     __tablename__ = 'notice'

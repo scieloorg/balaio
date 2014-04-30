@@ -147,7 +147,8 @@ class StatusTests(unittest.TestCase):
 
     def test_required_enums(self):
         names = [st.name for st in Status]
-        self.assertEqual(sorted(names), sorted(['ok', 'warning', 'error']))
+        self.assertEqual(sorted(names),
+            sorted(['ok', 'warning', 'error', 'SERV_BEGIN', 'SERV_END']))
 
 
 class AttemptTests(mocker.MockerTestCase):
