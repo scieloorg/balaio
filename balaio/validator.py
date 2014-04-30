@@ -39,7 +39,8 @@ class Worker(object):
 
         # check if there is something to do.
         # if not, close the session and return.
-        if not raw_messages.first():
+        raw_messages_no = raw_messages.count()
+        if not raw_messages_no:
             transaction.abort()
             session.close()
             logger.debug('End of validation round. Nothing to do.')
@@ -47,6 +48,7 @@ class Worker(object):
 
         try:
             # enrich each message with the current session.
+            logger.debug('Started validation of %s attempts' % raw_messages_no)
             messages = ((msg, session) for msg in raw_messages)
 
             for _ in self.pipeline.run(messages):
