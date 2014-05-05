@@ -9,6 +9,8 @@ balaio
 
 Utilitário de linha de comando para apoiar a instalação e operação da aplicação.
 
+Exemplo::
+
     $ python manage.py
     usage: manage.py [-h] --config CONFIGFILE
                      [--alembic-config ALEMBIC_CONFIGFILE]
