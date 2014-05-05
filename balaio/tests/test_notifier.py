@@ -3,8 +3,8 @@ import unittest
 import mocker
 from sqlalchemy.exc import OperationalError
 
-from balaio.notifier import Notifier
-from balaio import models
+from balaio.lib.notifier import Notifier
+from balaio.lib import models
 from . import doubles, modelfactories
 from .utils import db_bootstrap, DB_READY
 
@@ -42,6 +42,10 @@ class NotifierTests(mocker.MockerTestCase):
         mock_notifier = self.mocker.patch(notifier)
         mock_notifier._send_checkin_notification()
         self.mocker.result(None)
+
+        mock_notifier._send_notice_notification('', models.Status.SERV_BEGIN)
+        self.mocker.result(None)
+
         self.mocker.replay()
 
         notifier.start()
@@ -55,6 +59,10 @@ class NotifierTests(mocker.MockerTestCase):
         mock_notifier._send_checkin_notification()
         self.mocker.result(None)
         self.mocker.count(0,0)  # means the method is not called
+
+        mock_notifier._send_notice_notification('', models.Status.SERV_BEGIN)
+        self.mocker.result(None)
+
         self.mocker.replay()
 
         notifier.start()
@@ -136,6 +144,9 @@ class NotifierTests(mocker.MockerTestCase):
         mock_notifier = self.mocker.patch(notifier)
 
         mock_notifier._send_checkin_notification()
+        self.mocker.result(None)
+
+        mock_notifier._send_notice_notification('', models.Status.SERV_BEGIN)
         self.mocker.result(None)
 
         mock_notifier._send_notice_notification('foo', models.Status.ok, label='bar')

@@ -4,8 +4,7 @@ import os
 import argparse
 import logging
 
-import utils
-import models
+from lib import utils, models
 
 
 logger = logging.getLogger('balaio.main')
@@ -48,11 +47,10 @@ if __name__ == '__main__':
         if not args.alembic_configfile:
             sys.exit('%s: error: argument --alembic-config is required' % __file__)
 
-        logger.info('The database infrastructure will be created')
         engine = models.create_engine_from_config(config)
         models.init_database(engine)
 
-        print 'Done. All databases had been created'
+        print 'Done. All databases were created.'
         sys.exit(0)
 
     elif activity == 'shell':

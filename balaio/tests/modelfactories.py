@@ -1,7 +1,7 @@
 import factory
 from factory.alchemy import SQLAlchemyModelFactory
 
-from balaio import models
+from balaio.lib import models
 
 class ArticlePkgFactory(SQLAlchemyModelFactory):
     FACTORY_FOR = models.ArticlePkg

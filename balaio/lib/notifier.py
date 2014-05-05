@@ -5,7 +5,7 @@ import scieloapi
 import sqlalchemy
 import transaction
 
-import models
+from . import models
 
 
 logger = logging.getLogger(__name__)
@@ -67,11 +67,13 @@ class Notifier(object):
         self.checkpoint.start()
         if self.checkpoint.point is models.Point.checkin:
             self._send_checkin_notification()
+        self._send_notice_notification('', models.Status.SERV_BEGIN)
 
     def end(self):
         self.checkpoint.end()
         if self.checkpoint.point is models.Point.checkout:
             self._send_checkout_notification()
+        self._send_notice_notification('', models.Status.SERV_END)
 
     def _send_checkout_notification(self):
         """
@@ -153,9 +155,6 @@ class Notifier(object):
         """
         Sends notices notifications bound to the active checkin, to SciELO Manager.
         """
-        if not self.manager_integration:
-            logger.warning('Notifications to Manager are disabled. Skipping.')
-            return None
 
         data = {
             'checkin': self.checkpoint.attempt.checkin_uri,
@@ -164,6 +163,12 @@ class Notifier(object):
             'message': message,
             'status': status.name,
         }
+
+        logger.debug('Notification about to be sent to Manager: %s' % data)
+
+        if not self.manager_integration:
+            logger.warning('Notifications to Manager are disabled. Skipping.')
+            return None
 
         try:
             self.scieloapi.notices.post(data)

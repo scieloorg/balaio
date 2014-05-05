@@ -27,8 +27,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from zope.sqlalchemy import ZopeTransactionExtension
 
-from base28 import genbase
-from package import PackageAnalyzer
+from .base28 import genbase
+from .package import PackageAnalyzer
 
 
 logger = logging.getLogger(__name__)
@@ -291,6 +291,10 @@ class Status(enum.Enum):
     ok = 1
     warning = 2
     error = 3
+
+    # Services status on range 50 - 99 (inclusive)
+    SERV_BEGIN = 50
+    SERV_END = 51
 
 
 class Notice(Base):

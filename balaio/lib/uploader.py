@@ -2,7 +2,7 @@
 import imp
 import sys
 
-from balaio import utils
+from . import utils
 
 
 def load_module(name):

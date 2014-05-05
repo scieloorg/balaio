@@ -4,8 +4,7 @@ import unittest
 import ConfigParser
 from StringIO import StringIO
 
-from balaio import notifier
-from balaio import utils
+from balaio.lib import notifier, utils
 
 
 class SingletonMixinTests(mocker.MockerTestCase):

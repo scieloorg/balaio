@@ -4,8 +4,8 @@ import logging
 from sqlalchemy.exc import IntegrityError
 import transaction
 
-import models
-import excepts
+from . import models
+from . import excepts
 
 
 logger = logging.getLogger('balaio.checkin')

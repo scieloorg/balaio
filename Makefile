@@ -12,7 +12,7 @@ test: clean
 	@python setup.py test -q
 
 dbsetup:
-	@python $(WORKING_DIR)/balaio.py --config conf/config.ini --alembic-config conf/alembic.ini syncdb
+	@python $(WORKING_DIR)/manage.py --config conf/config.ini --alembic-config conf/alembic.ini syncdb
 
 setup: deps dbsetup test 
 

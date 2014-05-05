@@ -31,7 +31,7 @@ path=
 # Begin logging configuration
 
 [loggers]
-keys = root, balaio
+keys = root, balaio, lib, scieloapi
 
 [handlers]
 keys = console, sock
@@ -47,6 +47,18 @@ handlers = console
 level = INFO
 handlers = sock
 qualname = balaio
+propagate = 0
+
+[logger_lib]
+level = INFO
+handlers = sock
+qualname = lib
+propagate = 0
+
+[logger_scieloapi]
+level = ERROR
+handlers = sock
+qualname = scieloapi
 propagate = 0
 
 [handler_console]

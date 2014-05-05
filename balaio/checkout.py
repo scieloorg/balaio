@@ -8,10 +8,8 @@ from multiprocessing.dummy import Pool as ThreadPool
 import transaction
 import scieloapi
 
-import utils
-import models
-import meta_extractor
-from uploader import StaticScieloBackend
+from lib import utils, models, meta_extractor
+from lib.uploader import StaticScieloBackend
 
 
 FILES_EXTENSION = ['xml', 'pdf',]

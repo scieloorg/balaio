@@ -3,7 +3,7 @@ import argparse
 
 from wsgiref.simple_server import make_server
 
-import httpd, utils, models
+from lib import utils, models, httpd
 
 
 if __name__ == '__main__':

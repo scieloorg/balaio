@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 import mocker
 import unittest
 
-from balaio import package
+from balaio.lib import package
 from . import doubles
 
 
@@ -27,7 +27,7 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
     def _makeOne(self, fname):
         return package.PackageAnalyzer(fname)
 
-    def test_subzip(self): 
+    def test_subzip(self):
         data = [('bar.xml', b'<root><name>bar</name></root>')]
         arch1 = self._make_test_archive(data)
 
@@ -38,7 +38,7 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
             ['bar.xml']
         )
 
-    def test_subzip_nonexisting_member(self): 
+    def test_subzip_nonexisting_member(self):
         data = [('bar.xml', b'<root><name>bar</name></root>')]
         arch1 = self._make_test_archive(data)
 
@@ -49,7 +49,7 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
             lambda: parch1.subzip('nonexists.xml')
         )
 
-    def test_subzip_retrieving_one_from_many(self): 
+    def test_subzip_retrieving_one_from_many(self):
         data = [('bar.xml', b'<root><name>bar</name></root>'),
                 ('foo.txt', b'<root><name>foo</name></root>')]
 
@@ -61,7 +61,7 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
             ['bar.xml']
         )
 
-    def test_subzip_retrieving_two_from_many(self): 
+    def test_subzip_retrieving_two_from_many(self):
         data = [('bar.xml', b'<root><name>bar</name></root>'),
                 ('foo.txt', b'<root><name>foo</name></root>'),
                 ('coo.txt', b'<root><name>coo</name></root>')]
@@ -71,7 +71,7 @@ class PackageAnalyzerTests(mocker.MockerTestCase):
 
         self.assertEquals(
             zipfile.ZipFile(parch1.subzip('bar.xml', 'coo.txt')).namelist(),
-            ['bar.xml', 'coo.txt'] 
+            ['bar.xml', 'coo.txt']
         )
 
     def test_package_checksum_is_calculated(self):
@@ -338,7 +338,7 @@ class SafePackageTests(mocker.MockerTestCase):
         # mocks
         mock_shutil = self.mocker.replace('shutil')
         mock_uuid4 = self.mocker.replace('uuid.uuid4')
-        mock_utils = self.mocker.replace('balaio.utils')
+        mock_utils = self.mocker.replace('balaio.lib.utils')
 
         mock_shutil.copy2(mocker.ANY, mocker.ANY)
         self.mocker.result(None)
@@ -359,7 +359,7 @@ class SafePackageTests(mocker.MockerTestCase):
         # mocks
         mock_shutil = self.mocker.replace('shutil')
         mock_uuid4 = self.mocker.replace('uuid.uuid4')
-        mock_utils = self.mocker.replace('balaio.utils')
+        mock_utils = self.mocker.replace('balaio.lib.utils')
 
         mock_shutil.copy2(mocker.ANY, mocker.ANY)
         self.mocker.result(None)
@@ -380,7 +380,7 @@ class SafePackageTests(mocker.MockerTestCase):
         # mocks
         mock_shutil = self.mocker.replace('shutil')
         mock_uuid4 = self.mocker.replace('uuid.uuid4')
-        mock_utils = self.mocker.replace('balaio.utils')
+        mock_utils = self.mocker.replace('balaio.lib.utils')
 
         mock_shutil.copy2(mocker.ANY, mocker.ANY)
         self.mocker.result(None)
@@ -401,7 +401,7 @@ class SafePackageTests(mocker.MockerTestCase):
         # mocks
         mock_shutil = self.mocker.replace('shutil')
         mock_uuid4 = self.mocker.replace('uuid.uuid4')
-        mock_utils = self.mocker.replace('balaio.utils')
+        mock_utils = self.mocker.replace('balaio.lib.utils')
 
         mock_shutil.copy2(mocker.ANY, mocker.ANY)
         self.mocker.result(None)
