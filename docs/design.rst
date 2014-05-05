@@ -7,8 +7,33 @@ Design
 balaio
 ------
 
-Orquestra a execução dos módulos :mod:`monitor` e :mod:`validator` e gerencia a configuração
-do sistema de maneira que esses módulos utilizem as mesmas diretivas.
+Utilitário de linha de comando para apoiar a instalação e operação da aplicação.
+
+    $ python manage.py
+    usage: manage.py [-h] --config CONFIGFILE
+                     [--alembic-config ALEMBIC_CONFIGFILE]
+                     {syncdb,shell}
+
+Os comandos disponíveis até o momento são:
+
+
+syncdb
+~~~~~~
+
+Cria a estrutura de banco de dados da aplicação. Esse comando só deve ser executado
+no momento da instalação. Para a aplicação das migrações de schema de dados, o 
+`alembic` deve ser utilizado diretamente.
+
+
+shell
+~~~~~
+
+Acessa o console interativo do python com o contexto pré-configurado para facilitar 
+o acesso ao banco de dados, por exemplo::
+
+    >>> from lib import models
+    >>> session = Session()
+    >>> session.query(models.Attempt).all()
 
 
 monitor
@@ -43,8 +68,8 @@ loggingserver
 Recebe e consolida os *logs* dos módulos :mod:`monitor`, :mod:`validator` e :mod:`balaio`.
 
 
-httpd
---------------
+wsgiapp
+-------
 
 Disponibiliza uma interface HTTP para acesso e manipulação dos dados.
 

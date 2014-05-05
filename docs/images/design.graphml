@@ -15,13 +15,12 @@
   <graph edgedefault="directed" id="G">
     <data key="d7"/>
     <node id="n0">
-      <data key="d5"/>
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="46.0" width="176.0" x="469.0" y="297.0"/>
+          <y:Geometry height="46.0" width="176.0" x="980.0" y="187.0"/>
           <y:Fill color="#FFFFFF" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="20" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="27.5546875" modelName="custom" textColor="#000000" visible="true" width="62.525390625" x="56.7373046875" y="9.22265625">balaio<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="20" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="27.5546875" modelName="custom" textColor="#000000" visible="true" width="84.078125" x="45.9609375" y="9.22265625">wsgiapp<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -29,48 +28,10 @@
             </y:ModelParameter>
           </y:NodeLabel>
           <y:Shape type="rectangle"/>
-          <y:DropShadow color="#B3A691" offsetX="1" offsetY="1"/>
         </y:ShapeNode>
       </data>
     </node>
     <node id="n1">
-      <data key="d5"/>
-      <data key="d6">
-        <y:ShapeNode>
-          <y:Geometry height="46.0" width="176.0" x="591.0" y="77.0"/>
-          <y:Fill color="#FFFFFF" transparent="false"/>
-          <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="20" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="27.5546875" modelName="custom" textColor="#000000" visible="true" width="152.2421875" x="11.87890625" y="9.22265625">httpd<y:LabelModel>
-              <y:SmartNodeLabelModel distance="4.0"/>
-            </y:LabelModel>
-            <y:ModelParameter>
-              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
-            </y:ModelParameter>
-          </y:NodeLabel>
-          <y:Shape type="rectangle"/>
-        </y:ShapeNode>
-      </data>
-    </node>
-    <node id="n2">
-      <data key="d5"/>
-      <data key="d6">
-        <y:ShapeNode>
-          <y:Geometry height="46.0" width="176.0" x="352.0" y="77.0"/>
-          <y:Fill color="#FFFFFF" transparent="false"/>
-          <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="20" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="27.5546875" modelName="custom" textColor="#000000" visible="true" width="136.87109375" x="19.564453125" y="9.22265625">loggingserver<y:LabelModel>
-              <y:SmartNodeLabelModel distance="4.0"/>
-            </y:LabelModel>
-            <y:ModelParameter>
-              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
-            </y:ModelParameter>
-          </y:NodeLabel>
-          <y:Shape type="rectangle"/>
-        </y:ShapeNode>
-      </data>
-    </node>
-    <node id="n3">
-      <data key="d5"/>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="46.0" width="176.0" x="352.0" y="187.0"/>
@@ -87,11 +48,10 @@
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n4">
-      <data key="d5"/>
+    <node id="n2">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="46.0" width="176.0" x="591.0" y="187.0"/>
+          <y:Geometry height="46.0" width="176.0" x="560.5" y="187.0"/>
           <y:Fill color="#FFFFFF" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="20" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="27.5546875" modelName="custom" textColor="#000000" visible="true" width="88.541015625" x="43.7294921875" y="9.22265625">validator<y:LabelModel>
@@ -105,70 +65,296 @@
         </y:ShapeNode>
       </data>
     </node>
-    <edge id="e0" source="n3" target="n0">
-      <data key="d9"/>
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="-23.0">
-            <y:Point x="440.0" y="270.0"/>
-            <y:Point x="556.0" y="270.0"/>
-          </y:Path>
-          <y:LineStyle color="#000000" type="line" width="2.0"/>
-          <y:Arrows source="delta" target="delta"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
+    <node id="n3">
+      <data key="d6">
+        <y:ShapeNode>
+          <y:Geometry height="46.0" width="176.0" x="769.0" y="187.0"/>
+          <y:Fill color="#FFFFFF" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="20" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="27.5546875" modelName="custom" textColor="#000000" visible="true" width="91.91015625" x="42.044921875" y="9.22265625">checkout<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+          <y:Shape type="rectangle"/>
+        </y:ShapeNode>
       </data>
-    </edge>
-    <edge id="e1" source="n4" target="n0">
+    </node>
+    <node id="n4">
+      <data key="d5"/>
+      <data key="d6">
+        <y:SVGNode>
+          <y:Geometry height="71.61299896240234" width="59.03451306425481" x="720.4827434678725" y="336.1935005187988"/>
+          <y:Fill color="#CCCCFF" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" modelName="custom" textColor="#000000" visible="true" width="4.0" x="27.517256532127362" y="75.61299896240234">
+            <y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="-0.5" nodeRatioX="0.0" nodeRatioY="0.5" offsetX="0.0" offsetY="4.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+          <y:SVGNodeProperties usingVisualBounds="true"/>
+          <y:SVGModel svgBoundsPolicy="0">
+            <y:SVGContent refid="1"/>
+          </y:SVGModel>
+        </y:SVGNode>
+      </data>
+    </node>
+    <node id="n5">
+      <data key="d6">
+        <y:ShapeNode>
+          <y:Geometry height="46.0" width="176.0" x="980.0" y="49.0"/>
+          <y:Fill color="#FFFFFF" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="20" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="27.5546875" modelName="custom" textColor="#000000" visible="true" width="157.69140625" x="9.154296875" y="9.22265625">SciELO Manager<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+          <y:Shape type="rectangle"/>
+        </y:ShapeNode>
+      </data>
+    </node>
+    <edge id="e0" source="n1" target="n4">
       <data key="d9"/>
       <data key="d10">
-        <y:PolyLineEdge>
+        <y:ArcEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
-            <y:Point x="679.0" y="270.0"/>
-            <y:Point x="557.0" y="270.0"/>
-            <y:Point x="557.0" y="284.0"/>
+            <y:Point x="592.3782348632812" y="296.0169982910156"/>
           </y:Path>
-          <y:LineStyle color="#000000" type="line" width="2.0"/>
-          <y:Arrows source="delta" target="none"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="standard" target="standard"/>
+          <y:Arc height="-5.660748481750488" ratio="-0.06473550200462341" type="fixedRatio"/>
+        </y:ArcEdge>
       </data>
     </edge>
-    <edge id="e2" source="n3" target="n2">
+    <edge id="e1" source="n2" target="n4">
+      <data key="d9"/>
+      <data key="d10">
+        <y:ArcEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="702.055908203125" y="289.2419738769531"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="standard" target="standard"/>
+          <y:Arc height="3.311176300048828" ratio="0.06928207725286484" type="fixedRatio"/>
+        </y:ArcEdge>
+      </data>
+    </edge>
+    <edge id="e2" source="n3" target="n4">
+      <data key="d9"/>
+      <data key="d10">
+        <y:ArcEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="798.3683471679688" y="287.6105651855469"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="standard" target="standard"/>
+          <y:Arc height="-6.149983882904053" ratio="-0.12670788168907166" type="fixedRatio"/>
+        </y:ArcEdge>
+      </data>
+    </edge>
+    <edge id="e3" source="n0" target="n4">
+      <data key="d9"/>
+      <data key="d10">
+        <y:ArcEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="908.8511962890625" y="290.7078857421875"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="standard" target="standard"/>
+          <y:Arc height="-0.3278352916240692" ratio="-0.00367439235560596" type="fixedRatio"/>
+        </y:ArcEdge>
+      </data>
+    </edge>
+    <edge id="e4" source="n5" target="n5">
+      <data key="d9"/>
+      <data key="d10">
+        <y:ArcEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="1068.0" y="72.0"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:Arc height="0.0" ratio="1.0" type="fixedRatio"/>
+        </y:ArcEdge>
+      </data>
+    </edge>
+    <edge id="e5" source="n5" target="n0">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
-          <y:LineStyle color="#000000" type="line" width="2.0"/>
-          <y:Arrows source="none" target="delta"/>
+          <y:LineStyle color="#000000" type="dashed" width="1.0"/>
+          <y:Arrows source="standard" target="standard"/>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.1328125" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="34.626953125" x="-47.3134765625" y="36.93359375">HTTP<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="right" ratio="0.5" segment="0"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e3" source="n4" target="n2">
+    <edge id="e6" source="n1" target="n2">
       <data key="d9"/>
       <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
-          <y:LineStyle color="#000000" type="line" width="2.0"/>
-          <y:Arrows source="none" target="delta"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
+        <y:ArcEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="544.25" y="157.875"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="dotted" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:Arc height="52.125" ratio="1.0" type="fixedRatio"/>
+        </y:ArcEdge>
       </data>
     </edge>
-    <edge id="e4" source="n0" target="n2">
+    <edge id="e7" source="n2" target="n3">
       <data key="d9"/>
       <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
-          <y:LineStyle color="#000000" type="line" width="2.0"/>
-          <y:Arrows source="none" target="delta"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
+        <y:ArcEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="752.75" y="157.875"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="dotted" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:Arc height="52.125" ratio="1.0" type="fixedRatio"/>
+        </y:ArcEdge>
       </data>
     </edge>
   </graph>
   <data key="d0">
-    <y:Resources/>
+    <y:Resources>
+      <y:Resource id="1">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;!-- Generator: Adobe Illustrator 15.0.2, SVG Export Plug-In  --&gt;
+&lt;!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
+	&lt;!ENTITY ns_flows "http://ns.adobe.com/Flows/1.0/"&gt;
+]&gt;
+&lt;svg version="1.1"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:a="http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/"
+	 x="0px" y="0px" width="40px" height="48px" viewBox="0 0 40 48" enable-background="new 0 0 40 48" xml:space="preserve"&gt;
+&lt;defs&gt;
+&lt;/defs&gt;
+&lt;linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="370.2002" y1="655.0938" x2="409.4502" y2="655.0938" gradientTransform="matrix(1 0 0 1 -370.2002 -614.5742)"&gt;
+	&lt;stop  offset="0" style="stop-color:#4D4D4D"/&gt;
+	&lt;stop  offset="0.0558" style="stop-color:#5F5F5F"/&gt;
+	&lt;stop  offset="0.2103" style="stop-color:#8D8D8D"/&gt;
+	&lt;stop  offset="0.3479" style="stop-color:#AEAEAE"/&gt;
+	&lt;stop  offset="0.4623" style="stop-color:#C2C2C2"/&gt;
+	&lt;stop  offset="0.5394" style="stop-color:#C9C9C9"/&gt;
+	&lt;stop  offset="0.6247" style="stop-color:#C5C5C5"/&gt;
+	&lt;stop  offset="0.7072" style="stop-color:#BABABA"/&gt;
+	&lt;stop  offset="0.7885" style="stop-color:#A6A6A6"/&gt;
+	&lt;stop  offset="0.869" style="stop-color:#8B8B8B"/&gt;
+	&lt;stop  offset="0.9484" style="stop-color:#686868"/&gt;
+	&lt;stop  offset="1" style="stop-color:#4D4D4D"/&gt;
+&lt;/linearGradient&gt;
+&lt;path fill="url(#SVGID_1_)" d="M19.625,37.613C8.787,37.613,0,35.738,0,33.425v10c0,2.313,8.787,4.188,19.625,4.188
+	c10.839,0,19.625-1.875,19.625-4.188v-10C39.25,35.738,30.464,37.613,19.625,37.613z"/&gt;
+&lt;linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="370.2002" y1="649.0938" x2="409.4502" y2="649.0938" gradientTransform="matrix(1 0 0 1 -370.2002 -614.5742)"&gt;
+	&lt;stop  offset="0" style="stop-color:#B3B3B3"/&gt;
+	&lt;stop  offset="0.0171" style="stop-color:#B6B6B6"/&gt;
+	&lt;stop  offset="0.235" style="stop-color:#D7D7D7"/&gt;
+	&lt;stop  offset="0.4168" style="stop-color:#EBEBEB"/&gt;
+	&lt;stop  offset="0.5394" style="stop-color:#F2F2F2"/&gt;
+	&lt;stop  offset="0.6579" style="stop-color:#EEEEEE"/&gt;
+	&lt;stop  offset="0.7724" style="stop-color:#E3E3E3"/&gt;
+	&lt;stop  offset="0.8853" style="stop-color:#CFCFCF"/&gt;
+	&lt;stop  offset="0.9965" style="stop-color:#B4B4B4"/&gt;
+	&lt;stop  offset="1" style="stop-color:#B3B3B3"/&gt;
+&lt;/linearGradient&gt;
+&lt;path fill="url(#SVGID_2_)" d="M19.625,37.613c10.839,0,19.625-1.875,19.625-4.188l-1.229-2c0,2.168-8.235,3.927-18.396,3.927
+	c-9.481,0-17.396-1.959-18.396-3.927l-1.229,2C0,35.738,8.787,37.613,19.625,37.613z"/&gt;
+&lt;linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="371.4297" y1="646" x2="408.2217" y2="646" gradientTransform="matrix(1 0 0 1 -370.2002 -614.5742)"&gt;
+	&lt;stop  offset="0" style="stop-color:#C9C9C9"/&gt;
+	&lt;stop  offset="1" style="stop-color:#808080"/&gt;
+&lt;/linearGradient&gt;
+&lt;ellipse fill="url(#SVGID_3_)" cx="19.625" cy="31.425" rx="18.396" ry="3.926"/&gt;
+&lt;linearGradient id="SVGID_4_" gradientUnits="userSpaceOnUse" x1="370.2002" y1="641.0938" x2="409.4502" y2="641.0938" gradientTransform="matrix(1 0 0 1 -370.2002 -614.5742)"&gt;
+	&lt;stop  offset="0" style="stop-color:#4D4D4D"/&gt;
+	&lt;stop  offset="0.0558" style="stop-color:#5F5F5F"/&gt;
+	&lt;stop  offset="0.2103" style="stop-color:#8D8D8D"/&gt;
+	&lt;stop  offset="0.3479" style="stop-color:#AEAEAE"/&gt;
+	&lt;stop  offset="0.4623" style="stop-color:#C2C2C2"/&gt;
+	&lt;stop  offset="0.5394" style="stop-color:#C9C9C9"/&gt;
+	&lt;stop  offset="0.6247" style="stop-color:#C5C5C5"/&gt;
+	&lt;stop  offset="0.7072" style="stop-color:#BABABA"/&gt;
+	&lt;stop  offset="0.7885" style="stop-color:#A6A6A6"/&gt;
+	&lt;stop  offset="0.869" style="stop-color:#8B8B8B"/&gt;
+	&lt;stop  offset="0.9484" style="stop-color:#686868"/&gt;
+	&lt;stop  offset="1" style="stop-color:#4D4D4D"/&gt;
+&lt;/linearGradient&gt;
+&lt;path fill="url(#SVGID_4_)" d="M19.625,23.613C8.787,23.613,0,21.738,0,19.425v10c0,2.313,8.787,4.188,19.625,4.188
+	c10.839,0,19.625-1.875,19.625-4.188v-10C39.25,21.738,30.464,23.613,19.625,23.613z"/&gt;
+&lt;linearGradient id="SVGID_5_" gradientUnits="userSpaceOnUse" x1="370.2002" y1="635.0938" x2="409.4502" y2="635.0938" gradientTransform="matrix(1 0 0 1 -370.2002 -614.5742)"&gt;
+	&lt;stop  offset="0" style="stop-color:#B3B3B3"/&gt;
+	&lt;stop  offset="0.0171" style="stop-color:#B6B6B6"/&gt;
+	&lt;stop  offset="0.235" style="stop-color:#D7D7D7"/&gt;
+	&lt;stop  offset="0.4168" style="stop-color:#EBEBEB"/&gt;
+	&lt;stop  offset="0.5394" style="stop-color:#F2F2F2"/&gt;
+	&lt;stop  offset="0.6579" style="stop-color:#EEEEEE"/&gt;
+	&lt;stop  offset="0.7724" style="stop-color:#E3E3E3"/&gt;
+	&lt;stop  offset="0.8853" style="stop-color:#CFCFCF"/&gt;
+	&lt;stop  offset="0.9965" style="stop-color:#B4B4B4"/&gt;
+	&lt;stop  offset="1" style="stop-color:#B3B3B3"/&gt;
+&lt;/linearGradient&gt;
+&lt;path fill="url(#SVGID_5_)" d="M19.625,23.613c10.839,0,19.625-1.875,19.625-4.188l-1.229-2c0,2.168-8.235,3.926-18.396,3.926
+	c-9.481,0-17.396-1.959-18.396-3.926l-1.229,2C0,21.738,8.787,23.613,19.625,23.613z"/&gt;
+&lt;linearGradient id="SVGID_6_" gradientUnits="userSpaceOnUse" x1="371.4297" y1="632" x2="408.2217" y2="632" gradientTransform="matrix(1 0 0 1 -370.2002 -614.5742)"&gt;
+	&lt;stop  offset="0" style="stop-color:#C9C9C9"/&gt;
+	&lt;stop  offset="1" style="stop-color:#808080"/&gt;
+&lt;/linearGradient&gt;
+&lt;ellipse fill="url(#SVGID_6_)" cx="19.625" cy="17.426" rx="18.396" ry="3.926"/&gt;
+&lt;linearGradient id="SVGID_7_" gradientUnits="userSpaceOnUse" x1="370.2002" y1="627.5938" x2="409.4502" y2="627.5938" gradientTransform="matrix(1 0 0 1 -370.2002 -614.5742)"&gt;
+	&lt;stop  offset="0" style="stop-color:#4D4D4D"/&gt;
+	&lt;stop  offset="0.0558" style="stop-color:#5F5F5F"/&gt;
+	&lt;stop  offset="0.2103" style="stop-color:#8D8D8D"/&gt;
+	&lt;stop  offset="0.3479" style="stop-color:#AEAEAE"/&gt;
+	&lt;stop  offset="0.4623" style="stop-color:#C2C2C2"/&gt;
+	&lt;stop  offset="0.5394" style="stop-color:#C9C9C9"/&gt;
+	&lt;stop  offset="0.6247" style="stop-color:#C5C5C5"/&gt;
+	&lt;stop  offset="0.7072" style="stop-color:#BABABA"/&gt;
+	&lt;stop  offset="0.7885" style="stop-color:#A6A6A6"/&gt;
+	&lt;stop  offset="0.869" style="stop-color:#8B8B8B"/&gt;
+	&lt;stop  offset="0.9484" style="stop-color:#686868"/&gt;
+	&lt;stop  offset="1" style="stop-color:#4D4D4D"/&gt;
+&lt;/linearGradient&gt;
+&lt;path fill="url(#SVGID_7_)" d="M19.625,10.113C8.787,10.113,0,8.238,0,5.925v10c0,2.313,8.787,4.188,19.625,4.188
+	c10.839,0,19.625-1.875,19.625-4.188v-10C39.25,8.238,30.464,10.113,19.625,10.113z"/&gt;
+&lt;linearGradient id="SVGID_8_" gradientUnits="userSpaceOnUse" x1="370.2002" y1="621.5938" x2="409.4502" y2="621.5938" gradientTransform="matrix(1 0 0 1 -370.2002 -614.5742)"&gt;
+	&lt;stop  offset="0" style="stop-color:#B3B3B3"/&gt;
+	&lt;stop  offset="0.0171" style="stop-color:#B6B6B6"/&gt;
+	&lt;stop  offset="0.235" style="stop-color:#D7D7D7"/&gt;
+	&lt;stop  offset="0.4168" style="stop-color:#EBEBEB"/&gt;
+	&lt;stop  offset="0.5394" style="stop-color:#F2F2F2"/&gt;
+	&lt;stop  offset="0.6579" style="stop-color:#EEEEEE"/&gt;
+	&lt;stop  offset="0.7724" style="stop-color:#E3E3E3"/&gt;
+	&lt;stop  offset="0.8853" style="stop-color:#CFCFCF"/&gt;
+	&lt;stop  offset="0.9965" style="stop-color:#B4B4B4"/&gt;
+	&lt;stop  offset="1" style="stop-color:#B3B3B3"/&gt;
+&lt;/linearGradient&gt;
+&lt;path fill="url(#SVGID_8_)" d="M19.625,10.113c10.839,0,19.625-1.875,19.625-4.188l-1.229-2c0,2.168-8.235,3.926-18.396,3.926
+	c-9.481,0-17.396-1.959-18.396-3.926L0,5.925C0,8.238,8.787,10.113,19.625,10.113z"/&gt;
+&lt;linearGradient id="SVGID_9_" gradientUnits="userSpaceOnUse" x1="371.4297" y1="618.5" x2="408.2217" y2="618.5" gradientTransform="matrix(1 0 0 1 -370.2002 -614.5742)"&gt;
+	&lt;stop  offset="0" style="stop-color:#C9C9C9"/&gt;
+	&lt;stop  offset="1" style="stop-color:#808080"/&gt;
+&lt;/linearGradient&gt;
+&lt;ellipse fill="url(#SVGID_9_)" cx="19.625" cy="3.926" rx="18.396" ry="3.926"/&gt;
+&lt;path opacity="0.24" fill="#FFFFFF" enable-background="new    " d="M31.291,46.792c0,0-4.313,0.578-7.249,0.694
+	C20.917,47.613,15,47.613,15,47.613l-2.443-10.279l-0.119-2.283l-1.231-1.842L9.789,23.024l-0.082-0.119L9.3,20.715l-1.45-1.44
+	L5.329,8.793c0,0,5.296,0.882,7.234,1.07s8.375,0.25,8.375,0.25l3,9.875l-0.25,1.313l1.063,2.168l2.312,9.644l-0.375,1.875
+	l1.627,2.193L31.291,46.792z"/&gt;
+&lt;/svg&gt;
+</y:Resource>
+    </y:Resources>
   </data>
 </graphml>
