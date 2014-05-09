@@ -114,6 +114,7 @@ class EventHandler(pyinotify.ProcessEvent):
                 logger.info('Invalid zipfile: %s' % filepath)
                 return None
 
+            logger.debug('Adding %s to checkin processing pool.')
             self.monitor.trigger_event(filepath)
 
 

@@ -56,3 +56,5 @@ correlatas.
 * `lib.models.Status.SERV_BEGIN`: Sinaliza o início de um bloco de mensagens correlatas.
 * `lib.models.Status.SERV_END`: Sinaliza o término de um bloco de mensagens correlatas.
 
+Status de serviço podem ocupar valores de 50 a 99 (inclusive), que uma vez atribuídos não podem ser alterados
+
