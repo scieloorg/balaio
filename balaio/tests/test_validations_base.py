@@ -71,6 +71,120 @@ class SetupPipeTests(mocker.MockerTestCase):
         vpipe.feed(data)
         return vpipe
 
+    def test_get_journal_1(self):
+        """
+        Call `_fetch_journal_and_issue_data` function with only `print_issn`
+        as search criteria.
+        """
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapi = ScieloAPIClientStub()
+
+        mock_func = self.mocker.mock()
+        mock_func(print_issn='0100-879X')
+        self.mocker.result({'foo': 'bar'})  # this is the meaningful part of the test
+
+        self.mocker.replay()
+
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
+        vpipe._fetch_journal_and_issue_data = mock_func
+
+        attempt = AttemptStub()
+        attempt.articlepkg.issue_volume = None
+        attempt.articlepkg.issue_number = None
+        attempt.articlepkg.issue_suppl_volume = None
+        attempt.articlepkg.issue_suppl_number = None
+        attempt.articlepkg.journal_pissn = '0100-879X'
+        attempt.articlepkg.journal_eissn = None
+
+        self.assertEqual(vpipe.get_journal(attempt), {'foo': 'bar'})
+
+    def test_get_journal_2(self):
+        """
+        Call `_fetch_journal_and_issue_data` function with `print_issn`
+        and article data as search criteria.
+        """
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapi = ScieloAPIClientStub()
+
+        mock_func = self.mocker.mock()
+        mock_func(print_issn='0100-879X', volume='1', number='2',
+            suppl_volume='1', suppl_number='2')
+        self.mocker.result({'foo': 'bar'})  # this is the meaningful part of the test
+
+        self.mocker.replay()
+
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
+        vpipe._fetch_journal_and_issue_data = mock_func
+
+        attempt = AttemptStub()
+        attempt.articlepkg.issue_volume = '1'
+        attempt.articlepkg.issue_number = '2'
+        attempt.articlepkg.issue_suppl_volume = '1'
+        attempt.articlepkg.issue_suppl_number = '2'
+        attempt.articlepkg.journal_pissn = '0100-879X'
+        attempt.articlepkg.journal_eissn = None
+
+        self.assertEqual(vpipe.get_journal(attempt), {'foo': 'bar'})
+
+    def test_get_journal_3(self):
+        """
+        Call `_fetch_journal_and_issue_data` function with only `electronic_issn`
+        as search criteria.
+        """
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapi = ScieloAPIClientStub()
+
+        mock_func = self.mocker.mock()
+        mock_func(eletronic_issn='0100-879X')
+        self.mocker.result({'foo': 'bar'})  # this is the meaningful part of the test
+
+        self.mocker.replay()
+
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
+        vpipe._fetch_journal_and_issue_data = mock_func
+
+        attempt = AttemptStub()
+        attempt.articlepkg.issue_volume = None
+        attempt.articlepkg.issue_number = None
+        attempt.articlepkg.issue_suppl_volume = None
+        attempt.articlepkg.issue_suppl_number = None
+        attempt.articlepkg.journal_pissn = None
+        attempt.articlepkg.journal_eissn = '0100-879X'
+
+        self.assertEqual(vpipe.get_journal(attempt), {'foo': 'bar'})
+
+    def test_get_journal_4(self):
+        """
+        Call `_fetch_journal_and_issue_data` function with `electronic_issn`
+        and article data as search criteria.
+        """
+        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
+
+        scieloapi = ScieloAPIClientStub()
+
+        mock_func = self.mocker.mock()
+        mock_func(eletronic_issn='0100-879X', volume='1', number='2',
+            suppl_volume='1', suppl_number='2')
+        self.mocker.result({'foo': 'bar'})  # this is the meaningful part of the test
+
+        self.mocker.replay()
+
+        vpipe = self._makeOne(data, _scieloapi=scieloapi)
+        vpipe._fetch_journal_and_issue_data = mock_func
+
+        attempt = AttemptStub()
+        attempt.articlepkg.issue_volume = '1'
+        attempt.articlepkg.issue_number = '2'
+        attempt.articlepkg.issue_suppl_volume = '1'
+        attempt.articlepkg.issue_suppl_number = '2'
+        attempt.articlepkg.journal_pissn = None
+        attempt.articlepkg.journal_eissn = '0100-879X'
+
+        self.assertEqual(vpipe.get_journal(attempt), {'foo': 'bar'})
+
     def test_transform_returns_right_datastructure(self):
         """
         The right datastructure is a tuple in the form:
@@ -93,38 +207,6 @@ class SetupPipeTests(mocker.MockerTestCase):
         # so, testing its type actualy means nothing.
         self.assertEqual(len(result), 4)
 
-    def test_fetch_journal_data_with_valid_criteria(self):
-        """
-        Valid criteria means a valid querystring param.
-        See a list at http://ref.scielo.org/nssk38
-
-        The behaviour defined by the Restful API is to
-        ignore the query for invalid criteria, and so
-        do we.
-        """
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
-        scieloapi = ScieloAPIClientStub()
-        scieloapi.journals.filter = lambda **kwargs: [{'foo': 'bar'}]
-
-        vpipe = self._makeOne(data, _scieloapi=scieloapi)
-        self.assertEqual(vpipe._fetch_journal_data({'print_issn': '1234-1234'}),
-                         {'foo': 'bar'})
-
-    def test_fetch_journal_data_with_unknown_issn_raises_ValueError(self):
-        data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
-        scieloapi = ScieloAPIClientStub()
-        scieloapi.journals.filter = lambda **kwargs: []
-
-        sapi_tools = get_ScieloAPIToolbeltStubModule()
-
-        def _get_one(dataset):
-            raise ValueError()
-        sapi_tools.get_one = _get_one
-
-        vpipe = self._makeOne(data, _scieloapi=scieloapi, _sapi_tools=sapi_tools)
-        self.assertRaises(ValueError,
-                          lambda: vpipe._fetch_journal_data({'print_issn': '1234-1234'}))
-
     def test_fetch_journal_issue_data_with_valid_criteria(self):
         """
         Valid criteria means a valid querystring param.
@@ -143,7 +225,6 @@ class SetupPipeTests(mocker.MockerTestCase):
                          {'foo': 'bar'})
 
     def test_fetch_journal_issue_data_with_unknown_issn_raises_ValueError(self):
-        #FIXME
         data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
         scieloapi = ScieloAPIClientStub()
         scieloapi.journals.filter = lambda **kwargs: []
@@ -155,11 +236,10 @@ class SetupPipeTests(mocker.MockerTestCase):
         sapi_tools.get_one = _get_one
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi, _sapi_tools=sapi_tools)
-        self.assertRaises(ValueError,
-                          lambda: vpipe._fetch_journal_and_issue_data(print_issn='0100-879X', **{'volume': '30', 'number': '4'}))
+        self.assertIsNone(vpipe._fetch_journal_and_issue_data(print_issn='0100-879X',
+            **{'volume': '30', 'number': '4'}))
 
-    def test_fetch_journal_issue_data_with_unknown_criteria_raises_ValueError(self):
-        #FIXME
+    def test_fetch_journal_issue_data_with_unknown_criteria(self):
         data = "<root><issn pub-type='epub'>0102-6720</issn></root>"
         scieloapi = ScieloAPIClientStub()
         scieloapi.journals.filter = lambda **kwargs: []
@@ -171,8 +251,8 @@ class SetupPipeTests(mocker.MockerTestCase):
         sapi_tools.get_one = _get_one
 
         vpipe = self._makeOne(data, _scieloapi=scieloapi, _sapi_tools=sapi_tools)
-        self.assertRaises(ValueError,
-                          lambda: vpipe._fetch_journal_and_issue_data(**{'print_issn': '1234-1234', 'volume': '30', 'number': '4'}))
+        self.assertIsNone(vpipe._fetch_journal_and_issue_data(
+            **{'print_issn': '1234-1234', 'volume': '30', 'number': '4'}))
 
     def test_transform_grants_valid_issn_before_fetching(self):
         #FIXME verificar
