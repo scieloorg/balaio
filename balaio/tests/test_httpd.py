@@ -397,7 +397,10 @@ class PackageFunctionalAPITest(unittest.TestCase):
         testing.tearDown()
 
     def _makeOne(self):
-        article = modelfactories.ArticlePkgFactory.create()
+        """Acceptable defaults for non-important attributes.
+        """
+        article = modelfactories.ArticlePkgFactory.create(journal_pissn='0100-879X',
+            journal_eissn='0100-879X', issue_volume='67', issue_number='8')
         return article
 
     def test_GET_to_available_resource(self):

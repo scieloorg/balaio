@@ -33,11 +33,9 @@ from .package import PackageAnalyzer
 
 logger = logging.getLogger(__name__)
 
-#Use scoped_session only to web app
-ScopedSession = scoped_session(
-    sessionmaker(expire_on_commit=False, extension=ZopeTransactionExtension()))
 
 Session = sessionmaker(expire_on_commit=False, extension=ZopeTransactionExtension())
+ScopedSession = scoped_session(Session)  # only for `balaio.lib.httpd`
 Base = declarative_base()
 
 
