@@ -101,6 +101,9 @@ class SafePackage(object):
 
         self._move_to_working_dir()
 
+    def __repr__(self):
+        return '<lib.package.SafePackage filepath=%s safe_filepath=%s>' % (self.primary_path, self.path)
+
     def _gen_safe_path(self):
         basedir = os.path.dirname(self.primary_path)
         fname, fext = os.path.splitext(os.path.basename(self.primary_path))

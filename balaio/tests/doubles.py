@@ -1,9 +1,11 @@
 # coding: utf-8
-from StringIO import StringIO
-import datetime
-from xml.etree.ElementTree import ElementTree
-import types
 import os
+import types
+import datetime
+from StringIO import StringIO
+from xml.etree.ElementTree import ElementTree
+
+from balaio.lib import utils
 
 
 class Patch(object):
@@ -241,6 +243,50 @@ class TicketStub(object):
                     comments=self.comments,
                     articlepkg_id=ArticlePkgStub().id)
 
+# ---------------------
+# Configuration doubles
+# ---------------------
+default_config = """
+[app]
+db_dsn=
+socket=balaio.sock
+working_dir=/tmp/balaio_wd
+log_level=DEBUG
+debug_sql=False
+
+[monitor]
+watch_path=/vagrant/watch
+recursive=True
+
+[manager]
+api_key=
+api_username=
+api_url=http://homolog.manager.scielo.org/api/
+notifications=False
+
+[http_server]
+ip=0.0.0.0
+port=8080
+
+[checkout]
+mins_to_wait=1
+
+[static_server]
+host=
+username=
+password=
+path=
+"""
+
+def ConfigurationStub(config=default_config):
+    """Returns a true instance of balaio.utils.Configuration
+    with default values.
+    """
+    cfg = config.strip()
+    fp = StringIO(cfg)
+    return utils.Configuration(fp)
+
+# --------------------
 
 class ConfigStub(object):
     def get(self, section, option):
