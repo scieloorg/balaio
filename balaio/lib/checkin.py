@@ -34,6 +34,12 @@ def get_attempt(package, Session=models.Session):
     logger.info('Analyzing package: %s' % package)
 
     with package.analyzer as pkg:
+
+        if not pkg.is_valid_schema():
+            errors = pkg.stylechecker.validate()[1]
+            exc_message = ['%s:%s %s' % (err.line, err.column, err.message) for err in errors]
+            raise excepts.InvalidXML(exc_message)
+
         try:
             logger.debug('Creating a transactional session scope')
             session = Session()

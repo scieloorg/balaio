@@ -5,7 +5,10 @@ import datetime
 from StringIO import StringIO
 from xml.etree.ElementTree import ElementTree
 
-from balaio.lib import utils
+from balaio.lib import utils, package
+
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 class Patch(object):
@@ -423,6 +426,33 @@ class SafePackageStub(object):
         except OSError as e:
             logger.debug('The file is gone before marked as duplicated. %s' % e)
             if not silence: raise
+
+
+# -------------------
+# SafePackage doubles
+# -------------------
+def SafePackageFake(path, working_dir):
+    """Produces an instance of `lib.package.SafePackage`
+    for tests purposes.
+
+    :param path: absolute path or relative to the `tests` module.
+    :param working_dir: same as the original.
+    """
+
+    class SafePackageFake(package.SafePackage):
+        def _move_to_working_dir(self):
+            # act on the original fixture package
+            self.path = self.primary_path
+
+    if path.startswith('/'):
+        fixture = path
+    else:
+        fixture = os.path.join(HERE, path)
+
+    safepack = SafePackageFake(fixture, working_dir)
+    return safepack
+
+# -------------------
 
 #
 # Dummy os implementation

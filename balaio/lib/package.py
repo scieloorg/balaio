@@ -3,6 +3,7 @@ import os
 import stat
 import shutil
 import uuid
+from datetime import datetime
 
 from packtools import xray
 
@@ -102,7 +103,8 @@ class SafePackage(object):
         self._move_to_working_dir()
 
     def __repr__(self):
-        return '<lib.package.SafePackage filepath=%s safe_filepath=%s>' % (self.primary_path, self.path)
+        return '<%s filepath=%s safe_filepath=%s>' % (self.__class__.__name__,
+            self.primary_path, self.path)
 
     def _gen_safe_path(self):
         basedir = os.path.dirname(self.primary_path)
@@ -152,3 +154,20 @@ class SafePackage(object):
         except OSError as e:
             logger.debug('The file is gone before marked as duplicated. %s' % e)
             if not silence: raise
+
+
+class CheckinReporter(object):
+    def __init__(self, package):
+        """
+        :param package: filesystem path to package.
+        """
+        package_path = package.primary_path
+
+        self.packname = os.path.basename(package_path)
+        self.dirname = os.path.dirname(package_path)
+        self.report_filepath = os.path.join(self.dirname, 'report.log')
+
+    def tell(self, message):
+        with open(self.report_filepath, 'a') as fp:
+            fp.write('[%s]\t%s\t%s\n' % (datetime.now(), self.packname, message))
+

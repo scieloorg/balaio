@@ -34,8 +34,16 @@ def process_package(pack, notifier):
     """
     logger.debug('Started processing %s.' % pack)
 
+    pack_reporter = package.CheckinReporter(pack)
+    pack_reporter.tell('Started processing.')
+
     try:
         attempt = checkin.get_attempt(pack)
+
+    except excepts.InvalidXML as e:
+        pack.mark_as_failed(silence=True)
+        for msg in e.message:
+            pack.reporter.tell(msg)
 
     except ValueError as e:
         pack.mark_as_failed(silence=True)
