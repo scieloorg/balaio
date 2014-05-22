@@ -34,14 +34,28 @@ def process_package(pack, notifier):
     """
     logger.debug('Started processing %s.' % pack)
 
+    pack_reporter = package.CheckinReporter(pack.primary_path)
+    pack_reporter.tell('Started the identification process.')
+
     try:
         attempt = checkin.get_attempt(pack)
 
-    except ValueError as e:
+    except excepts.MissingXML as e:
         pack.mark_as_failed(silence=True)
+        pack_reporter.tell('The package must have only one XML file.')
+
+    except excepts.InvalidXML as e:
+        pack.mark_as_failed(silence=True)
+        for msg in e.message:
+            pack_reporter.tell(msg)
 
     except excepts.DuplicatedPackage as e:
-        pack.mark_as_duplicated(silence=True)
+        pack.mark_as_failed(silence=True)
+        pack_reporter.tell('The package has already been deposited.')
+
+    except Exception as e:
+        pack.mark_as_failed(silence=True)
+        pack_reporter.tell('The package could not be processed due to an unexpected error. Our engineers have been notified.')
 
     else:
         # Create a notification to keep track of the checkin process
@@ -56,6 +70,9 @@ def process_package(pack, notifier):
             notification_msg = 'Attempt cannot be validated'
             notification_status = models.Status.error
 
+        pack_reporter.tell('The package is ready to be validated.')
+        checkin_notifier.tell('XML validates against the SPS Schema',
+            notification_status, 'Checkin')
         checkin_notifier.tell(notification_msg, notification_status, 'Checkin')
         checkin_notifier.end()
 

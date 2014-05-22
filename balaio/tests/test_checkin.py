@@ -79,12 +79,9 @@ class CheckinTests(unittest.TestCase):
         self.assertIsInstance(attempt, models.Attempt)
 
     def test_get_attempt_invalid_package_missing_xml(self):
-        """
-        There are more than one article registered with same article title
-        """
         pkg = self._make_test_archive([('texto.txt', b'bla bla')])
         safe_package = package.SafePackage(pkg.name, '/tmp/')
-        self.assertRaises(ValueError, checkin.get_attempt, safe_package)
+        self.assertRaises(excepts.MissingXML, checkin.get_attempt, safe_package)
 
     def test_get_attempt_invalid_package_missing_issn_and_article_title(self):
         """
@@ -92,4 +89,5 @@ class CheckinTests(unittest.TestCase):
         """
         pkg = self._make_test_archive([('texto.xml', b'<root/>')])
         safe_package = package.SafePackage(pkg.name, '/tmp/')
-        self.assertRaises(ValueError, lambda: checkin.get_attempt(safe_package))
+        self.assertRaises(excepts.InvalidXML, lambda: checkin.get_attempt(safe_package))
+
