@@ -93,7 +93,7 @@ class ProcessPackageFunctionTests(mocker.MockerTestCase):
         self.mocker.replay()
 
         self.assertIsNone(monitor.process_package(patched_safepack, None))
-        self.assertTrue('The package has already been deposited.' in pack_reporter._messages)
+        self.assertTrue('The package was already deposited.' in pack_reporter._messages)
 
     @unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
     def test_unknown_exceptions(self):

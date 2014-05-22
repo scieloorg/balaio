@@ -51,7 +51,7 @@ def process_package(pack, notifier):
 
     except excepts.DuplicatedPackage as e:
         pack.mark_as_failed(silence=True)
-        pack_reporter.tell('The package has already been deposited.')
+        pack_reporter.tell('The package was already deposited.')
 
     except Exception as e:
         pack.mark_as_failed(silence=True)
