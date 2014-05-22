@@ -11,3 +11,8 @@ class DuplicatedPackage(BalaioBaseError):
 class InvalidXML(BalaioBaseError):
     """Raised when a package XML validation fail against the SPS XSD.
     """
+
+class MissingXML(BalaioBaseError):
+    """Raised when there is not a single XML inside a package.
+    """
+

@@ -35,7 +35,12 @@ def get_attempt(package, Session=models.Session):
 
     with package.analyzer as pkg:
 
-        if not pkg.is_valid_schema():
+        try:
+            is_valid_xml = pkg.is_valid_schema()
+        except AttributeError as e:  # if there is not a single xml file
+            raise excepts.MissingXML(e.message)
+
+        if not is_valid_xml:
             errors = pkg.stylechecker.validate()[1]
             exc_message = ['%s:%s %s' % (err.line, err.column, err.message) for err in errors]
             raise excepts.InvalidXML(exc_message)
@@ -58,41 +63,28 @@ def get_attempt(package, Session=models.Session):
                 attempt.articlepkg = article_pkg
                 attempt.is_valid = True
 
-                #checkin_notifier.tell('Attempt is valid.', models.Status.ok, 'Checkin')
-
             except Exception as e:
                 savepoint.rollback()
-                #checkin_notifier.tell('Failed to load an ArticlePkg for %s.' % package, models.Status.error, 'Checkin')
-
                 logger.error('Failed to load an ArticlePkg for %s.' % package)
                 logger.debug('---> Traceback: %s' % e)
 
             transaction.commit()
             return attempt
 
-        except IOError as e:
-            transaction.abort()
-            logger.error('The package %s had been deleted during analysis' % package)
-            logger.debug('---> Traceback: %s' % e)
-            raise ValueError('The package %s had been deleted during analysis' % package)
-
         except IntegrityError as e:
             transaction.abort()
-            logger.error('The package has no integrity. Aborting.')
             logger.debug('---> Traceback: %s' % e)
 
-            if 'violates not-null constraint' in e.message:
-                raise ValueError('An integrity error was cast as ValueError.')
-            else:
+            if 'package_checksum' in e.message:
                 raise excepts.DuplicatedPackage('The package %s already exists.' % package)
+            else:
+                raise
 
         except Exception as e:
             transaction.abort()
-
-            logger.error('Unexpected error! The package analysis for %s was aborted.' % (
-                package))
+            logger.error('Something really bad happened while processing %s.' % package)
             logger.debug('---> Traceback: %s' % e)
-            raise ValueError('Unexpected error! The package analysis for %s was aborted.' % package)
+            raise
 
         finally:
             logger.debug('Closing the transactional session scope')

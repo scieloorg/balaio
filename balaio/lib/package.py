@@ -142,27 +142,12 @@ class SafePackage(object):
             logger.debug('The file is gone before marked as failed. %s' % e)
             if not silence: raise
 
-    def mark_as_duplicated(self, silence=False):
-        """
-        Mark primary path as duplicated.
-
-        If the target file if gone, the error is logged
-        and the exception is silenced.
-        """
-        try:
-            utils.mark_as_duplicated(self.primary_path)
-        except OSError as e:
-            logger.debug('The file is gone before marked as duplicated. %s' % e)
-            if not silence: raise
-
 
 class CheckinReporter(object):
-    def __init__(self, package):
+    def __init__(self, package_path):
         """
-        :param package: filesystem path to package.
+        :param package_path: filesystem path to package.
         """
-        package_path = package.primary_path
-
         self.packname = os.path.basename(package_path)
         self.dirname = os.path.dirname(package_path)
         self.report_filepath = os.path.join(self.dirname, 'report.log')

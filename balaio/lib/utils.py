@@ -113,10 +113,6 @@ def mark_as_failed(filename):
     prefix_file(filename, '_failed_')
 
 
-def mark_as_duplicated(filename):
-    prefix_file(filename, '_duplicated_')
-
-
 def setup_logging(config):
     global has_logger
 

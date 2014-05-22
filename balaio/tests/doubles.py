@@ -429,7 +429,7 @@ class SafePackageStub(object):
 
 
 # -------------------
-# SafePackage doubles
+# lib.package doubles
 # -------------------
 def SafePackageFake(path, working_dir):
     """Produces an instance of `lib.package.SafePackage`
@@ -451,6 +451,18 @@ def SafePackageFake(path, working_dir):
 
     safepack = SafePackageFake(fixture, working_dir)
     return safepack
+
+
+class CheckinReporterFake(package.CheckinReporter):
+    """Produces an instance of `lib.package.CheckinReporter`
+    for tests purposes.
+
+    The `_messages` attribute can be used to get all messages
+    passed to the `tell` method.
+    """
+    def tell(self, message):
+        messages = self.__dict__.setdefault('_messages', [])
+        messages.append(message)
 
 # -------------------
 
