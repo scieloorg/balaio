@@ -169,18 +169,23 @@ def get_file_from_attempt(request):
     """
     Get a portion of a package bound to an Attempt.
 
+    Get a specific member, by name (raw):
+    `/api/:api_id/files/:attempt_id/:target?file=:member&raw=true`
+
     Get a specific member, by name:
-    `/api/:api_id/files/:attempt_id/:target.zip/?file=:member`
+    `/api/:api_id/files/:attempt_id/:target.zip?file=:member`
 
     Get more than one specific members, by name:
-    `/api/:api_id/files/:attempt_id/:target.zip/?file=:member&file=:member2`
+    `/api/:api_id/files/:attempt_id/:target.zip?file=:member&file=:member2`
 
     Get the full package:
-    `/api/:api_id/files/:attempt_id/:target.zip/?full=true`
+    `/api/:api_id/files/:attempt_id/:target.zip?full=true`
     """
     has_body = False
 
     attempt_id = request.matchdict.get('attempt_id', None)
+    target = request.matchdict.get('target', None)
+
     try:
         attempt = request.db.query(models.Attempt).get(attempt_id)
     except DataError:
@@ -189,14 +194,29 @@ def get_file_from_attempt(request):
     if attempt is None:
         return HTTPNotFound()
 
-    response = Response(content_type='application/zip')
+    is_full = asbool(request.GET.get('full', False))
+    is_raw = asbool(request.GET.get('raw', False))
+
+    if is_full and is_raw:
+        return HTTPBadRequest()
+
+    response = Response(status_code=200)
 
     # Get the full package.
-    if asbool(request.GET.get('full', False)):
-       response.app_iter = open(attempt.filepath, 'rb')
-       has_body = True
+    if is_full:
+        response.content_type = 'application/zip'
+        response.app_iter = open(attempt.filepath, 'rb')
+        has_body = True
+
+    elif is_raw:
+        member_name = request.GET.get('file')
+        response.content_type = 'text/xml'
+        response.app_iter = attempt.analyzer.get_fp(member_name)
+        has_body = True
 
     else:
+        response.content_type = 'application/zip'
+
         # Get partial portions of the package.
         files = [member for attr, member in request.GET.items() if attr == 'file']
 
@@ -243,7 +263,7 @@ def main(config, engine):
 
     # files
     config_pyrmd.add_route('list_attempt_members', '/api/v1/files/{attempt_id}/')
-    config_pyrmd.add_route('get_attempt_member', '/api/v1/files/{attempt_id}/{target}/')
+    config_pyrmd.add_route('get_attempt_member', '/api/v1/files/{attempt_id}/{target}')
 
     config_pyrmd.add_renderer('gtw', factory='.renderers.GtwFactory')
 
