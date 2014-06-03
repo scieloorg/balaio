@@ -6,6 +6,7 @@ Guia de instalação do balaio e suas dependencias.
 Requisitos
 ----------
 
+    * python2.7
     * git
     * circus
     * chaussette
