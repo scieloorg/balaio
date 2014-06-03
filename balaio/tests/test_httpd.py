@@ -879,7 +879,7 @@ class FilesAPITests(unittest.TestCase):
         attempt = self._makeOne()
 
         self.testapp.get(
-            '/api/v1/files/%s/target.zip/?file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml' % attempt.id,
+            '/api/v1/files/%s/target.zip?file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml' % attempt.id,
             status=200)
 
     def test_GET_specific_member_content(self):
@@ -888,11 +888,22 @@ class FilesAPITests(unittest.TestCase):
         attempt = self._makeOne()
 
         response = self.testapp.get(
-            '/api/v1/files/%s/target.zip/?file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml' % attempt.id,
+            '/api/v1/files/%s/target.zip?file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml' % attempt.id,
             status=200)
 
         zip_res = zipfile.ZipFile(StringIO.StringIO(response.body))
         self.assertEqual(zip_res.namelist(), ['0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml'])
+
+    def test_GET_specific_member_raw_content(self):
+        import StringIO
+        attempt = self._makeOne()
+
+        response = self.testapp.get(
+            '/api/v1/files/%s/target.zip?file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml&raw=true' % attempt.id,
+            status=200)
+
+        body = response.body
+        self.assertTrue(isinstance(body, basestring))
 
     def test_GET_many_members_contents(self):
         import zipfile
@@ -900,7 +911,7 @@ class FilesAPITests(unittest.TestCase):
         attempt = self._makeOne()
 
         response = self.testapp.get(
-            '/api/v1/files/%s/target.zip/?file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml&file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.pdf' % attempt.id,
+            '/api/v1/files/%s/target.zip?file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.xml&file=0042-9686-bwho-91-08-545/0042-9686-bwho-91-08-545.pdf' % attempt.id,
             status=200)
 
         zip_res = zipfile.ZipFile(StringIO.StringIO(response.body))
@@ -914,7 +925,7 @@ class FilesAPITests(unittest.TestCase):
         attempt = self._makeOne()
 
         response = self.testapp.get(
-            '/api/v1/files/%s/target.zip/?file=nonexisting.xml' % attempt.id,
+            '/api/v1/files/%s/target.zip?file=nonexisting.xml' % attempt.id,
             status=400)
 
     def test_GET_full_package(self):
@@ -923,7 +934,7 @@ class FilesAPITests(unittest.TestCase):
         attempt = self._makeOne()
 
         response = self.testapp.get(
-            '/api/v1/files/%s/target.zip/?full=true' % attempt.id,
+            '/api/v1/files/%s/target.zip?full=true' % attempt.id,
             status=200)
 
         zip_res = zipfile.ZipFile(StringIO.StringIO(response.body))
