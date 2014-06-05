@@ -2,7 +2,7 @@ requests
 pyinotify
 sqlalchemy
 enum34
-scielo.plumber
+picles.plumber
 scieloapi
 -e git+git://github.com/scieloorg/packtools.git#egg=packtools
 pyramid
