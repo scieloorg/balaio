@@ -82,6 +82,7 @@ class Attempt(Base):
     finished_at = Column(DateTime)
     filepath = Column(String)
     is_valid = Column(Boolean)
+    is_expired = Column(Boolean, nullable=False, default=False)
     checkin_uri = Column(String(length=64), nullable=True)
 
     proceed_to_validation = Column(Boolean, nullable=False, default=False)
@@ -100,6 +101,7 @@ class Attempt(Base):
         super(Attempt, self).__init__(*args, **kwargs)
         self.started_at = datetime.datetime.now()
         self.is_valid = kwargs.get('is_valid', True)
+        self.is_expired = kwargs.get('is_expired', False)
         self.proceed_to_validation = kwargs.get('proceed_to_validation', False)
         self.proceed_to_checkout = kwargs.get('proceed_to_checkout', False)
 
@@ -125,6 +127,7 @@ class Attempt(Base):
                            finished_at=str(self.finished_at) if self.finished_at else None,
                            filepath=self.filepath,
                            is_valid=self.is_valid,
+                           is_expired=self.is_expired,
                            proceed_to_checkout=self.proceed_to_checkout,
                            checkout_started_at=self.checkout_started_at,
                            queued_checkout=self.queued_checkout)
@@ -184,6 +187,22 @@ class Attempt(Base):
             return xmlname.rsplit(os.extsep, 1)[-2]
         else:
             raise ValueError('There are many xml files in the package.')
+
+    def expire(self):
+        """Mark the attempt as expired.
+        """
+        if self.is_expired:
+            return None
+
+        if self.proceed_to_checkout:
+            raise ValueError('Cannot expire an attempt scheduled for checkout.')
+
+        try:
+            os.unlink(self.filepath)
+        except (IOError, OSError) as e:
+            logger.error(e)
+
+        self.is_expired = True
 
 
 class ArticlePkg(Base):

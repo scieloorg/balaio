@@ -1,18 +1,23 @@
+import logging
+import xmlrpclib
+
 import transaction
 
 from pyramid.response import Response
 from pyramid.config import Configurator
-from pyramid.httpexceptions import HTTPNotFound, HTTPAccepted, HTTPCreated, HTTPBadRequest
+from pyramid.httpexceptions import HTTPNotFound, HTTPBadRequest
 from pyramid.view import notfound_view_config, view_config
 from pyramid.events import NewRequest
 from pyramid.settings import asbool
-from pyramid_xmlrpc import parse_xmlrpc_request, xmlrpc_response, xmlrpc_view
+from pyramid_xmlrpc import XMLRPCView
 
 from sqlalchemy import func
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import DataError
 
 from . import models, health
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_query_filters(model, request_params):
@@ -23,6 +28,9 @@ def get_query_filters(model, request_params):
     return filters
 
 
+# ------------------------------
+# View-functions
+# ------------------------------
 @notfound_view_config(append_slash=True)
 def notfound(request):
     return HTTPNotFound('Not found')
@@ -98,42 +106,6 @@ def attempts(request):
             'objects': [attempt.to_dict() for attempt in attempts]}
 
 
-@view_config(route_name='proceed_to_checkout')
-def proceed_to_checkout(request):
-    """
-    XML-RPC method to set attribute proceed_to_checkout=True
-    return ``True`` if the operation succeeded ``False`` otherwise
-    """
-    params, method = parse_xmlrpc_request(request)
-
-    if len(params) != 0:
-        attempt = request.db.query(models.Attempt).get(params[0])
-    else:
-        _return = False
-
-    if attempt:
-        attempt.proceed_to_checkout = True
-        try:
-            transaction.commit()
-            _return = True
-        except:
-            transaction.abort()
-            _return = False
-    else:
-        _return = False
-
-    return xmlrpc_response(_return)
-
-
-@view_config(route_name='rpc_status')
-@xmlrpc_view
-def rpc_status(context):
-    """
-    XML-RPC method to test service
-    """
-    return True
-
-
 @view_config(route_name='status', request_method='GET', renderer='json')
 def health_status(request):
     """
@@ -166,11 +138,15 @@ def list_files_from_attempt(request):
 
 @view_config(route_name='get_attempt_member', request_method='GET', renderer='json')
 def get_file_from_attempt(request):
-    """
-    Get a portion of a package bound to an Attempt.
+    """Get a portion of a package bound to an Attempt.
 
     Get a specific member, by name (raw):
     `/api/:api_id/files/:attempt_id/:target?file=:member&raw=true`
+
+    .. note::
+      The attributes `raw` and `full` are mutually exclusives, and will
+      raise an HTTPBadRequest if used together.
+
 
     Get a specific member, by name:
     `/api/:api_id/files/:attempt_id/:target.zip?file=:member`
@@ -230,6 +206,91 @@ def get_file_from_attempt(request):
     return response if has_body else HTTPBadRequest()
 
 
+# ------------------------------
+# XML-RPC Endpoint
+# ------------------------------
+@view_config(route_name='rpc')
+class XMLRPCEndpoint(XMLRPCView):
+    """XML-RPC Server.
+
+    The server listens the endpoint `/api/v1/_rpc/`.
+
+    Fault codes and descriptions:
+      - `ServerError`: An unhandled exception occured
+      - `ValueError`: Argument with invalid value
+      - `TypeError`: Argument of an invalid type
+    """
+
+    def status(self):
+        """Check if the XML-RPC endpoint is listening.
+        """
+        return True
+
+    def proceed_to_checkout(self, attempt_id):
+        """Set an attempt as being ready for checkout.
+        """
+        attempt = self.request.db.query(models.Attempt).get(attempt_id)
+        if not attempt:
+            return xmlrpclib.Fault('ValueError', 'Unknown attempt with id %s.' % attempt_id)
+
+        if attempt.is_expired:
+            return xmlrpclib.Fault('ValueError', 'Attempt %s is expired.' % attempt_id)
+
+        attempt.proceed_to_checkout = True
+        try:
+            transaction.commit()
+
+        except Exception as e:
+            logger.error(e)
+            transaction.abort()
+            return xmlrpclib.Fault('ServerError', 'An unexpected error occurred.')
+
+        return True
+
+    def expire_attempt(self, attempt_id):
+        """Mark an attempt as expired.
+
+        Expired attempts are not eligible to the checkout process and
+        their related zip packages are deleted.
+
+        It is not possible to expire attempts with
+        `proceed_to_checkout == True`.
+
+        .. note::
+          Since this function is idempotent, it can be called many times without
+          undesired side-effects.
+        """
+        attempt = self.request.db.query(models.Attempt).get(attempt_id)
+        if not attempt:
+            return xmlrpclib.Fault('ValueError', 'Unknown attempt with id %s.' % attempt_id)
+
+        try:
+            attempt.expire()
+
+        except IOError as e:
+            logger.error(e)
+            return xmlrpclib.Fault('ServerError', 'An unexpected error occurred.')
+
+        except ValueError as e:
+            logger.error(e)
+            return xmlrpclib.Fault('ValueError', e.message)
+
+        else:
+            try:
+                transaction.commit()
+
+            except Exception as e:
+                logger.error(e)
+                transaction.abort()
+                return xmlrpclib.Fault('ServerError', 'An unexpected error occurred.')
+
+        return True
+
+
+
+# ------------------------------
+# Webapp entry point
+# ------------------------------
 def main(config, engine):
     """
     Returns a pyramid app.
@@ -256,10 +317,8 @@ def main(config, engine):
     config_pyrmd.add_route('list_package', '/api/v1/packages/')
     config_pyrmd.add_route('list_attempts', '/api/v1/attempts/')
 
-    # XML RPC status
-    config_pyrmd.add_route('rpc_status', '/api/v1/_rpc/status/')
-    # XML RPC to mark ``proceed_to_checkout=True``
-    config_pyrmd.add_route('proceed_to_checkout', '/api/v1/_rpc/proceed_to_checkout/')
+    # XML-RPC
+    config_pyrmd.add_route('rpc', '/api/v1/_rpc/')
 
     # files
     config_pyrmd.add_route('list_attempt_members', '/api/v1/files/{attempt_id}/')

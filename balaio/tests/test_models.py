@@ -207,6 +207,52 @@ class AttemptTests(mocker.MockerTestCase):
 
         self.assertRaises(ValueError, lambda: attempt.xml_filename)
 
+    @unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
+    def test_expiration(self):
+        attempt = modelfactories.AttemptFactory(filepath='/var/pack.zip')
+
+        mock_unlink = self.mocker.replace('os.unlink')
+        mock_unlink('/var/pack.zip')
+        self.mocker.result(None)
+        self.mocker.replay()
+
+        self.assertIsNone(attempt.expire())
+        self.assertTrue(attempt.is_expired)
+
+    @unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
+    def test_expiration_error(self):
+        attempt = modelfactories.AttemptFactory(filepath='/var/pack.zip')
+
+        mock_unlink = self.mocker.replace('os.unlink')
+        mock_unlink('/var/pack.zip')
+        self.mocker.throw(IOError)
+        self.mocker.replay()
+
+        self.assertIsNone(attempt.expire())
+        self.assertTrue(attempt.is_expired)
+
+    @unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
+    def test_expiration_idempotency(self):
+        attempt = modelfactories.AttemptFactory(filepath='/var/pack.zip')
+
+        mock_unlink = self.mocker.replace('os.unlink')
+        # note that unlink is called only once
+        mock_unlink('/var/pack.zip')
+        self.mocker.result(None)
+        self.mocker.replay()
+
+        self.assertIsNone(attempt.expire())
+        self.assertIsNone(attempt.expire())
+        self.assertTrue(attempt.is_expired)
+
+    @unittest.skipUnless(DB_READY, u'DB must be set. Make sure `app_balaio_tests` is properly configured.')
+    def test_expire_attempt_scheduled_for_checkout(self):
+        attempt = modelfactories.AttemptFactory(filepath='/var/pack.zip',
+                                                proceed_to_checkout=True)
+
+        self.assertRaises(ValueError, lambda: attempt.expire())
+        self.assertFalse(attempt.is_expired)
+
 
 class ArticlePkgTests(mocker.MockerTestCase):
 

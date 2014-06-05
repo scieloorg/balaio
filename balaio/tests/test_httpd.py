@@ -3,6 +3,7 @@ import json
 import sys
 import os
 import unittest
+import xmlrpclib
 
 from pyramid import testing
 from pyramid.httpexceptions import HTTPNotFound,HTTPAccepted, HTTPCreated
@@ -105,6 +106,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                        "checkout_started_at": null,
                        "queued_checkout": null,
                        "is_valid": true,
+                       "is_expired": false,
                        "started_at": "2013-10-09 16:44:29.865787",
                        "id": %s,
                        "package_checksum": "%s",
@@ -135,6 +137,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "is_valid": true,
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
+                            "is_expired": false,
                             "package_checksum": "%s",
                             "proceed_to_checkout": false,
                             "checkout_started_at": null,
@@ -146,6 +149,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "is_valid": true,
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
+                            "is_expired": false,
                             "package_checksum": "%s",
                             "proceed_to_checkout": false,
                             "checkout_started_at": null,
@@ -157,6 +161,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "is_valid": true,
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
+                            "is_expired": false,
                             "package_checksum": "%s",
                             "proceed_to_checkout": false,
                             "checkout_started_at": null,
@@ -192,6 +197,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "is_valid": true,
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
+                            "is_expired": false,
                             "package_checksum": "%s",
                             "proceed_to_checkout": false,
                             "checkout_started_at": null,
@@ -203,6 +209,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "is_valid": true,
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
+                            "is_expired": false,
                             "package_checksum": "%s",
                             "proceed_to_checkout": false,
                             "checkout_started_at": null,
@@ -214,6 +221,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "is_valid": true,
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
+                            "is_expired": false,
                             "package_checksum": "%s",
                             "proceed_to_checkout": false,
                             "checkout_started_at": null,
@@ -245,6 +253,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                           "is_valid": true,
                           "started_at": "2013-10-09 16:44:29.865787",
                           "id": %s,
+                          "is_expired": false,
                           "package_checksum": "%s",
                           "proceed_to_checkout": false,
                           "checkout_started_at": null,
@@ -254,6 +263,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                           "finished_at": null,
                           "articlepkg_id": %s,
                           "is_valid": true,
+                          "is_expired": false,
                           "started_at": "2013-10-09 16:44:29.865787",
                           "id": %s,
                           "package_checksum": "%s",
@@ -291,6 +301,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                           "is_valid": true,
                           "started_at": "2013-10-09 16:44:29.865787",
                           "id": %s,
+                          "is_expired": false,
                           "package_checksum": "%s",
                           "proceed_to_checkout": false,
                           "checkout_started_at": null,
@@ -302,6 +313,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                           "is_valid": true,
                           "started_at": "2013-10-09 16:44:29.865787",
                           "id": %s,
+                          "is_expired": false,
                           "package_checksum": "%s",
                           "proceed_to_checkout": false,
                           "checkout_started_at": null,
@@ -331,6 +343,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "is_valid": true,
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
+                            "is_expired": false,
                             "package_checksum": "%s",
                             "proceed_to_checkout": false,
                             "checkout_started_at": null,
@@ -342,6 +355,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "is_valid": true,
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
+                            "is_expired": false,
                             "package_checksum": "%s",
                             "proceed_to_checkout": false,
                             "checkout_started_at": null,
@@ -370,6 +384,7 @@ class AttemptFunctionalAPITest(unittest.TestCase):
                             "is_valid": true,
                             "started_at": "2013-10-09 16:44:29.865787",
                             "id": %s,
+                            "is_expired": false,
                             "package_checksum": "%s",
                             "proceed_to_checkout": false,
                             "checkout_started_at": null,
@@ -970,4 +985,36 @@ class HealthStatusTests(unittest.TestCase):
         self.assertTrue('NotificationsOption' in results)
         self.assertTrue('status' in results['NotificationsOption'])
         self.assertTrue('description' in results['NotificationsOption'])
+
+
+class XMLRPCEndpointTests(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def _makeRequest(self, args, methodname):
+        packet = xmlrpclib.dumps(args, methodname=methodname)
+        request = testing.DummyRequest()
+        request.body = packet
+        request.content_length = len(packet)
+        return request
+
+    def test_status(self):
+        request = self._makeRequest((), 'status')
+
+        context = testing.DummyModel()
+        instance = httpd.XMLRPCEndpoint(context, request)
+
+        response = instance()
+        self.assertEqual(response.body, xmlrpclib.dumps((True,), methodresponse=True))
+
+    @unittest.skip('need to figure out how to test it without hacking the session')
+    def test_proceed_to_checkout(self):
+        pass
+
+    @unittest.skip('need to figure out how to test it without hacking the session')
+    def test_expire_attempt(self):
+        pass
 
