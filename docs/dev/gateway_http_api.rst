@@ -6,8 +6,7 @@ Balaio Gateway HTTP API
   
     this document is currently under development
 
-
-This API is a RESTful API which provides services related to the XML packages and
+RESTful API which provides services related to the XML packages and
 their attempts.
 
 
