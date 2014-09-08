@@ -4,7 +4,7 @@ sqlalchemy
 enum34
 picles.plumber
 scieloapi
--e git+git://github.com/scieloorg/packtools.git#egg=packtools
+packtools==0.4dev-20140908
 pyramid
 pyramid_xmlrpc
 WebTest
