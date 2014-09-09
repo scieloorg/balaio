@@ -93,6 +93,8 @@ class Attempt(Base):
     checkout_started_at = Column(DateTime)
     queued_checkout = Column(Boolean)
 
+    submitted_by = Column(String(length=254))
+
     articlepkg = relationship('ArticlePkg',
                               backref=backref('attempts',
                               cascade='all, delete-orphan'))

@@ -315,3 +315,21 @@ def get_static_path(path, aid, filename):
     """
     return os.path.join(path, aid, os.path.basename(filename))
 
+
+def get_email_from_config(dirname):
+    """
+    Get e-mail from .config file
+
+    Currently .config file has the following format:
+
+    [identify]
+    email=xxxx@yyyy.cccc.bb
+
+    Can use name=value or name:value
+    """
+    sfp = SafeConfigParser()
+
+    sfp.readfp(open(os.path.join(dirname, '.config'), 'r'))
+
+    return sfp.get('identify', 'email')
+

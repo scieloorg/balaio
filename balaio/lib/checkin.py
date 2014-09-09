@@ -1,4 +1,5 @@
 #coding: utf-8
+import os
 import logging
 
 from sqlalchemy.exc import IntegrityError
@@ -6,6 +7,7 @@ import transaction
 
 from . import models
 from . import excepts
+from . import utils
 
 
 logger = logging.getLogger('balaio.checkin')
@@ -66,6 +68,14 @@ def get_attempt(package, Session=models.Session):
             except Exception as e:
                 savepoint.rollback()
                 logger.error('Failed to load an ArticlePkg for %s.' % package)
+                logger.debug('---> Traceback: %s' % e)
+
+            # Trying to get the submitted email
+            try:
+                dirname = os.path.dirname(package.primary_path)
+                attempt.email_submitted = utils.get_email_from_config(dirname)
+            except IOError as e:
+                logger.debug('Failed to get the submitted email from .config file for %s' % package)
                 logger.debug('---> Traceback: %s' % e)
 
             transaction.commit()

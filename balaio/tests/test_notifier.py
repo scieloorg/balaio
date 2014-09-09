@@ -106,6 +106,7 @@ class NotifierTests(mocker.MockerTestCase):
              'package_name': '0042-9686-bwho-91-08-545',
              'uploaded_at': str(checkpoint.attempt.started_at),
              'article': '/api/v1/checkins_articles/1/',
+             'submitted_by': str(checkpoint.attempt.submitted_by),
         }
 
         mock_attempt = self.mocker.patch(attempt)

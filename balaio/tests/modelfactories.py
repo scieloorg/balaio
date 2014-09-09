@@ -55,6 +55,7 @@ class AttemptFactory(SQLAlchemyModelFactory):
     validation_ended_at = None
     checkout_started_at = None
     queued_checkout = None
+    submitted_by = factory.Sequence(lambda n: 'email%s@domain.com' % n)
 
 
 class CheckpointFactory(SQLAlchemyModelFactory):
