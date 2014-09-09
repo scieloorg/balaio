@@ -1,49 +1,28 @@
 #coding: utf-8
 import time
 import logging
+import argparse
 from datetime import datetime
 from StringIO import StringIO
-from multiprocessing.dummy import Pool as ThreadPool
 
 import transaction
 import scieloapi
 
-from lib import utils, models, meta_extractor
+from lib import utils, models, meta_extractor, package
 from lib.uploader import StaticScieloBackend
-
 
 FILES_EXTENSION = ['xml', 'pdf',]
 IMAGES_EXTENSION = ['tif', 'eps']
 NAME_ZIP_FILE = 'images.zip'
 STATIC_PATH = 'articles'
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('checkout')
 
-
-class CheckoutList(list):
-    """
-    Child class of list adapted to evaluate the type of the object when use the
-    method append, if it's a models.Attempt change the boolean value of the
-    attribute queued_checkout.
-    """
-
-    def append(self, item):
-        """
-        Add the param item on a parent list if is a expected type
-
-        :param item: Any Attempt like object
-        """
-        if isinstance(item, models.Attempt):
-            item.queued_checkout=True
-
-        super(CheckoutList, self).append(item)
-
-
-def upload_static_files(attempt, conn_static):
+def upload_static_files(package_analyzer, conn_static):
     """
     Send the ``PDF``, ``XML`` files to the static server
 
-    :param attempt: Attempt object
+    :param package_analyzer: PackageAnalyzer object
     :param conn_static: connection with static server
     """
     uri_dict = {}
@@ -52,20 +31,20 @@ def upload_static_files(attempt, conn_static):
     with conn_static as static:
 
         for ext in FILES_EXTENSION:
-            for static_file in attempt.analyzer.get_fps(ext):
+            for static_file in package_analyzer.get_fps(ext):
                 uri = static.send(StringIO(static_file.read()),
                                   utils.get_static_path(STATIC_PATH,
-                                                        attempt.articlepkg.aid,
+                                                        'tmp',
                                                         static_file.name))
                 uri_dict[ext] = uri
 
         for ext in IMAGES_EXTENSION:
-            filename_list += attempt.analyzer.get_ext(ext)
+            filename_list += package_analyzer.get_ext(ext)
 
-        subzip_img = attempt.analyzer.subzip(*filename_list)
+        subzip_img = package_analyzer.subzip(*filename_list)
 
         static_path = utils.get_static_path(STATIC_PATH,
-                                            attempt.articlepkg.aid, NAME_ZIP_FILE)
+                                            'tmp', NAME_ZIP_FILE)
 
         uri = static.send(subzip_img, static_path)
 
@@ -74,29 +53,29 @@ def upload_static_files(attempt, conn_static):
         return uri_dict
 
 
-def upload_meta_front(attempt, client, uri_dict):
+def upload_meta_front(package_analyzer, client, uri_dict):
     """
     Send the extracted front to SciELO Manager
 
-    :param attempt: Attempt object
-    :param cfg: cfguration file
+    :param package_analyzer: PackageAnalyzer object
+    :param client: Manager client connection
     :param uri_dict: dict content the uri to the static file
     """
     dict_filter = {}
 
     ppl =  meta_extractor.get_meta_ppl()
 
-    xml = attempt.analyzer.xml
+    xml = package_analyzer.xml
 
-    articlepkg = attempt.articlepkg
+    meta = package_analyzer.meta
 
-    dict_filter['pissn'] = articlepkg.journal_pissn if articlepkg.journal_pissn else None
-    dict_filter['eissn'] = articlepkg.journal_eissn if articlepkg.journal_eissn else None
-    dict_filter['volume'] = articlepkg.issue_volume if articlepkg.issue_volume else None
-    dict_filter['number'] = articlepkg.issue_number if articlepkg.issue_number else None
-    dict_filter['suppl_number'] = articlepkg.issue_suppl_number if articlepkg.issue_suppl_number else None
-    dict_filter['suppl_volume'] = articlepkg.issue_suppl_volume if articlepkg.issue_suppl_volume else None
-    dict_filter['publication_year'] = articlepkg.issue_year if articlepkg.issue_year else None
+    dict_filter['pissn'] = meta['journal_pissn']
+    dict_filter['eissn'] = meta['journal_eissn']
+    dict_filter['volume'] = meta['issue_volume']
+    dict_filter['number'] = meta['issue_number']
+    dict_filter['suppl_number'] = meta['issue_suppl_number']
+    dict_filter['suppl_volume'] = meta['issue_suppl_volume']
+    dict_filter['publication_year'] = meta['issue_year']
 
     issue = next(client.issues.filter(**dict_filter))
 
@@ -111,35 +90,86 @@ def upload_meta_front(attempt, client, uri_dict):
     client.articles.post(data)
 
 
-def checkout_procedure(item):
+def checkout_procedure_by_attempt(item):
     """
-    This function performs some operations related to the checkout
+    This function performs some operations related to checkout attempts
         - Upload static files to the backend
         - Upload the front metadata to the Manager
         - Set queued_checkout = False
 
-    :param attempt: item (Attempt, cfg)
+    :param item: item (attempt, client, conn)
     """
-    attempt, client, conn = item
+    try:
+        attempt, client, conn = item
 
-    logger.info("Starting checkout to attempt: %s" % attempt)
+        logger.info("Starting checkout to attempt: %s" % attempt)
 
-    attempt.checkout_started_at = datetime.now()
+        attempt.checkout_started_at = datetime.now()
 
-    logger.info("Set checkout_started_at to: %s" % attempt.checkout_started_at)
+        logger.info("Set checkout_started_at to: %s" % attempt.checkout_started_at)
 
-    uri_dict = upload_static_files(attempt, conn)
+        uri_dict = upload_static_files(attempt.analyzer, conn)
 
-    logger.info("Upload static files for attempt: %s" % attempt)
+        logger.info("Upload static files for attempt: %s" % attempt)
 
-    upload_meta_front(attempt, client, uri_dict)
+        upload_meta_front(attempt.analyzer, client, uri_dict)
 
-    logger.info("Set queued_checkout to False attempt: %s" % attempt)
+        logger.info("Set queued_checkout to False attempt: %s" % attempt)
 
-    attempt.queued_checkout = False
+        attempt.queued_checkout = False
+    except Exception as e:
+        logger.critical("some exception occurred while processing the package %s, traceback: %s" % (attempt.analyzer._filename, e.message))
+
+
+def checkout_procedure_by_package(item):
+    """
+    This function performs some operations related to packages
+        - Upload static files to the backend
+        - Upload the front metadata to the Manager
+
+    :param item: item (package, client, conn)
+    """
+    try:
+        pkg, client, conn = item
+
+        logger.info("Starting checkout to package: %s" % pkg._filename)
+
+        uri_dict = upload_static_files(pkg, conn)
+
+        logger.info("Upload static files for package: %s" % pkg._filename)
+
+        upload_meta_front(pkg, client, uri_dict)
+
+        logger.info("Upload meta front for package: %s" % pkg._filename)
+    except Exception as e:
+        logger.critical("some exception occurred while processing the package %s, traceback: %s" % (pkg._filename, e.message))
 
 
 def main(config):
+
+    parser = argparse.ArgumentParser(description='Checkout SPS packages from command line\
+                                    and checkout attempts like deamon process.')
+
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    group.add_argument('-d', '--directory',
+                        dest='directory',
+                        help='indicate the path direcotry to process')
+
+    group.add_argument('-f', '--file',
+                        dest='file',
+                        help='indicate the path of package ``.zip` to process')
+
+    group.add_argument('-a', '--attempts',
+                        action='store_true',
+                        help='processes attempts considering the proceed_to_checkout\
+                        = True and checkout_started_at = None')
+
+    parser.add_argument('-v', '--version',
+                        action='version',
+                        version='%(prog)s 0.1')
+
+    args = parser.parse_args()
 
     session = models.Session()
 
@@ -152,38 +182,40 @@ def main(config):
                                config.get('static_server', 'path'),
                                config.get('static_server', 'host'))
 
-    pool = ThreadPool()
+    if args.attempts:
 
-    while True:
+        while True:
 
-        attempts_checkout = session.query(models.Attempt).filter_by(
-                                          proceed_to_checkout=True,
-                                          checkout_started_at=None).all()
+            attempts_checkout = session.query(models.Attempt).filter_by(
+                                              proceed_to_checkout=True,
+                                              checkout_started_at=None).all()
 
-        #Process only if exists itens
-        if attempts_checkout:
+            if attempts_checkout:
+                try:
+                    for attempt in attempts_checkout:
+                        attempt.queued_checkout=True
+                        checkout_procedure_by_attempt((attempt, client, conn))
 
-            checkout_lst = CheckoutList()
+                    transaction.commit()
+                except:
+                    transaction.abort()
+                    raise
 
-            try:
-                for attempt in attempts_checkout:
-                    checkout_lst.append((attempt, client, conn))
+            time.sleep(config.getint('checkout', 'mins_to_wait') * 60)
 
-                #Execute the checkout procedure for each item
-                pool.map(checkout_procedure, checkout_lst)
+    if args.directory:
+        packages = [package.PackageAnalyzer(fp) for fp in utils.get_zip_files(args.directory)]
+        for pkg in packages:
+            checkout_procedure_by_package((pkg, client, conn))
 
-                transaction.commit()
-            except:
-                transaction.abort()
-                raise
-
-        time.sleep(config.getint('checkout', 'mins_to_wait') * 60)
-
-    pool.close
+    if args.file:
+        pkg = package.PackageAnalyzer(args.file)
+        checkout_procedure_by_package((pkg, client, conn))
 
 
 if __name__ == '__main__':
     config = utils.balaio_config_from_env()
+
     utils.setup_logging(config)
 
     models.Session.configure(bind=models.create_engine_from_config(config))

@@ -4,6 +4,7 @@ import requests
 import zipfile
 from StringIO import StringIO
 import logging, logging.handlers
+from os.path import isfile, join
 from ConfigParser import SafeConfigParser
 
 from requests.exceptions import Timeout, RequestException
@@ -313,5 +314,16 @@ def get_static_path(path, aid, filename):
     :param aid: aid (article identify)
     :param filename: name of the file
     """
-    return os.path.join(path, aid, os.path.basename(filename))
+    return join(path, aid, os.path.basename(filename))
+
+
+def get_zip_files(path):
+    """
+    Return a list of zip file from directory, it will raise OSError otherwise
+
+    :param path: valid path
+    """
+
+    return [join(path,f) for f in os.listdir(path) if isfile(join(path,f)) and zipfile.is_zipfile(join(path,f))]
+
 
